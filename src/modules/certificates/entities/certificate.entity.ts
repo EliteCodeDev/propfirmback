@@ -1,0 +1,33 @@
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { UserAccount } from '../../users/entities/user-account.entity';
+import { Challenge } from '../../challenges/entities/challenge.entity';
+
+@Entity('Certificate')
+export class Certificate {
+  @PrimaryGeneratedColumn('uuid')
+  certificateID: string;
+
+  @Column({ type: 'uuid' })
+  userId: string;
+
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
+  monto: number;
+
+  @Column({ length: 255, nullable: true })
+  qrLink: string;
+
+  @Column({ type: 'uuid' })
+  challengeID: string;
+
+  @Column({ type: 'char', length: 18, nullable: true })
+  certificateDate: string;
+
+  // Relations
+  @ManyToOne(() => UserAccount, user => user.certificates)
+  @JoinColumn({ name: 'userId' })
+  user: UserAccount;
+
+  @ManyToOne(() => Challenge, challenge => challenge.certificates)
+  @JoinColumn({ name: 'challengeID' })
+  challenge: Challenge;
+}
