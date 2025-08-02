@@ -29,7 +29,7 @@ export class ChallengesController {
 
   @Get('my-challenges')
   @ApiOperation({ summary: 'Get current user challenges' })
-  findMyChallences(@Request() req, @Query() query: ChallengeQueryDto) {
+  findMyChallenges(@Request() req, @Query() query: ChallengeQueryDto) {
     return this.challengesService.findByUserId(req.user.userID, query);
   }
 
