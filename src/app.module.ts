@@ -7,25 +7,25 @@ import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { validationSchema } from './config/validation.schema';
-import { databaseConfig }   from './config/database.config';
-import { jwtConfig }        from './config/jwt.config';
+import { databaseConfig } from './config/database.config';
+import { jwtConfig } from './config/jwt.config';
 
-import { JwtAuthGuard }           from './common/guards/jwt-auth.guard';
-import { HttpExceptionFilter }    from './common/filters/http-exception.filter';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
-import { ResponseInterceptor }    from './common/interceptors/response.interceptor';
-import { LoggingInterceptor }     from './common/interceptors/logging.interceptor';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
-import { AuthModule }              from './modules/auth/auth.module';
-import { UsersModule }             from './modules/users/users.module';
-import { AffiliatesModule }        from './modules/affiliates/affiliates.module';
-import { ChallengesModule }        from './modules/challenges/challenges.module';
-import { BrokerAccountsModule }    from './modules/broker-accounts/broker-accounts.module';
-import { CertificatesModule }      from './modules/certificates/certificates.module';
-import { OrdersModule }            from './modules/orders/orders.module';
-import { VerificationModule }      from './modules/verification/verification.module';
-import { WithdrawalsModule }       from './modules/withdrawals/withdrawals.module';
-import { RbacModule }              from './modules/rbac/rbac.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
+import { AffiliatesModule } from './modules/affiliates/affiliates.module';
+import { ChallengesModule } from './modules/challenges/challenges.module';
+import { BrokerAccountsModule } from './modules/broker-accounts/broker-accounts.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { VerificationModule } from './modules/verification/verification.module';
+import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
+import { RbacModule } from './modules/rbac/rbac.module';
 import { ExternalCredentialsModule } from './modules/external-credentials/external-credentials.module';
 
 import { AppController } from './app.controller';
@@ -77,4 +77,4 @@ import { AppController } from './app.controller';
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
   ],
 })
-export class AppModule {}
+export class AppModule { }
