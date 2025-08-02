@@ -14,7 +14,7 @@ import { ChallengeDetails } from './challenge-details.entity';
 import { Certificate } from '../../certificates/entities/certificate.entity';
 import { CustomerOrder } from '../../orders/entities/customer-order.entity';
 import { Withdrawal } from '../../withdrawals/entities/withdrawal.entity';
-
+import { ChallengeStatus } from 'src/common/enums/challenge-status.enum';
 @Entity('Challenge')
 export class Challenge {
   @PrimaryGeneratedColumn('uuid')
@@ -37,10 +37,11 @@ export class Challenge {
 
   @Column({
     type: 'enum',
-    enum: ['in_progress', 'passed', 'failed', 'cancelled'],
+    enum: ChallengeStatus,
+    default: ChallengeStatus.INNITIAL,
     nullable: true,
   })
-  status: string;  // ← aquí no hay ningún `length`
+  status: ChallengeStatus; // ← aquí no hay ningún `length`
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

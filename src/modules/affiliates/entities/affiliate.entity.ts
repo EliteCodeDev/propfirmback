@@ -10,6 +10,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
+import { AffiliateStatus } from 'src/common/enums/affiliate-status.enum';
 
 @Entity('Affiliate')
 export class Affiliate {
@@ -27,10 +28,10 @@ export class Affiliate {
 
   @Column({
     type: 'enum',
-    enum: ['active', 'inactive', 'banned'],
-    default: 'active',
+    enum: AffiliateStatus,
+    default: AffiliateStatus.ACTIVE,
   })
-  status: string;
+  status: AffiliateStatus;
 
   @CreateDateColumn()
   createdAt: Date;

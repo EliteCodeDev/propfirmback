@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
-
+import { WithdrawalStatus } from 'src/common/enums/withdrawal-status.enum';
 @Entity('Withdrawal')
 export class Withdrawal {
   @PrimaryGeneratedColumn('uuid')
@@ -28,10 +28,10 @@ export class Withdrawal {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'approved', 'paid', 'rejected'],
-    default: 'pending',
+    enum: WithdrawalStatus,
+    default: WithdrawalStatus.PENDING,
   })
-  status: string;
+  status: WithdrawalStatus;
 
   @CreateDateColumn()
   createdAt: Date;
