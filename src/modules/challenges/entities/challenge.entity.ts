@@ -21,10 +21,10 @@ export class Challenge {
   challengeID: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userID: string;
 
   @Column({ type: 'uuid', nullable: true })
-  relationId: string;
+  relationID: string;
 
   @Column({ type: 'timestamp', nullable: true })
   startDate: Date;
@@ -47,22 +47,22 @@ export class Challenge {
   isActive: boolean;
 
   @Column({ type: 'uuid', nullable: true })
-  parentId: string;
+  parentID: string;
 
   @Column({ type: 'uuid', nullable: true })
   brokerAccountID: string;
 
   // Relaciones
   @ManyToOne(() => UserAccount, (user) => user.challenges)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 
   @ManyToOne(() => ChallengeRelation, (relation) => relation.challenges)
-  @JoinColumn({ name: 'relationId' })
+  @JoinColumn({ name: 'relationID' })
   relation: ChallengeRelation;
 
   @ManyToOne(() => Challenge, (challenge) => challenge.children)
-  @JoinColumn({ name: 'parentId' })
+  @JoinColumn({ name: 'parentID' })
   parent: Challenge;
 
   @OneToMany(() => Challenge, (challenge) => challenge.parent)

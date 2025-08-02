@@ -39,7 +39,11 @@ export class RolesController {
   @Post()
   @Auth('super_admin')
   @ApiOperation({ summary: 'Create a new role' })
-  @ApiResponse({ status: 201, description: 'Role created successfully', type: Role })
+  @ApiResponse({
+    status: 201,
+    description: 'Role created successfully',
+    type: Role,
+  })
   @ApiResponse({ status: 409, description: 'Role already exists' })
   create(@Body() createRoleDto: CreateRoleDto): Promise<Role> {
     return this.rolesService.create(createRoleDto);
@@ -67,7 +71,11 @@ export class RolesController {
   @Auth('super_admin')
   @ApiOperation({ summary: 'Update role' })
   @ApiParam({ name: 'id', description: 'Role UUID' })
-  @ApiResponse({ status: 200, description: 'Role updated successfully', type: Role })
+  @ApiResponse({
+    status: 200,
+    description: 'Role updated successfully',
+    type: Role,
+  })
   @ApiResponse({ status: 404, description: 'Role not found' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -90,7 +98,11 @@ export class RolesController {
   @Auth('super_admin')
   @ApiOperation({ summary: 'Assign permissions to role' })
   @ApiParam({ name: 'id', description: 'Role UUID' })
-  @ApiResponse({ status: 200, description: 'Permissions assigned successfully', type: Role })
+  @ApiResponse({
+    status: 200,
+    description: 'Permissions assigned successfully',
+    type: Role,
+  })
   assignPermissions(
     @Param('id', ParseUUIDPipe) roleId: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
@@ -103,7 +115,11 @@ export class RolesController {
   @ApiOperation({ summary: 'Remove permission from role' })
   @ApiParam({ name: 'roleId', description: 'Role UUID' })
   @ApiParam({ name: 'permissionId', description: 'Permission UUID' })
-  @ApiResponse({ status: 200, description: 'Permission removed successfully', type: Role })
+  @ApiResponse({
+    status: 200,
+    description: 'Permission removed successfully',
+    type: Role,
+  })
   removePermission(
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Param('permissionId', ParseUUIDPipe) permissionId: string,
@@ -120,26 +136,29 @@ export class RolesController {
     return this.rolesService.assignRole(assignRoleDto);
   }
 
-  @Delete('assign/:userId/:roleId')
+  @Delete('assign/:userID/:roleId')
   @Auth('admin', 'super_admin')
   @ApiOperation({ summary: 'Remove role from user' })
-  @ApiParam({ name: 'userId', description: 'User UUID' })
+  @ApiParam({ name: 'userID', description: 'User UUID' })
   @ApiParam({ name: 'roleId', description: 'Role UUID' })
   @ApiResponse({ status: 200, description: 'Role removed successfully' })
   @ApiResponse({ status: 404, description: 'Role assignment not found' })
   removeRole(
-    @Param('userId', ParseUUIDPipe) userId: string,
+    @Param('userID', ParseUUIDPipe) userID: string,
     @Param('roleId', ParseUUIDPipe) roleId: string,
   ): Promise<void> {
-    return this.rolesService.removeRole(userId, roleId);
+    return this.rolesService.removeRole(userID, roleId);
   }
 
-  @Get('user/:userId')
+  @Get('user/:userID')
   @Auth('admin', 'super_admin')
   @ApiOperation({ summary: 'Get user roles' })
-  @ApiParam({ name: 'userId', description: 'User UUID' })
-  @ApiResponse({ status: 200, description: 'User roles retrieved successfully' })
-  getUserRoles(@Param('userId', ParseUUIDPipe) userId: string) {
-    return this.rolesService.getUserRoles(userId);
+  @ApiParam({ name: 'userID', description: 'User UUID' })
+  @ApiResponse({
+    status: 200,
+    description: 'User roles retrieved successfully',
+  })
+  getUserRoles(@Param('userID', ParseUUIDPipe) userID: string) {
+    return this.rolesService.getUserRoles(userID);
   }
 }

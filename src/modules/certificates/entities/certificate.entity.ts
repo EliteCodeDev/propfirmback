@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
 
@@ -8,7 +14,7 @@ export class Certificate {
   certificateID: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userID: string;
 
   @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
   monto: number;
@@ -19,15 +25,15 @@ export class Certificate {
   @Column({ type: 'uuid' })
   challengeID: string;
 
-  @Column({ type: 'char', length: 18, nullable: true })
-  certificateDate: string;
+  @Column({ type: 'timestamp', nullable: true })
+  certificateDate: Date;
 
   // Relations
-  @ManyToOne(() => UserAccount, user => user.certificates)
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => UserAccount, (user) => user.certificates)
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 
-  @ManyToOne(() => Challenge, challenge => challenge.certificates)
+  @ManyToOne(() => Challenge, (challenge) => challenge.certificates)
   @JoinColumn({ name: 'challengeID' })
   challenge: Challenge;
 }

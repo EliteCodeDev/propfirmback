@@ -17,7 +17,7 @@ export class Verification {
   verificationID: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userID: string;
 
   @Column({
     type: 'enum',
@@ -49,7 +49,7 @@ export class Verification {
 
   // Relations
   @ManyToOne(() => UserAccount, (user) => user.verifications)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 
   @OneToMany(() => Media, (media) => media.verification)

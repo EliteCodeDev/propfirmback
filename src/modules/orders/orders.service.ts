@@ -12,10 +12,13 @@ export class OrdersService {
     private orderRepository: Repository<CustomerOrder>,
   ) {}
 
-  async create(userId: string, createOrderDto: CreateOrderDto): Promise<CustomerOrder> {
+  async create(
+    userID: string,
+    createOrderDto: CreateOrderDto,
+  ): Promise<CustomerOrder> {
     const order = this.orderRepository.create({
       ...createOrderDto,
-      userId,
+      userID,
     });
 
     return this.orderRepository.save(order);
@@ -47,11 +50,11 @@ export class OrdersService {
     };
   }
 
-  async findByUserId(userId: string, query: any) {
+  async findByUserId(userID: string, query: any) {
     const { page = 1, limit = 10, status } = query;
     const skip = (page - 1) * limit;
 
-    const whereConditions: any = { userId };
+    const whereConditions: any = { userID };
     if (status) {
       whereConditions.statusOrder = status;
     }
@@ -86,11 +89,14 @@ export class OrdersService {
     return order;
   }
 
-  async update(id: string, updateOrderDto: UpdateOrderDto): Promise<CustomerOrder> {
+  async update(
+    id: string,
+    updateOrderDto: UpdateOrderDto,
+  ): Promise<CustomerOrder> {
     const order = await this.findOne(id);
-    
+
     Object.assign(order, updateOrderDto);
-    
+
     return this.orderRepository.save(order);
   }
 

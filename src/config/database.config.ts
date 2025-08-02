@@ -10,16 +10,23 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
     username: configService.get('DATABASE_USERNAME'),
     password: configService.get('DATABASE_PASSWORD'),
     database: configService.get('DATABASE_NAME'),
-    ssl: configService.get('DATABASE_SSL') === 'true' ? {
-      rejectUnauthorized: false
-    } : false,
+    ssl:
+      configService.get('DATABASE_SSL') === 'true'
+        ? {
+            rejectUnauthorized: false,
+          }
+        : false,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
     synchronize: configService.get('NODE_ENV') === 'development',
-    logging: configService.get('NODE_ENV') === 'development' ? ['query', 'error'] : ['error'],
+    logging:
+      configService.get('NODE_ENV') === 'development'
+        ? ['query', 'error']
+        : ['error'],
     migrationsRun: false,
     autoLoadEntities: true,
     retryAttempts: 3,
     retryDelay: 3000,
+    dropSchema: true,
   }),
 };

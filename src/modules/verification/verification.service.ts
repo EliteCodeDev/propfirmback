@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Verification } from './entities/verification.entity';
 import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
+import { VerificationStatus } from 'src/common/enums/verification-status.enum';
 
 @Injectable()
 export class VerificationService {
@@ -12,11 +13,14 @@ export class VerificationService {
     private verificationRepository: Repository<Verification>,
   ) {}
 
-  async create(userId: string, createVerificationDto: CreateVerificationDto): Promise<Verification> {
+  async create(
+    userID: string,
+    createVerificationDto: CreateVerificationDto,
+  ): Promise<Verification> {
     const verification = this.verificationRepository.create({
       ...createVerificationDto,
-      userId,
-      status: 'pending',
+      userID,
+      status: VerificationStatus.PENDING,
     });
 
     return this.verificationRepository.save(verification);
@@ -34,13 +38,14 @@ export class VerificationService {
       whereConditions.documentType = documentType;
     }
 
-    const [verifications, total] = await this.verificationRepository.findAndCount({
-      where: whereConditions,
-      skip,
-      take: limit,
-      order: { submittedAt: 'DESC' },
-      relations: ['user', 'media'],
-    });
+    const [verifications, total] =
+      await this.verificationRepository.findAndCount({
+        where: whereConditions,
+        skip,
+        take: limit,
+        order: { submittedAt: 'DESC' },
+        relations: ['user', 'media'],
+      });
 
     return {
       data: verifications,
@@ -51,22 +56,23 @@ export class VerificationService {
     };
   }
 
-  async findByUserId(userId: string, query: any) {
+  async findByUserId(userID: string, query: any) {
     const { page = 1, limit = 10, status } = query;
     const skip = (page - 1) * limit;
 
-    const whereConditions: any = { userId };
+    const whereConditions: any = { userID };
     if (status) {
       whereConditions.status = status;
     }
 
-    const [verifications, total] = await this.verificationRepository.findAndCount({
-      where: whereConditions,
-      skip,
-      take: limit,
-      order: { submittedAt: 'DESC' },
-      relations: ['media'],
-    });
+    const [verifications, total] =
+      await this.verificationRepository.findAndCount({
+        where: whereConditions,
+        skip,
+        take: limit,
+        order: { submittedAt: 'DESC' },
+        relations: ['media'],
+      });
 
     return {
       data: verifications,
@@ -90,17 +96,20 @@ export class VerificationService {
     return verification;
   }
 
-  async update(id: string, updateVerificationDto: UpdateVerificationDto): Promise<Verification> {
+  async update(
+    id: string,
+    updateVerificationDto: UpdateVerificationDto,
+  ): Promise<Verification> {
     const verification = await this.findOne(id);
-    
+
     Object.assign(verification, updateVerificationDto);
 
-    if (updateVerificationDto.status === 'approved') {
+    if (updateVerificationDto.status === VerificationStatus.APPROVED) {
       verification.approvedAt = new Date();
-    } else if (updateVerificationDto.status === 'rejected') {
+    } else if (updateVerificationDto.status === VerificationStatus.REJECTED) {
       verification.rejectedAt = new Date();
     }
-    
+
     return this.verificationRepository.save(verification);
   }
 

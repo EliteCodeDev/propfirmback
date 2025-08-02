@@ -11,8 +11,12 @@ export class ExternalCredentialsService {
     private externalCredentialRepository: Repository<ExternalCredential>,
   ) {}
 
-  async create(createExternalCredentialDto: CreateExternalCredentialDto): Promise<ExternalCredential> {
-    const credential = this.externalCredentialRepository.create(createExternalCredentialDto);
+  async create(
+    createExternalCredentialDto: CreateExternalCredentialDto,
+  ): Promise<ExternalCredential> {
+    const credential = this.externalCredentialRepository.create(
+      createExternalCredentialDto,
+    );
     return this.externalCredentialRepository.save(credential);
   }
 
@@ -22,9 +26,9 @@ export class ExternalCredentialsService {
     });
   }
 
-  async findByUserId(userId: string): Promise<ExternalCredential> {
+  async findByUserId(userID: string): Promise<ExternalCredential> {
     const credential = await this.externalCredentialRepository.findOne({
-      where: { userID: userId },
+      where: { userID: userID },
       relations: ['user'],
     });
 
@@ -35,16 +39,19 @@ export class ExternalCredentialsService {
     return credential;
   }
 
-  async update(userId: string, updateData: Partial<CreateExternalCredentialDto>): Promise<ExternalCredential> {
-    const credential = await this.findByUserId(userId);
-    
+  async update(
+    userID: string,
+    updateData: Partial<CreateExternalCredentialDto>,
+  ): Promise<ExternalCredential> {
+    const credential = await this.findByUserId(userID);
+
     Object.assign(credential, updateData);
-    
+
     return this.externalCredentialRepository.save(credential);
   }
 
-  async remove(userId: string): Promise<void> {
-    const credential = await this.findByUserId(userId);
+  async remove(userID: string): Promise<void> {
+    const credential = await this.findByUserId(userID);
     await this.externalCredentialRepository.remove(credential);
   }
 }

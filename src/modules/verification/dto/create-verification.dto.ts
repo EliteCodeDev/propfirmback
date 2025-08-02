@@ -1,10 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString, IsOptional } from 'class-validator';
+import { DocumentType } from 'src/common/enums/verification-document-type.enum';
 
 export class CreateVerificationDto {
-  @ApiProperty({ enum: ['dni', 'passport', 'driver_license', 'other'] })
-  @IsEnum(['dni', 'passport', 'driver_license', 'other'])
-  documentType: string;
+  @ApiProperty({ enum: DocumentType })
+  @IsEnum(DocumentType)
+  documentType: DocumentType;
 
   @ApiProperty({ required: false })
   @IsOptional()

@@ -15,13 +15,13 @@ import { AffiliateStatus } from 'src/common/enums/affiliate-status.enum';
 @Entity('Affiliate')
 export class Affiliate {
   @PrimaryGeneratedColumn('uuid')
-  afiliateID: string;
+  affiliateID: string;
 
   @Column({ length: 50, unique: true })
   referralCode: string;
 
   @Column({ type: 'uuid', nullable: true })
-  parentAffiliateId: string;
+  parentAffiliateID: string;
 
   @Column({ type: 'int', default: 1 })
   level: number;
@@ -39,7 +39,7 @@ export class Affiliate {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column({ type: 'char', length: 18, nullable: true })
+  @Column({ type: 'text', nullable: true })
   referralUrl: string;
 
   @Column({ type: 'decimal', precision: 6, scale: 2 })
@@ -50,7 +50,7 @@ export class Affiliate {
 
   // Relations
   @ManyToOne(() => Affiliate, (affiliate) => affiliate.childAffiliates)
-  @JoinColumn({ name: 'parentAffiliateId' })
+  @JoinColumn({ name: 'parentAffiliateID' })
   parentAffiliate: Affiliate;
 
   @OneToMany(() => Affiliate, (affiliate) => affiliate.parentAffiliate)

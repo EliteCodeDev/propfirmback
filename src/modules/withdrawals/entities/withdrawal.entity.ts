@@ -15,7 +15,7 @@ export class Withdrawal {
   withdrawalID: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userID: string;
 
   @Column({ length: 150 })
   wallet: string;
@@ -41,7 +41,7 @@ export class Withdrawal {
 
   // Relations
   @ManyToOne(() => UserAccount, (user) => user.withdrawals)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 
   @ManyToOne(() => Challenge, (challenge) => challenge.withdrawals)

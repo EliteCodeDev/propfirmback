@@ -18,10 +18,10 @@ export class ChallengeBalance {
   @Column({ length: 50, nullable: true })
   discount: string;
 
-  @Column({ type: 'char', length: 18, nullable: true })
-  balance: string;
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
+  balance: number;
 
   // Relations
-  @OneToMany(() => ChallengeRelation, relation => relation.balance)
+  @OneToMany(() => ChallengeRelation, (relation) => relation.balance)
   relations: ChallengeRelation[];
 }

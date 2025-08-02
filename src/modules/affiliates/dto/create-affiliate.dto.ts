@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUUID, IsNumber, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsNumber,
+  IsEnum,
+  Min,
+  Max,
+} from 'class-validator';
+import { AffiliateStatus } from 'src/common/enums/affiliate-status.enum';
 
 export class CreateAffiliateDto {
   @ApiProperty({ example: 'REF123ABC' })
@@ -9,7 +18,7 @@ export class CreateAffiliateDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsUUID()
-  parentAffiliateId?: string;
+  parentAffiliateID?: string;
 
   @ApiProperty({ default: 1 })
   @IsOptional()
@@ -17,10 +26,10 @@ export class CreateAffiliateDto {
   @Min(1)
   level?: number = 1;
 
-  @ApiProperty({ enum: ['active', 'inactive', 'banned'], default: 'active' })
+  @ApiProperty({ enum: AffiliateStatus, default: AffiliateStatus.ACTIVE })
   @IsOptional()
-  @IsEnum(['active', 'inactive', 'banned'])
-  status?: string = 'active';
+  @IsEnum(AffiliateStatus)
+  status?: AffiliateStatus = AffiliateStatus.ACTIVE;
 
   @ApiProperty({ required: false })
   @IsOptional()

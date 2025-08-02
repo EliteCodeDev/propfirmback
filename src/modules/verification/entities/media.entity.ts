@@ -26,7 +26,7 @@ export class Media {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'char', length: 18, nullable: true })
+  @Column({ length: 50, nullable: true })
   scope: string;
 
   @Column({ type: 'uuid', nullable: true })
