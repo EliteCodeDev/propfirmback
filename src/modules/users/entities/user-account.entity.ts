@@ -68,31 +68,33 @@ export class UserAccount {
 
   // Ahora opcional: puede ser NULL si no viene referralCode
   @Column({ type: 'uuid', nullable: true })
-  refAfiliateID?: string;
+  refAffiliateID?: string;
 
   // Relaciones
-  @OneToMany(() => UserRole, userRole => userRole.user)
+  @OneToMany(() => UserRole, (userRole) => userRole.user)
   userRoles: UserRole[];
 
-  @OneToOne(() => Address, address => address.user)
+  @OneToOne(() => Address, (address) => address.user)
   address: Address;
 
-  @ManyToOne(() => Affiliate, affiliate => affiliate.users, { nullable: true })
-  @JoinColumn({ name: 'refAfiliateID' })
+  @ManyToOne(() => Affiliate, (affiliate) => affiliate.users, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'refAffiliateID' })
   referralAffiliate?: Affiliate;
 
-  @OneToMany(() => Challenge, challenge => challenge.user)
+  @OneToMany(() => Challenge, (challenge) => challenge.user)
   challenges: Challenge[];
 
-  @OneToMany(() => Verification, verification => verification.user)
+  @OneToMany(() => Verification, (verification) => verification.user)
   verifications: Verification[];
 
-  @OneToMany(() => Withdrawal, withdrawal => withdrawal.user)
+  @OneToMany(() => Withdrawal, (withdrawal) => withdrawal.user)
   withdrawals: Withdrawal[];
 
-  @OneToMany(() => CustomerOrder, order => order.user)
+  @OneToMany(() => CustomerOrder, (order) => order.user)
   orders: CustomerOrder[];
 
-  @OneToMany(() => Certificate, certificate => certificate.user)
+  @OneToMany(() => Certificate, (certificate) => certificate.user)
   certificates: Certificate[];
 }

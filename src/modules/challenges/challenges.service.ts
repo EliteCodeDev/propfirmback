@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Challenge } from './entities/challenge.entity';
@@ -13,27 +17,30 @@ export class ChallengesService {
     private challengeRepository: Repository<Challenge>,
   ) {}
 
-  async create(userId: string, createChallengeDto: CreateChallengeDto): Promise<Challenge> {
+  async create(
+    userID: string,
+    createChallengeDto: CreateChallengeDto,
+  ): Promise<Challenge> {
     const challenge = this.challengeRepository.create({
       ...createChallengeDto,
-      userId,
+      userID,
     });
 
     return this.challengeRepository.save(challenge);
   }
 
   async findAll(query: ChallengeQueryDto) {
-    const { page = 1, limit = 10, status, userId } = query;
+    const { page = 1, limit = 10, status, userID } = query;
     const skip = (page - 1) * limit;
 
     const whereConditions: any = {};
-    
+
     if (status) {
       whereConditions.status = status;
     }
 
-    if (userId) {
-      whereConditions.userId = userId;
+    if (userID) {
+      whereConditions.userID = userID;
     }
 
     const [challenges, total] = await this.challengeRepository.findAndCount({
@@ -53,8 +60,8 @@ export class ChallengesService {
     };
   }
 
-  async findByUserId(userId: string, query: ChallengeQueryDto) {
-    return this.findAll({ ...query, userId });
+  async findByUserId(userID: string, query: ChallengeQueryDto) {
+    return this.findAll({ ...query, userID });
   }
 
   async findOne(id: string): Promise<Challenge> {
@@ -70,11 +77,14 @@ export class ChallengesService {
     return challenge;
   }
 
-  async update(id: string, updateChallengeDto: UpdateChallengeDto): Promise<Challenge> {
+  async update(
+    id: string,
+    updateChallengeDto: UpdateChallengeDto,
+  ): Promise<Challenge> {
     const challenge = await this.findOne(id);
-    
+
     Object.assign(challenge, updateChallengeDto);
-    
+
     return this.challengeRepository.save(challenge);
   }
 

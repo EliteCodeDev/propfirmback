@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Withdrawal } from './entities/withdrawal.entity';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
-
+import { WithdrawalStatus } from 'src/common/enums/withdrawal-status.enum';
 @Injectable()
 export class WithdrawalsService {
   constructor(
@@ -12,11 +12,14 @@ export class WithdrawalsService {
     private withdrawalRepository: Repository<Withdrawal>,
   ) {}
 
-  async create(userId: string, createWithdrawalDto: CreateWithdrawalDto): Promise<Withdrawal> {
+  async create(
+    userID: string,
+    createWithdrawalDto: CreateWithdrawalDto,
+  ): Promise<Withdrawal> {
     const withdrawal = this.withdrawalRepository.create({
       ...createWithdrawalDto,
-      userId,
-      status: 'pending',
+      userID,
+      status: WithdrawalStatus.PENDING,
     });
 
     return this.withdrawalRepository.save(withdrawal);
@@ -48,11 +51,11 @@ export class WithdrawalsService {
     };
   }
 
-  async findByUserId(userId: string, query: any) {
+  async findByUserId(userID: string, query: any) {
     const { page = 1, limit = 10, status } = query;
     const skip = (page - 1) * limit;
 
-    const whereConditions: any = { userId };
+    const whereConditions: any = { userID };
     if (status) {
       whereConditions.status = status;
     }
@@ -87,11 +90,14 @@ export class WithdrawalsService {
     return withdrawal;
   }
 
-  async update(id: string, updateWithdrawalDto: UpdateWithdrawalDto): Promise<Withdrawal> {
+  async update(
+    id: string,
+    updateWithdrawalDto: UpdateWithdrawalDto,
+  ): Promise<Withdrawal> {
     const withdrawal = await this.findOne(id);
-    
+
     Object.assign(withdrawal, updateWithdrawalDto);
-    
+
     return this.withdrawalRepository.save(withdrawal);
   }
 

@@ -8,14 +8,14 @@ import {
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
-
+import { WithdrawalStatus } from 'src/common/enums/withdrawal-status.enum';
 @Entity('Withdrawal')
 export class Withdrawal {
   @PrimaryGeneratedColumn('uuid')
   withdrawalID: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userID: string;
 
   @Column({ length: 150 })
   wallet: string;
@@ -28,10 +28,10 @@ export class Withdrawal {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'approved', 'paid', 'rejected'],
-    default: 'pending',
+    enum: WithdrawalStatus,
+    default: WithdrawalStatus.PENDING,
   })
-  status: string;
+  status: WithdrawalStatus;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -41,7 +41,7 @@ export class Withdrawal {
 
   // Relations
   @ManyToOne(() => UserAccount, (user) => user.withdrawals)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 
   @ManyToOne(() => Challenge, (challenge) => challenge.withdrawals)

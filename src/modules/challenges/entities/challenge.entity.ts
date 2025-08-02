@@ -14,17 +14,17 @@ import { ChallengeDetails } from './challenge-details.entity';
 import { Certificate } from '../../certificates/entities/certificate.entity';
 import { CustomerOrder } from '../../orders/entities/customer-order.entity';
 import { Withdrawal } from '../../withdrawals/entities/withdrawal.entity';
-
+import { ChallengeStatus } from 'src/common/enums/challenge-status.enum';
 @Entity('Challenge')
 export class Challenge {
   @PrimaryGeneratedColumn('uuid')
   challengeID: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userID: string;
 
   @Column({ type: 'uuid', nullable: true })
-  relationId: string;
+  relationID: string;
 
   @Column({ type: 'timestamp', nullable: true })
   startDate: Date;
@@ -37,31 +37,32 @@ export class Challenge {
 
   @Column({
     type: 'enum',
-    enum: ['in_progress', 'passed', 'failed', 'cancelled'],
+    enum: ChallengeStatus,
+    default: ChallengeStatus.INNITIAL,
     nullable: true,
   })
-  status: string;  // ← aquí no hay ningún `length`
+  status: ChallengeStatus; // ← aquí no hay ningún `length`
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
   @Column({ type: 'uuid', nullable: true })
-  parentId: string;
+  parentID: string;
 
   @Column({ type: 'uuid', nullable: true })
   brokerAccountID: string;
 
   // Relaciones
   @ManyToOne(() => UserAccount, (user) => user.challenges)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 
   @ManyToOne(() => ChallengeRelation, (relation) => relation.challenges)
-  @JoinColumn({ name: 'relationId' })
+  @JoinColumn({ name: 'relationID' })
   relation: ChallengeRelation;
 
   @ManyToOne(() => Challenge, (challenge) => challenge.children)
-  @JoinColumn({ name: 'parentId' })
+  @JoinColumn({ name: 'parentID' })
   parent: Challenge;
 
   @OneToMany(() => Challenge, (challenge) => challenge.parent)

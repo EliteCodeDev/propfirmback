@@ -1,11 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsUUID, IsDateString, IsNumber, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsUUID,
+  IsDateString,
+  IsNumber,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
+import { ChallengeStatus } from 'src/common/enums/challenge-status.enum';
 
 export class CreateChallengeDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsUUID()
-  relationId?: string;
+  relationID?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -22,13 +30,13 @@ export class CreateChallengeDto {
   @IsNumber()
   numPhase?: number;
 
-  @ApiProperty({ 
-    enum: ['in_progress', 'passed', 'failed', 'cancelled'],
-    required: false 
+  @ApiProperty({
+    enum: ChallengeStatus,
+    required: false,
   })
   @IsOptional()
-  @IsEnum(['in_progress', 'passed', 'failed', 'cancelled'])
-  status?: string;
+  @IsEnum(ChallengeStatus)
+  status?: ChallengeStatus;
 
   @ApiProperty({ default: true })
   @IsOptional()
@@ -38,7 +46,7 @@ export class CreateChallengeDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsUUID()
-  parentId?: string;
+  parentID?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()

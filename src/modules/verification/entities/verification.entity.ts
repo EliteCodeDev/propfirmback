@@ -1,27 +1,36 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Media } from './media.entity';
-
+import { VerificationStatus } from 'src/common/enums/verification-status.enum';
+import { DocumentType } from 'src/common/enums/verification-document-type.enum';
 @Entity('Verification')
 export class Verification {
   @PrimaryGeneratedColumn('uuid')
   verificationID: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userID: string;
 
-  @Column({ 
+  @Column({
     type: 'enum',
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    enum: VerificationStatus,
+    default: VerificationStatus.PENDING,
   })
-  status: string;
+  status: VerificationStatus;
 
-  @Column({ 
+  @Column({
     type: 'enum',
-    enum: ['dni', 'passport', 'driver_license', 'other']
+    enum: DocumentType,
   })
-  documentType: string;
+  documentType: DocumentType;
 
   @Column({ length: 100, nullable: true })
   numDocument: string;
@@ -39,10 +48,10 @@ export class Verification {
   rejectedAt: Date;
 
   // Relations
-  @ManyToOne(() => UserAccount, user => user.verifications)
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => UserAccount, (user) => user.verifications)
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 
-  @OneToMany(() => Media, media => media.verification)
+  @OneToMany(() => Media, (media) => media.verification)
   media: Media[];
 }

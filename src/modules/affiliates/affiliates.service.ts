@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Affiliate } from './entities/affiliate.entity';
@@ -13,7 +17,9 @@ export class AffiliatesService {
   ) {}
 
   async create(createAffiliateDto: CreateAffiliateDto): Promise<Affiliate> {
-    const existingCode = await this.findByReferralCode(createAffiliateDto.referralCode);
+    const existingCode = await this.findByReferralCode(
+      createAffiliateDto.referralCode,
+    );
     if (existingCode) {
       throw new ConflictException('Referral code already exists');
     }
@@ -50,7 +56,7 @@ export class AffiliatesService {
 
   async findOne(id: string): Promise<Affiliate> {
     const affiliate = await this.affiliateRepository.findOne({
-      where: { afiliateID: id },
+      where: { affiliateID: id },
       relations: ['parentAffiliate', 'childAffiliates', 'user'],
     });
 
@@ -67,11 +73,19 @@ export class AffiliatesService {
     });
   }
 
-  async update(id: string, updateAffiliateDto: UpdateAffiliateDto): Promise<Affiliate> {
+  async update(
+    id: string,
+    updateAffiliateDto: UpdateAffiliateDto,
+  ): Promise<Affiliate> {
     const affiliate = await this.findOne(id);
 
-    if (updateAffiliateDto.referralCode && updateAffiliateDto.referralCode !== affiliate.referralCode) {
-      const existingCode = await this.findByReferralCode(updateAffiliateDto.referralCode);
+    if (
+      updateAffiliateDto.referralCode &&
+      updateAffiliateDto.referralCode !== affiliate.referralCode
+    ) {
+      const existingCode = await this.findByReferralCode(
+        updateAffiliateDto.referralCode,
+      );
       if (existingCode) {
         throw new ConflictException('Referral code already exists');
       }

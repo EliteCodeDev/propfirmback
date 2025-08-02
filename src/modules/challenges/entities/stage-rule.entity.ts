@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { StageParameter } from './stage-parameter.entity';
-
+import { StageRuleType } from 'src/common/enums/stage-rule-type.enum';
 @Entity('StageRule')
 export class StageRule {
   @PrimaryGeneratedColumn('uuid')
@@ -8,9 +8,11 @@ export class StageRule {
 
   @Column({
     type: 'enum',
-    enum: ['number', 'percentage', 'boolean', 'string'],
+    enum: StageRuleType,
+    default: StageRuleType.NUMBER, // Default type can be adjusted as needed
+    nullable: false,
   })
-  ruleType: string;
+  ruleType: StageRuleType;
 
   @Column({ length: 255, nullable: true })
   ruleName: string;
@@ -19,6 +21,6 @@ export class StageRule {
   ruleDescription: string;
 
   // Relations
-  @OneToMany(() => StageParameter, parameter => parameter.rule)
+  @OneToMany(() => StageParameter, (parameter) => parameter.rule)
   parameters: StageParameter[];
 }

@@ -4,7 +4,7 @@ import { IsUUID, IsOptional, IsNumber, IsString } from 'class-validator';
 export class CreateCertificateDto {
   @ApiProperty()
   @IsUUID()
-  userId: string;
+  userID: string;
 
   @ApiProperty({ required: false })
   @IsOptional()

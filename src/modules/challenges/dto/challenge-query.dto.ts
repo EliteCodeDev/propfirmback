@@ -25,5 +25,5 @@ export class ChallengeQueryDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsUUID()
-  userId?: string;
+  userID?: string;
 }

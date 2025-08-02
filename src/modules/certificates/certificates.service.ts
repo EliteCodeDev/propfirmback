@@ -11,7 +11,9 @@ export class CertificatesService {
     private certificateRepository: Repository<Certificate>,
   ) {}
 
-  async create(createCertificateDto: CreateCertificateDto): Promise<Certificate> {
+  async create(
+    createCertificateDto: CreateCertificateDto,
+  ): Promise<Certificate> {
     const certificate = this.certificateRepository.create(createCertificateDto);
     return this.certificateRepository.save(certificate);
   }
@@ -20,12 +22,14 @@ export class CertificatesService {
     const { page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
-    const [certificates, total] = await this.certificateRepository.findAndCount({
-      skip,
-      take: limit,
-      order: { certificateDate: 'DESC' },
-      relations: ['user', 'challenge'],
-    });
+    const [certificates, total] = await this.certificateRepository.findAndCount(
+      {
+        skip,
+        take: limit,
+        order: { certificateDate: 'DESC' },
+        relations: ['user', 'challenge'],
+      },
+    );
 
     return {
       data: certificates,
@@ -36,17 +40,19 @@ export class CertificatesService {
     };
   }
 
-  async findByUserId(userId: string, query: any) {
+  async findByUserId(userID: string, query: any) {
     const { page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
-    const [certificates, total] = await this.certificateRepository.findAndCount({
-      where: { userId },
-      skip,
-      take: limit,
-      order: { certificateDate: 'DESC' },
-      relations: ['challenge'],
-    });
+    const [certificates, total] = await this.certificateRepository.findAndCount(
+      {
+        where: { userID },
+        skip,
+        take: limit,
+        order: { certificateDate: 'DESC' },
+        relations: ['challenge'],
+      },
+    );
 
     return {
       data: certificates,

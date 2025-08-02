@@ -6,16 +6,16 @@ export class ExternalCredential {
   @PrimaryColumn('uuid')
   userID: string;
 
-  @Column({ type: 'char', length: 18, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   login: string;
 
-  @Column({ type: 'char', length: 18, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   password: string;
 
-  @Column({ type: 'char', length: 18, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   provider: string;
 
-  @Column({ type: 'char', length: 18, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   documentId: string;
 
   // Relations

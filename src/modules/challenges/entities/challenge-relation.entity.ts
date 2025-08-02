@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { ChallengeCategory } from './challenge-category.entity';
 import { ChallengePlan } from './challenge-plan.entity';
 import { ChallengeBalance } from './challenge-balance.entity';
@@ -16,22 +23,25 @@ export class ChallengeRelation {
   @Column({ type: 'uuid' })
   planID: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  balanceID: string;
+
   // Relations
-  @ManyToOne(() => ChallengeCategory, category => category.relations)
+  @ManyToOne(() => ChallengeCategory, (category) => category.relations)
   @JoinColumn({ name: 'subcategoryID' })
   category: ChallengeCategory;
 
-  @ManyToOne(() => ChallengePlan, plan => plan.relations)
+  @ManyToOne(() => ChallengePlan, (plan) => plan.relations)
   @JoinColumn({ name: 'planID' })
   plan: ChallengePlan;
 
-  @OneToMany(() => Challenge, challenge => challenge.relation)
+  @OneToMany(() => Challenge, (challenge) => challenge.relation)
   challenges: Challenge[];
 
-  @OneToMany(() => RelationStage, stage => stage.relation)
+  @OneToMany(() => RelationStage, (stage) => stage.relation)
   stages: RelationStage[];
 
-  @ManyToOne(() => ChallengeBalance, balance => balance.relations)
+  @ManyToOne(() => ChallengeBalance, (balance) => balance.relations)
   @JoinColumn({ name: 'balanceID' })
   balance: ChallengeBalance;
 }

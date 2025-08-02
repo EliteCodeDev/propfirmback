@@ -13,7 +13,7 @@ export class CreateOrderDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
-  idWoo?: number;
+  wooID?: number;
 
   @ApiProperty({ required: false })
   @IsOptional()

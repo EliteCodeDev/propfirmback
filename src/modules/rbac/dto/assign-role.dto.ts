@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class AssignRoleDto {
   @ApiProperty()
   @IsUUID()
-  userId: string;
+  userID: string;
 
   @ApiProperty()
   @IsUUID()

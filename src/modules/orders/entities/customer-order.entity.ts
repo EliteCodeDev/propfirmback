@@ -1,14 +1,21 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
 
 @Entity('CustomerOrder')
 export class CustomerOrder {
-  @PrimaryColumn({ type: 'char', length: 18 })
+  @PrimaryGeneratedColumn('uuid')
   orderID: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userID: string;
 
   @CreateDateColumn()
   dateCreated: Date;
@@ -17,7 +24,7 @@ export class CustomerOrder {
   statusOrder: string;
 
   @Column({ type: 'bigint', nullable: true })
-  idWoo: number;
+  wooID: number;
 
   @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
   total: number;
@@ -32,11 +39,11 @@ export class CustomerOrder {
   documentChallenge: string;
 
   // Relations
-  @ManyToOne(() => UserAccount, user => user.orders)
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => UserAccount, (user) => user.orders)
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 
-  @ManyToOne(() => Challenge, challenge => challenge.orders)
+  @ManyToOne(() => Challenge, (challenge) => challenge.orders)
   @JoinColumn({ name: 'documentChallenge' })
   challenge: Challenge;
 }

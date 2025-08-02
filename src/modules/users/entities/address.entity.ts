@@ -1,13 +1,19 @@
-import { Entity, PrimaryColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { UserAccount } from './user-account.entity';
 
 @Entity('Address')
 export class Address {
-  @PrimaryColumn({ type: 'char', length: 18 })
-  addresID: string;
+  @PrimaryGeneratedColumn('uuid')
+  addressID: string;
 
   @Column({ type: 'uuid', unique: true })
-  userId: string;
+  userID: string;
 
   @Column({ length: 100, nullable: true })
   country: string;
@@ -28,7 +34,7 @@ export class Address {
   addressLine2: string;
 
   // Relations
-  @OneToOne(() => UserAccount, user => user.address)
-  @JoinColumn({ name: 'userId' })
+  @OneToOne(() => UserAccount, (user) => user.address)
+  @JoinColumn({ name: 'userID' })
   user: UserAccount;
 }

@@ -7,7 +7,7 @@ export class StageParameter {
   @PrimaryColumn('uuid')
   ruleID: string;
 
-  @PrimaryColumn({ type: 'char', length: 18 })
+  @PrimaryColumn('uuid')
   relationStageID: string;
 
   @Column({ length: 255 })
@@ -17,11 +17,11 @@ export class StageParameter {
   isActive: boolean;
 
   // Relations
-  @ManyToOne(() => StageRule, rule => rule.parameters)
+  @ManyToOne(() => StageRule, (rule) => rule.parameters)
   @JoinColumn({ name: 'ruleID' })
   rule: StageRule;
 
-  @ManyToOne(() => RelationStage, stage => stage.parameters)
+  @ManyToOne(() => RelationStage, (stage) => stage.parameters)
   @JoinColumn({ name: 'relationStageID' })
   relationStage: RelationStage;
 }

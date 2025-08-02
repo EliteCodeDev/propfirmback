@@ -12,10 +12,10 @@ export class ChallengePlan {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
-  @Column({ type: 'char', length: 18, nullable: true })
-  wooID: string;
+  @Column({ type: 'bigint', nullable: true })
+  wooID: number;
 
   // Relations
-  @OneToMany(() => ChallengeRelation, relation => relation.plan)
+  @OneToMany(() => ChallengeRelation, (relation) => relation.plan)
   relations: ChallengeRelation[];
 }

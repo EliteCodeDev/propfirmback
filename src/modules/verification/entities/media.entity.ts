@@ -1,5 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Verification } from './verification.entity';
+import { MediaType } from 'src/common/enums/media-type.enum';
 
 @Entity('Media')
 export class Media {
@@ -9,23 +17,23 @@ export class Media {
   @Column({ type: 'text' })
   url: string;
 
-  @Column({ 
+  @Column({
     type: 'enum',
-    enum: ['image', 'video', 'document', 'other']
+    enum: MediaType,
   })
-  type: string;
+  type: MediaType;
 
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'char', length: 18, nullable: true })
+  @Column({ length: 50, nullable: true })
   scope: string;
 
   @Column({ type: 'uuid', nullable: true })
   verificationID: string;
 
   // Relations
-  @ManyToOne(() => Verification, verification => verification.media)
+  @ManyToOne(() => Verification, (verification) => verification.media)
   @JoinColumn({ name: 'verificationID' })
   verification: Verification;
 }
