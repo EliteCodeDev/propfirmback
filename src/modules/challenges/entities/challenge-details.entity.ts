@@ -7,22 +7,19 @@ export class ChallengeDetails {
   challengeID: string;
 
   @Column({ type: 'text', nullable: true })
-  metadata: string;
+  metaStats: string;
 
   @Column({ type: 'text', nullable: true })
-  dataAdmin: string;
+  positions: string;
 
   @Column({ type: 'text', nullable: true })
-  validationRules: string;
-
-  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
-  dynamicBalance: number;
+  rulesValidation: string;
 
   @Column({ type: 'timestamp', nullable: true })
   lastUpdate: Date;
 
   // Relations
-  @OneToOne(() => Challenge, challenge => challenge.details)
+  @OneToOne(() => Challenge, (challenge) => challenge.details)
   @JoinColumn({ name: 'challengeID' })
   challenge: Challenge;
 }

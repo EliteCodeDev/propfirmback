@@ -35,6 +35,9 @@ export class Challenge {
   @Column({ type: 'int', nullable: true })
   numPhase: number;
 
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
+  dynamicBalance: number;
+
   @Column({
     type: 'enum',
     enum: ChallengeStatus,

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-import { StageRuleType } from '../../../common/enums/stage-rule-type.enum';
+import { StageRuleType } from 'src/common/enums/stage-rule-type.enum';
 
 export class CreateStageRuleDto {
   @ApiProperty({

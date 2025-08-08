@@ -10,7 +10,7 @@ import { ChallengeCategory } from './challenge-category.entity';
 import { ChallengePlan } from './challenge-plan.entity';
 import { ChallengeBalance } from './challenge-balance.entity';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
-import { RelationStage } from './relation-stage.entity';
+import { RelationStage } from './stage/relation-stage.entity';
 
 @Entity('ChallengeRelation')
 export class ChallengeRelation {

@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { ChallengeStage } from './challenge-stage.entity';
-import { ChallengeRelation } from './challenge-relation.entity';
+import { ChallengeRelation } from '../challenge-relation.entity';
 import { StageParameter } from './stage-parameter.entity';
 
 @Entity('RelationStage')

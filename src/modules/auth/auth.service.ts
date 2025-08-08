@@ -16,7 +16,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
-import { BcryptUtil } from '../../common/utils/bcrypt.util';
+import { BcryptUtil } from '../../common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
