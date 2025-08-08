@@ -1,5 +1,4 @@
-import { DataOpenPositions, DataClosePositions } from "../types/mt4/data.type";
-
+import { DataOpenPositions, DataClosePositions } from '../types/mt4/data.type';
 
 export class Account {
   userID: string;
@@ -16,5 +15,4 @@ export class Account {
 
   metaStats: Object;
   validation: Object;
-
 }

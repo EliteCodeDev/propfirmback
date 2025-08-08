@@ -4,20 +4,20 @@ import { Account } from '../utils/account';
 export class ContextBuffer {
   private buffer: Map<string, Account> = new Map(); //login, objeto con infromacion
 
-  public setBuffer(login: string, data: Account): void {
-    this.buffer.set(login, data);
+  public setBuffer(brokerAccountID: string, data: Account): void {
+    this.buffer.set(brokerAccountID, data);
   }
 
-  public getBuffer(login: string): Account | undefined {
-    return this.buffer.get(login);
+  public getBuffer(brokerAccountID: string): Account | undefined {
+    return this.buffer.get(brokerAccountID);
   }
 
-  public has(login: string): boolean {
-    return this.buffer.has(login);
+  public has(brokerAccountID: string): boolean {
+    return this.buffer.has(brokerAccountID);
   }
 
-  public delete(login: string): void {
-    this.buffer.delete(login);
+  public delete(brokerAccountID: string): void {
+    this.buffer.delete(brokerAccountID);
   }
 
   public clear(): void {
