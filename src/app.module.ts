@@ -37,7 +37,7 @@ import { AppController } from './app.controller';
     // config de entorno
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, mailerConfig],
+      load: [mailerConfig],
       validationSchema,
       envFilePath: '.env',
       cache: true,
