@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { RolePermission } from './role-permission.entity';
-import { UserRole } from '../../users/entities/user-role.entity';
+import { UserAccount } from '../../users/entities/user-account.entity';
 
 @Entity('Role')
 export class Role {
@@ -14,9 +14,10 @@ export class Role {
   description: string;
 
   // Relations
-  @OneToMany(() => RolePermission, rolePermission => rolePermission.role)
+  @OneToMany(() => RolePermission, (rolePermission) => rolePermission.role)
   rolePermissions: RolePermission[];
 
-  @OneToMany(() => UserRole, userRole => userRole.role)
-  userRoles: UserRole[];
+  // Un rol lo pueden tener muchos usuarios
+  @OneToMany(() => UserAccount, (user) => user.role)
+  users: UserAccount[];
 }

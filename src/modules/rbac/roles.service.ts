@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { RolePermission } from './entities/role-permission.entity';
-import { UserRole } from '../users/entities/user-role.entity';
+import { UserAccount } from '../users/entities/user-account.entity';
 
 import { CreateRoleDto } from './dto/create-role.dto';
 import { BaseQueryDto } from '../../common/dto/base-query.dto';
@@ -27,9 +27,8 @@ export class RolesService {
 
     @InjectRepository(RolePermission)
     private readonly rpRepo: Repository<RolePermission>,
-
-    @InjectRepository(UserRole)
-    private readonly urRepo: Repository<UserRole>,
+    @InjectRepository(UserAccount)
+    private readonly userRepo: Repository<UserAccount>,
   ) {}
 
   async create(dto: CreateRoleDto): Promise<Role> {
@@ -112,44 +111,41 @@ export class RolesService {
    * Asigna un rol a un usuario (DTO trae un solo roleId)
    */
   async assignRole(dto: AssignRoleDto): Promise<void> {
-    const exists = await this.urRepo.findOne({
-      where: { userID: dto.userID, roleID: dto.roleId },
-    });
-    if (!exists) {
-      const ur = this.urRepo.create({
-        userID: dto.userID,
-        roleID: dto.roleId, // <-- usa roleId, no roleIds
-      });
-      await this.urRepo.save(ur);
-    }
+    const user = await this.userRepo.findOne({ where: { userID: dto.userID } });
+    if (!user) throw new NotFoundException('User not found');
+    const role = await this.roleRepo.findOne({ where: { roleID: dto.roleId } });
+    if (!role) throw new NotFoundException('Role not found');
+    user.roleID = role.roleID;
+    await this.userRepo.save(user);
   }
 
   /**
    * Quita un rol de un usuario
    */
   async removeRole(userID: string, roleId: string): Promise<void> {
-    await this.urRepo.delete({ userID, roleID: roleId });
+    const user = await this.userRepo.findOne({ where: { userID } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.roleID !== roleId) return; // nothing to do
+    user.roleID = null as any;
+    await this.userRepo.save(user);
   }
 
   /**
    * Obtiene los roles asignados a un usuario
    */
   async getUserRoles(userID: string): Promise<Role[]> {
-    const urs = await this.urRepo.find({
+    const user = await this.userRepo.findOne({
       where: { userID },
       relations: ['role'],
     });
-    return urs.map((u) => u.role);
+    return user?.role ? [user.role] : [];
   }
 
   /**
    * (Opcional) Mantengo método original si lo necesitas
    */
   async getRoleUsers(roleId: string): Promise<any[]> {
-    const urs = await this.urRepo.find({
-      where: { roleID: roleId },
-      relations: ['user'],
-    });
-    return urs.map((u) => u.user);
+    const users = await this.userRepo.find({ where: { roleID: roleId } });
+    return users;
   }
 }

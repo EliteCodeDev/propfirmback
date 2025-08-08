@@ -82,7 +82,7 @@ export class AuthService {
     const { email, password } = dto;
     const user = await this.userRepo.findOne({
       where: { email },
-      relations: ['userRoles', 'userRoles.role'],
+      relations: ['role'],
     });
     if (!user || !(await BcryptUtil.compare(password, user.passwordHash))) {
       throw new UnauthorizedException('Invalid credentials');
@@ -115,7 +115,7 @@ export class AuthService {
       });
       const user = await this.userRepo.findOne({
         where: { userID: payload.sub },
-        relations: ['userRoles', 'userRoles.role'],
+        relations: ['role'],
       });
       if (!user) throw new UnauthorizedException('User not found');
       return this.generateTokens(user);

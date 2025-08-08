@@ -30,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // payload.sub contiene el userID
     const user = await this.userRepository.findOne({
       where: { userID: payload.sub },
-      relations: ['userRoles', 'userRoles.role'],
+      relations: ['role'],
     });
     if (!user) {
       throw new UnauthorizedException();
@@ -39,7 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userID: payload.sub,
       email: user.email,
       username: user.username,
-      roles: user.userRoles?.map((ur) => ur.role?.name) || [],
+  roles: user.role?.name ? [user.role.name] : [],
       isVerified: user.isVerified,
     };
   }

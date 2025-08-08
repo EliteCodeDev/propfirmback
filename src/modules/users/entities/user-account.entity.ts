@@ -10,7 +10,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { UserRole } from './user-role.entity';
 import { Address } from './address.entity';
 import { Affiliate } from '../../affiliates/entities/affiliate.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
@@ -18,6 +17,7 @@ import { Verification } from '../../verification/entities/verification.entity';
 import { Withdrawal } from '../../withdrawals/entities/withdrawal.entity';
 import { CustomerOrder } from '../../orders/entities/customer-order.entity';
 import { Certificate } from '../../certificates/entities/certificate.entity';
+import { Role } from '../../rbac/entities/role.entity';
 
 @Entity('UserAccount')
 export class UserAccount {
@@ -70,9 +70,13 @@ export class UserAccount {
   @Column({ type: 'uuid', nullable: true })
   refAffiliateID?: string;
 
-  // Relaciones
-  @OneToMany(() => UserRole, (userRole) => userRole.user)
-  userRoles: UserRole[];
+  // Rol del usuario (Many users -> One role)
+  @Column({ type: 'uuid', nullable: true })
+  roleID?: string;
+
+  @ManyToOne(() => Role, (role) => role.users, { nullable: true })
+  @JoinColumn({ name: 'roleID' })
+  role?: Role;
 
   @OneToOne(() => Address, (address) => address.user)
   address: Address;
