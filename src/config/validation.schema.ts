@@ -5,7 +5,11 @@ export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   HOST: Joi.string().default('localhost'),
   PORT: Joi.number().default(1337),
-  CLIENT_URL: Joi.string().required(),
+
+  // Frontend & Email Confirmation
+  FRONTEND_URL: Joi.string().required(),
+  EMAIL_CONFIRM_PATH: Joi.string().required(),
+  EMAIL_CONFIRM_ADD_LOGIN: Joi.boolean().default(false),
   
   // CORS
   CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
@@ -22,6 +26,8 @@ export const validationSchema = Joi.object({
   // JWT
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
+  JWT_EMAIL_CONFIRM_SECRET: Joi.string().required(),
+  JWT_EMAIL_CONFIRM_EXPIRES: Joi.string().required(),
   
   // App Keys (for additional security)
   APP_KEYS: Joi.string(),

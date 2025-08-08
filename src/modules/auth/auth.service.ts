@@ -29,7 +29,6 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private mailerService: MailerService,
-    private readonly mailer: MailerService,
   ) {}
 
   /** Registro SIN afiliado */
@@ -53,8 +52,8 @@ export class AuthService {
     const confirmationToken = this.jwtService.sign(
       { email },
       {
-        secret: this.configService.get<string>('jwt.secret'),
-        expiresIn: '1d', // El token de confirmación expira en 1 día
+        secret: this.configService.get<string>('JWT_EMAIL_CONFIRM_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_EMAIL_CONFIRM_EXPIRES'),
       },
     );
 
@@ -71,9 +70,12 @@ export class AuthService {
     const saved = await this.userRepo.save(user);
 
     // 5) Enviar email de confirmación
-    const confirmationLink = `${this.configService.get<string>(
-      'CLIENT_URL',
-    )}/auth/confirm-email?token=${confirmationToken}&login=true`;
+    const baseUrl = this.configService.get<string>('FRONTEND_URL');
+    const path = this.configService.get<string>('EMAIL_CONFIRM_PATH');
+    let confirmationLink = `${baseUrl}${path}?token=${confirmationToken}`;
+    if (this.configService.get<boolean>('EMAIL_CONFIRM_ADD_LOGIN')) {
+      confirmationLink += '&login=true';
+    }
 
     await this.mailerService.sendMail({
       to: saved.email,
@@ -211,7 +213,7 @@ export class AuthService {
   async confirmEmail(token: string) {
     try {
       const payload = this.jwtService.verify(token, {
-        secret: this.configService.get<string>('jwt.secret'),
+        secret: this.configService.get<string>('JWT_EMAIL_CONFIRM_SECRET'),
       });
       if (!payload.email) {
         throw new UnauthorizedException('Invalid token');
