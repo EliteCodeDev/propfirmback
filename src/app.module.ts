@@ -28,6 +28,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 import { RbacModule } from './modules/rbac/rbac.module';
+import { ChallengeTemplatesModule } from './modules/challenge-templates/challenge-templates.module';
 import { ExternalCredentialsModule } from './modules/external-credentials/external-credentials.module';
 
 import { AppController } from './app.controller';
@@ -85,4 +86,4 @@ import { ContextsModule } from './lib/buffer.module';
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
   ],
 })
-export class AppModule { }
+export class AppModule {}
