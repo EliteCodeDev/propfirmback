@@ -15,8 +15,10 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ConfirmResetDto } from './dto/confirm-reset.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from '../../common/utils/bcrypt.util';
+import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +28,7 @@ export class AuthService {
 
     private jwtService: JwtService,
     private configService: ConfigService,
+    private mailerService: MailerService,
   ) {}
 
   /** Registro SIN afiliado */
@@ -45,7 +48,16 @@ export class AuthService {
     // 2) hash de la contraseña
     const passwordHash = await BcryptUtil.hash(password);
 
-    // 3) crear y guardar usuario
+    // 3) generar token de confirmacion
+    const confirmationToken = this.jwtService.sign(
+      { email },
+      {
+        secret: this.configService.get<string>('jwt.secret'),
+        expiresIn: '1d', // El token de confirmación expira en 1 día
+      },
+    );
+
+    // 4) crear y guardar usuario
     const user = this.userRepo.create({
       username,
       email,
@@ -53,13 +65,30 @@ export class AuthService {
       firstName,
       lastName,
       phone,
+      confirmationToken,
     });
     const saved = await this.userRepo.save(user);
 
-    // 4) generar tokens y devolver
+    // 5) Enviar email de confirmación
+    const confirmationLink = `${this.configService.get<string>(
+      'app.clientUrl',
+    )}/auth/confirm-email?token=${confirmationToken}`;
+
+    await this.mailerService.sendMail({
+      to: saved.email,
+      subject: 'Confirm your email address',
+      template: 'confirm-email',
+      context: {
+        name: saved.firstName,
+        link: confirmationLink,
+      },
+    });
+
+    // 6) generar tokens y devolver
     const tokens = this.generateTokens(saved);
     return {
-      message: 'User registered successfully',
+      message:
+        'User registered successfully. Please check your email to confirm your account.',
       user: this.excludePassword(saved),
       ...tokens,
     };
@@ -77,6 +106,9 @@ export class AuthService {
     }
     if (user.isBlocked) {
       throw new UnauthorizedException('Account is blocked');
+    }
+    if (!user.isConfirmed) {
+      throw new UnauthorizedException('Please confirm your email before logging in');
     }
     return {
       user: this.excludePassword(user),
@@ -121,7 +153,86 @@ export class AuthService {
       { expiresIn: '1h' },
     );
     await this.userRepo.update(user.userID, { resetPasswordToken: resetToken });
-    return { message: 'Password reset email sent', resetToken };
+
+    // Enviar email con el link de reseteo
+    const resetLink = `${this.configService.get<string>(
+      'app.clientUrl',
+    )}/reset-password?token=${resetToken}`;
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Password Reset Request',
+      template: 'reset-password',
+      context: {
+        name: user.firstName,
+        link: resetLink,
+      },
+    });
+
+    return { message: 'Password reset email sent' };
+  }
+
+  /** Confirmar reset de contraseña */
+  async confirmPasswordReset(dto: ConfirmResetDto) {
+    const { token, password } = dto;
+
+    try {
+      // 1) Verificar token
+      const payload = this.jwtService.verify(token, {
+        secret: this.configService.get<string>('jwt.secret'),
+      });
+      if (!payload.email) {
+        throw new UnauthorizedException('Invalid token');
+      }
+
+      // 2) Buscar usuario y verificar que el token sea el mismo
+      const user = await this.userRepo.findOne({
+        where: { email: payload.email },
+      });
+      if (!user || user.resetPasswordToken !== token) {
+        throw new UnauthorizedException('Invalid or expired token');
+      }
+
+      // 3) Hashear y actualizar contraseña
+      const passwordHash = await BcryptUtil.hash(password);
+      await this.userRepo.update(user.userID, {
+        passwordHash,
+        resetPasswordToken: null, // Invalidar token
+      });
+
+      return { message: 'Password has been reset successfully' };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+  }
+
+  /** Confirmar email */
+  async confirmEmail(token: string) {
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: this.configService.get<string>('jwt.secret'),
+      });
+      if (!payload.email) {
+        throw new UnauthorizedException('Invalid token');
+      }
+
+      const user = await this.userRepo.findOne({
+        where: { email: payload.email },
+      });
+
+      if (!user || user.confirmationToken !== token) {
+        throw new UnauthorizedException('Invalid or expired token');
+      }
+
+      await this.userRepo.update(user.userID, {
+        isConfirmed: true,
+        confirmationToken: null,
+      });
+
+      return { message: 'Email confirmed successfully' };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
   }
 
   /* — Helpers privados — */

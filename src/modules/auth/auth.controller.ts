@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Get,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +21,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ConfirmResetDto } from './dto/confirm-reset.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 
@@ -54,6 +56,20 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.requestPasswordReset(dto);
+  }
+
+  @Public()
+  @Post('reset-password/confirm')
+  @HttpCode(HttpStatus.OK)
+  async confirmResetPassword(@Body() dto: ConfirmResetDto) {
+    return this.authService.confirmPasswordReset(dto);
+  }
+
+  @Public()
+  @Get('confirm-email')
+  @HttpCode(HttpStatus.OK)
+  async confirmEmail(@Query('token') token: string) {
+    return this.authService.confirmEmail(token);
   }
 
   @UseGuards(JwtAuthGuard)
