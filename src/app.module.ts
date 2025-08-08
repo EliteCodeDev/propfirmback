@@ -32,6 +32,8 @@ import { ExternalCredentialsModule } from './modules/external-credentials/extern
 
 import { AppController } from './app.controller';
 
+import { ContextsModule } from './lib/buffer.module';
+
 @Module({
   imports: [
     // config de entorno
@@ -52,6 +54,8 @@ import { AppController } from './app.controller';
       ],
     }),
     // módulos de la aplicación
+
+    ContextsModule,
     AuthModule,
     MailerModule,
     UsersModule,
