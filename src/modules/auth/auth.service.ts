@@ -29,6 +29,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private mailerService: MailerService,
+    private readonly mailer: MailerService,
   ) {}
 
   /** Registro SIN afiliado */

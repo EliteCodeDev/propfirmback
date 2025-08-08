@@ -7,7 +7,7 @@ import { AuthController } from './auth.controller';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAccount } from '../users/entities/user-account.entity';
-
+import { MailerModule as AppMailerModule } from '../mailer/mailer.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserAccount]),         // sólo UserAccount
@@ -18,6 +18,7 @@ import { UserAccount } from '../users/entities/user-account.entity';
       }),
       inject: [],
     }),
+    AppMailerModule,
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],
