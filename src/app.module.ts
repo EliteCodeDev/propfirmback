@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { validationSchema } from './config/validation.schema';
+import mailerConfig from './config/mailer.config';
 import { databaseConfig } from './config/database.config';
 import { jwtConfig } from './config/jwt.config';
 
@@ -17,9 +18,9 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 import { AuthModule } from './modules/auth/auth.module';
+import { MailerModule } from './modules/mailer/mailer.module';
 import { UsersModule } from './modules/users/users.module';
 import { AffiliatesModule } from './modules/affiliates/affiliates.module';
-import { ChallengeTemplatesModule } from './modules/challenge-templates/challenge-templates.module';
 import { ChallengesModule } from './modules/challenges/challenges.module';
 import { BrokerAccountsModule } from './modules/broker-accounts/broker-accounts.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
@@ -30,6 +31,8 @@ import { RbacModule } from './modules/rbac/rbac.module';
 import { ExternalCredentialsModule } from './modules/external-credentials/external-credentials.module';
 
 import { AppController } from './app.controller';
+
+import { ContextsModule } from './lib/buffer.module';
 
 @Module({
   imports: [
@@ -51,7 +54,10 @@ import { AppController } from './app.controller';
       ],
     }),
     // módulos de la aplicación
+
+    ContextsModule,
     AuthModule,
+    MailerModule,
     UsersModule,
     AffiliatesModule,
     ChallengeTemplatesModule,
@@ -79,4 +85,4 @@ import { AppController } from './app.controller';
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
   ],
 })
-export class AppModule {}
+export class AppModule { }

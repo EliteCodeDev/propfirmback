@@ -28,12 +28,13 @@ export const validationSchema = Joi.object({
   ADMIN_JWT_SECRET: Joi.string(),
   TRANSFER_TOKEN_SALT: Joi.string(),
   
-  // Email (optional for future use)
-  SMTP_HOST: Joi.string().optional(),
-  SMTP_PORT: Joi.number().optional(),
-  SMTP_USER: Joi.string().optional(),
-  SMTP_PASS: Joi.string().optional(),
-  
+  // Mailer
+  MAIL_HOST: Joi.string().required(),
+  MAIL_PORT: Joi.number().required(),
+  MAIL_USER: Joi.string().required(),
+  MAIL_PASS: Joi.string().required(),
+  MAIL_FROM: Joi.string().required(),
+
   // File Upload (optional)
   MAX_FILE_SIZE: Joi.number().default(5242880), // 5MB
   UPLOAD_PATH: Joi.string().default('./uploads'),
