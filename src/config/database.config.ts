@@ -16,7 +16,8 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
             rejectUnauthorized: false,
           }
         : false,
-    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+    // Buscar entidades solo dentro de carpetas "entities" (incluyendo subcarpetas)
+    entities: [__dirname + '/../**/entities/**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
     synchronize: configService.get('NODE_ENV') === 'development',
     logging:

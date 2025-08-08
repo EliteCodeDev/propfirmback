@@ -1,5 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ChallengesService } from './challenges.service';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { UpdateChallengeDto } from './dto/update-challenge.dto';
@@ -16,6 +32,7 @@ export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Create a new challenge' })
   create(@Request() req, @Body() createChallengeDto: CreateChallengeDto) {
     return this.challengesService.create(req.user.userID, createChallengeDto);
@@ -41,7 +58,10 @@ export class ChallengesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update challenge' })
-  update(@Param('id') id: string, @Body() updateChallengeDto: UpdateChallengeDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateChallengeDto: UpdateChallengeDto,
+  ) {
     return this.challengesService.update(id, updateChallengeDto);
   }
 
@@ -51,5 +71,30 @@ export class ChallengesController {
   @ApiOperation({ summary: 'Delete challenge' })
   remove(@Param('id') id: string) {
     return this.challengesService.remove(id);
+  }
+
+  // Template-related endpoints (read-only for challenge creation)
+  @Get('templates/relations')
+  @ApiOperation({
+    summary: 'Get available challenge relations for creating challenges',
+  })
+  getAvailableRelations() {
+    return this.challengesService.getAvailableRelations();
+  }
+
+  @Get('templates/categories')
+  @ApiOperation({
+    summary: 'Get available challenge categories for creating challenges',
+  })
+  getAvailableCategories() {
+    return this.challengesService.getAvailableCategories();
+  }
+
+  @Get('templates/plans')
+  @ApiOperation({
+    summary: 'Get available challenge plans for creating challenges',
+  })
+  getAvailablePlans() {
+    return this.challengesService.getAvailablePlans();
   }
 }

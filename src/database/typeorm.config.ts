@@ -2,7 +2,7 @@ import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 
 config();
-
+// es utilizado por el CLI de TypeORM para cargar las variables de entorno desde el archivo .env
 export default new DataSource({
   type: 'postgres',
   host: process.env.DATABASE_HOST,
@@ -10,10 +10,14 @@ export default new DataSource({
   username: process.env.DATABASE_USERNAME,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
-  ssl: process.env.DATABASE_SSL === 'true' ? {
-    rejectUnauthorized: false
-  } : false,
-  entities: ['src/**/*.entity{.ts,.js}'],
+  ssl:
+    process.env.DATABASE_SSL === 'true'
+      ? {
+          rejectUnauthorized: false,
+        }
+      : false,
+  // Buscar entidades solo dentro de carpetas "entities" (incluyendo subcarpetas)
+  entities: ['src/**/entities/**/*.entity{.ts,.js}'],
   migrations: ['src/database/migrations/*{.ts,.js}'],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',

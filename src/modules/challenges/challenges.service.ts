@@ -9,18 +9,27 @@ import { Challenge } from './entities/challenge.entity';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { ChallengeQueryDto } from './dto/challenge-query.dto';
+import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
 
 @Injectable()
 export class ChallengesService {
   constructor(
     @InjectRepository(Challenge)
     private challengeRepository: Repository<Challenge>,
+    private challengeTemplatesService: ChallengeTemplatesService,
   ) {}
 
   async create(
     userID: string,
     createChallengeDto: CreateChallengeDto,
   ): Promise<Challenge> {
+    // Validate that the relation exists if relationID is provided
+    if (createChallengeDto.relationID) {
+      await this.challengeTemplatesService.findOneRelation(
+        createChallengeDto.relationID,
+      );
+    }
+
     const challenge = this.challengeRepository.create({
       ...createChallengeDto,
       userID,
@@ -91,5 +100,18 @@ export class ChallengesService {
   async remove(id: string): Promise<void> {
     const challenge = await this.findOne(id);
     await this.challengeRepository.remove(challenge);
+  }
+
+  // Template-related methods
+  async getAvailableRelations() {
+    return this.challengeTemplatesService.findAllRelations();
+  }
+
+  async getAvailableCategories() {
+    return this.challengeTemplatesService.findAllCategories();
+  }
+
+  async getAvailablePlans() {
+    return this.challengeTemplatesService.findAllPlans();
   }
 }

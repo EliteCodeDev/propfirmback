@@ -8,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
-import { ChallengeRelation } from './challenge-relation.entity';
+import { ChallengeRelation } from 'src/modules/challenge-templates/entities/challenge-relation.entity';
 import { BrokerAccount } from '../../broker-accounts/entities/broker-account.entity';
 import { ChallengeDetails } from './challenge-details.entity';
 import { Certificate } from '../../certificates/entities/certificate.entity';
