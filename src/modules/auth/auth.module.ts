@@ -7,6 +7,8 @@ import { AuthController } from './auth.controller';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAccount } from '../users/entities/user-account.entity';
+import { MailerService } from '../mailer/mailer.service';
+import { MailerModule } from '../mailer/mailer.module';
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { UserAccount } from '../users/entities/user-account.entity';
       }),
       inject: [],
     }),
+    MailerModule,
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],

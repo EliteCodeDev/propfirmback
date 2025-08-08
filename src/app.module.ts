@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { validationSchema } from './config/validation.schema';
+import mailerConfig from './config/mailer.config';
 import { databaseConfig } from './config/database.config';
 import { jwtConfig } from './config/jwt.config';
 
@@ -17,6 +18,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 import { AuthModule } from './modules/auth/auth.module';
+import { MailerModule } from './modules/mailer/mailer.module';
 import { UsersModule } from './modules/users/users.module';
 import { AffiliatesModule } from './modules/affiliates/affiliates.module';
 import { ChallengesModule } from './modules/challenges/challenges.module';
@@ -51,6 +53,7 @@ import { AppController } from './app.controller';
     }),
     // módulos de la aplicación
     AuthModule,
+    MailerModule,
     UsersModule,
     AffiliatesModule,
     ChallengesModule,

@@ -17,6 +17,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from '../../common/utils/bcrypt.util';
+import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
 
     private jwtService: JwtService,
     private configService: ConfigService,
+    private mailerService: MailerService,
   ) {}
 
   /** Registro SIN afiliado */
@@ -56,7 +58,17 @@ export class AuthService {
     });
     const saved = await this.userRepo.save(user);
 
-    // 4) generar tokens y devolver
+    // 4) Enviar email de bienvenida
+    await this.mailerService.sendMail({
+      to: saved.email,
+      subject: 'Welcome to Prop Firm',
+      template: 'welcome',
+      context: {
+        name: saved.firstName,
+      },
+    });
+
+    // 5) generar tokens y devolver
     const tokens = this.generateTokens(saved);
     return {
       message: 'User registered successfully',
@@ -121,7 +133,23 @@ export class AuthService {
       { expiresIn: '1h' },
     );
     await this.userRepo.update(user.userID, { resetPasswordToken: resetToken });
-    return { message: 'Password reset email sent', resetToken };
+
+    // Enviar email con el link de reseteo
+    const resetLink = `${this.configService.get<string>(
+      'app.clientUrl',
+    )}/reset-password?token=${resetToken}`;
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Password Reset Request',
+      template: 'reset-password',
+      context: {
+        name: user.firstName,
+        link: resetLink,
+      },
+    });
+
+    return { message: 'Password reset email sent' };
   }
 
   /* — Helpers privados — */
