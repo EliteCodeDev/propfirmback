@@ -72,8 +72,8 @@ export class AuthService {
 
     // 5) Enviar email de confirmación
     const confirmationLink = `${this.configService.get<string>(
-      'app.clientUrl',
-    )}/auth/confirm-email?token=${confirmationToken}`;
+      'CLIENT_URL',
+    )}/auth/confirm-email?token=${confirmationToken}&login=true`;
 
     await this.mailerService.sendMail({
       to: saved.email,
@@ -157,7 +157,7 @@ export class AuthService {
 
     // Enviar email con el link de reseteo
     const resetLink = `${this.configService.get<string>(
-      'app.clientUrl',
+      'CLIENT_URL',
     )}/reset-password?token=${resetToken}`;
 
     await this.mailerService.sendMail({
