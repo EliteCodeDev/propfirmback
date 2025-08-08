@@ -8,7 +8,10 @@ import {
   HttpStatus,
   Get,
   Query,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
   ApiOperation,
@@ -28,7 +31,10 @@ import { Public } from '../../common/decorators/public.decorator';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -67,9 +73,15 @@ export class AuthController {
 
   @Public()
   @Get('confirm-email')
-  @HttpCode(HttpStatus.OK)
-  async confirmEmail(@Query('token') token: string) {
-    return this.authService.confirmEmail(token);
+  async confirmEmail(
+    @Query('token') token: string,
+    @Res() res: Response,
+  ) {
+    await this.authService.confirmEmail(token);
+    const frontendLoginUrl = `${this.configService.get<string>(
+      'FRONTEND_URL',
+    )}/login`;
+    return res.redirect(frontendLoginUrl);
   }
 
   @UseGuards(JwtAuthGuard)

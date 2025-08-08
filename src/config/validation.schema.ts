@@ -5,6 +5,7 @@ export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   HOST: Joi.string().default('localhost'),
   PORT: Joi.number().default(1337),
+  BACKEND_URL: Joi.string().required(),
 
   // Frontend & Email Confirmation
   FRONTEND_URL: Joi.string().required(),

@@ -70,12 +70,8 @@ export class AuthService {
     const saved = await this.userRepo.save(user);
 
     // 5) Enviar email de confirmación
-    const baseUrl = this.configService.get<string>('FRONTEND_URL');
-    const path = this.configService.get<string>('EMAIL_CONFIRM_PATH');
-    let confirmationLink = `${baseUrl}${path}?token=${confirmationToken}`;
-    if (this.configService.get<boolean>('EMAIL_CONFIRM_ADD_LOGIN')) {
-      confirmationLink += '&login=true';
-    }
+    const baseUrl = this.configService.get<string>('BACKEND_URL');
+    const confirmationLink = `${baseUrl}/auth/confirm-email?token=${confirmationToken}`;
 
     await this.mailerService.sendMail({
       to: saved.email,
@@ -159,7 +155,7 @@ export class AuthService {
 
     // Enviar email con el link de reseteo
     const resetLink = `${this.configService.get<string>(
-      'CLIENT_URL',
+      'FRONTEND_URL',
     )}/reset-password?token=${resetToken}`;
 
     await this.mailerService.sendMail({
