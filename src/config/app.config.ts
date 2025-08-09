@@ -5,19 +5,20 @@ export const appConfig = registerAs('app', () => ({
   host: process.env.HOST || 'localhost',
   port: parseInt(process.env.PORT, 10) || 1337,
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+
   // Security
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  
+
   // File Upload
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 5242880, // 5MB
   uploadPath: process.env.UPLOAD_PATH || './uploads',
-  
+
   // API Configuration
   apiPrefix: 'api',
   swaggerPath: 'api/docs',
-  
+
   // Rate Limiting
   throttleTtl: 60000, // 1 minute
   throttleLimit: 100, // 100 requests per minute

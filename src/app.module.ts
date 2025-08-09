@@ -6,11 +6,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
-import { validationSchema } from './config/validation.schema';
-import mailerConfig from './config/mailer.config';
-import { databaseConfig } from './config/database.config';
-import { jwtConfig } from './config/jwt.config';
-
+import {
+  validationSchema,
+  databaseConfig,
+  jwtConfig,
+  appConfig,
+  jwtConfigValues,
+  mailerConfig,
+  smtApiConfig,
+} from './config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
@@ -44,6 +48,11 @@ import { ContextsModule } from './common/lib/buffer.module';
       envFilePath: '.env',
       cache: true,
     }),
+    // cargar namespaces de config
+    ConfigModule.forFeature(appConfig),
+    ConfigModule.forFeature(jwtConfigValues),
+    ConfigModule.forFeature(mailerConfig),
+    ConfigModule.forFeature(smtApiConfig),
     // base de datos
     TypeOrmModule.forRootAsync(databaseConfig),
     // JWT
@@ -51,11 +60,10 @@ import { ContextsModule } from './common/lib/buffer.module';
     // rate limiting
     ThrottlerModule.forRoot({
       throttlers: [
-        { ttl: 60000, limit: 100 }, // 60 000 ms = 1 min, hasta 100 peticiones
+        { ttl: 60000, limit: 100 }, // configurar mediante appConfig si se desea
       ],
     }),
     // módulos de la aplicación
-
     ContextsModule,
     AuthModule,
     MailerModule,

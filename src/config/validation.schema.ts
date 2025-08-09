@@ -2,13 +2,16 @@ import * as Joi from 'joi';
 
 export const validationSchema = Joi.object({
   // Application
-  NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test')
+    .default('development'),
   HOST: Joi.string().default('localhost'),
   PORT: Joi.number().default(1337),
-  
+
   // CORS
   CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
-  
+  CLIENT_URL: Joi.string().default('http://localhost:3000'),
+
   // Database
   DATABASE_CLIENT: Joi.string().valid('postgres').default('postgres'),
   DATABASE_HOST: Joi.string().required(),
@@ -17,17 +20,19 @@ export const validationSchema = Joi.object({
   DATABASE_USERNAME: Joi.string().required(),
   DATABASE_PASSWORD: Joi.string().required(),
   DATABASE_SSL: Joi.boolean().default(false),
-  
+
   // JWT
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
-  
+  JWT_REFRESH_SECRET: Joi.string().optional(),
+  JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
+
   // App Keys (for additional security)
   APP_KEYS: Joi.string(),
   API_TOKEN_SALT: Joi.string(),
   ADMIN_JWT_SECRET: Joi.string(),
   TRANSFER_TOKEN_SALT: Joi.string(),
-  
+
   // Mailer
   MAIL_HOST: Joi.string().required(),
   MAIL_PORT: Joi.number().required(),
@@ -38,4 +43,9 @@ export const validationSchema = Joi.object({
   // File Upload (optional)
   MAX_FILE_SIZE: Joi.number().default(5242880), // 5MB
   UPLOAD_PATH: Joi.string().default('./uploads'),
+
+  // SMT API
+  SMT_API_URL: Joi.string().required(),
+  SMT_API_KEY: Joi.string().required(),
+  SMT_API_AUTH_HEADER: Joi.string().default('x-api-key'),
 });

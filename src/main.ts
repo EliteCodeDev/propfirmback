@@ -1,7 +1,7 @@
-import { NestFactory }        from '@nestjs/core';
-import { AppModule }           from './app.module';
-import { ConfigService }       from '@nestjs/config';
-import { ValidationPipe }      from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -11,7 +11,8 @@ async function bootstrap() {
   // CORS
   app.enableCors({
     origin: [
-      configService.get<string>('CORS_ORIGIN'),
+      configService.get<string>('app.corsOrigin') ||
+        configService.get<string>('CORS_ORIGIN'),
       'http://localhost:3000',
       'http://127.0.0.1:3000',
     ],
@@ -19,15 +20,17 @@ async function bootstrap() {
   });
 
   // Validation Pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-    transformOptions: { enableImplicitConversion: true },
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
 
   // Prefijo global
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix(configService.get<string>('app.apiPrefix') || 'api');
 
   // Swagger
   const swaggerConfig = new DocumentBuilder()
@@ -37,10 +40,16 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup(
+    configService.get<string>('app.swaggerPath') || 'api/docs',
+    app,
+    document,
+  );
 
-  const host = configService.get<string>('HOST');
-  const port = configService.get<number>('PORT');
+  const host =
+    configService.get<string>('app.host') || configService.get<string>('HOST');
+  const port =
+    configService.get<number>('app.port') || configService.get<number>('PORT');
   await app.listen(port, host);
 
   console.log(`🚀 PropFirm Backend running on: http://${host}:${port}/api`);
