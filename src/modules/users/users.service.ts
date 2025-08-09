@@ -124,10 +124,6 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async updateResetToken(id: string, resetToken: string): Promise<void> {
-    await this.userRepository.update(id, { resetPasswordToken: resetToken });
-  }
-
   async remove(id: string): Promise<void> {
     const user = await this.findById(id);
     await this.userRepository.remove(user);

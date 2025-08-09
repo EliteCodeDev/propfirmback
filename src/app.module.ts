@@ -45,7 +45,7 @@ import { ContextsModule } from './common/lib/buffer.module';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema,
-      envFilePath: '.env',
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
       cache: true,
     }),
     // cargar namespaces de config

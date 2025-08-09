@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -18,12 +19,16 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from '../../common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
+import { PasswordReset } from './entities/password-reset.entity';
+import { ConfirmPasswordResetDto } from './dto/confirm-password-reset.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserAccount)
     private userRepo: Repository<UserAccount>,
+    @InjectRepository(PasswordReset)
+    private passwordResetRepo: Repository<PasswordReset>,
 
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -80,10 +85,14 @@ export class AuthService {
   /** Login */
   async login(dto: LoginDto) {
     const { email, password } = dto;
-    const user = await this.userRepo.findOne({
-      where: { email },
-      relations: ['userRoles', 'userRoles.role'],
-    });
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.userRoles', 'userRoles')
+      .leftJoinAndSelect('userRoles.role', 'role')
+      .where('user.email = :email', { email })
+      .addSelect('user.passwordHash')
+      .getOne();
+
     if (!user || !(await BcryptUtil.compare(password, user.passwordHash))) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -100,8 +109,7 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepo.findOne({ where: { email } });
     if (user && (await BcryptUtil.compare(password, user.passwordHash))) {
-      const { passwordHash, resetPasswordToken, confirmationToken, ...rest } =
-        user;
+      const { passwordHash, confirmationToken, ...rest } = user;
       return rest;
     }
     return null;
@@ -128,16 +136,23 @@ export class AuthService {
   async requestPasswordReset(dto: ResetPasswordDto) {
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
     if (!user) throw new NotFoundException('User not found');
-    const resetToken = this.jwtService.sign(
-      { email: user.email, sub: user.userID },
-      { expiresIn: '1h' },
-    );
-    await this.userRepo.update(user.userID, { resetPasswordToken: resetToken });
 
-    // Enviar email con el link de reseteo
+    // Invalidate previous tokens for this user
+    await this.passwordResetRepo.update({ userID: user.userID }, { used: true });
+
+    const token = uuidv4();
+    const expiresAt = new Date(Date.now() + 3600 * 1000); // 1 hour from now
+
+    const resetRequest = this.passwordResetRepo.create({
+      token,
+      userID: user.userID,
+      expiresAt,
+    });
+    await this.passwordResetRepo.save(resetRequest);
+
     const resetLink = `${this.configService.get<string>(
       'app.clientUrl',
-    )}/reset-password?token=${resetToken}`;
+    )}/reset-password?token=${token}`;
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -150,6 +165,30 @@ export class AuthService {
     });
 
     return { message: 'Password reset email sent' };
+  }
+
+  async resetPassword(dto: ConfirmPasswordResetDto) {
+    const { token, newPassword } = dto;
+
+    const resetRequest = await this.passwordResetRepo.findOne({
+      where: { token, used: false },
+    });
+
+    if (!resetRequest || resetRequest.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    const user = await this.userRepo.findOne({ where: { userID: resetRequest.userID } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const passwordHash = await BcryptUtil.hash(newPassword);
+    await this.userRepo.update(user.userID, { passwordHash });
+
+    await this.passwordResetRepo.update(resetRequest.id, { used: true });
+
+    return { message: 'Password has been reset successfully' };
   }
 
   /* — Helpers privados — */
@@ -176,8 +215,7 @@ export class AuthService {
   }
 
   private excludePassword(user: UserAccount) {
-    const { passwordHash, resetPasswordToken, confirmationToken, ...rest } =
-      user;
+    const { passwordHash, confirmationToken, ...rest } = user;
     return rest;
   }
 }

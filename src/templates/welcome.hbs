@@ -1,10 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Welcome!</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Bienvenido a Prop Firm!</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #004aad;
+            color: #ffffff;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 40px;
+            line-height: 1.6;
+            color: #333333;
+        }
+        .content h2 {
+            color: #004aad;
+        }
+        .content p {
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #004aad;
+            color: #ffffff;
+            padding: 12px 25px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+        }
+        .footer a {
+            color: #004aad;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-  <h1>Welcome, {{name}}!</h1>
-  <p>Thank you for registering on our platform.</p>
+    <div class="container">
+        <div class="header">
+            <h1>¡Bienvenido a Prop Firm!</h1>
+        </div>
+        <div class="content">
+            <h2>Hola, {{name}}!</h2>
+            <p>Gracias por registrarte en nuestra plataforma. Estamos encantados de tenerte con nosotros.</p>
+            <p>Tu cuenta ha sido creada exitosamente. Ahora puedes explorar todas las funcionalidades que ofrecemos para ayudarte a alcanzar tus metas de trading.</p>
+            <p>Si tienes alguna pregunta, no dudes en contactar a nuestro equipo de soporte.</p>
+            <a href="#" class="button">Ir a mi cuenta</a>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 Prop Firm. Todos los derechos reservados.</p>
+            <p>
+                <a href="#">Política de Privacidad</a> |
+                <a href="#">Términos de Servicio</a>
+            </p>
+        </div>
+    </div>
 </body>
 </html>

@@ -42,10 +42,6 @@ export class UserAccount {
 
   @Column({ length: 255, nullable: true })
   @Exclude()
-  resetPasswordToken?: string;
-
-  @Column({ length: 255, nullable: true })
-  @Exclude()
   confirmationToken?: string;
 
   @Column({ type: 'boolean', default: false })

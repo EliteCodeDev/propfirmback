@@ -10,10 +10,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { MailerModule } from '../mailer/mailer.module';
 import { jwtConfig } from '../../config';
+import { PasswordReset } from './entities/password-reset.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserAccount]), // sólo UserAccount
+    TypeOrmModule.forFeature([UserAccount, PasswordReset]),
     ConfigModule,
     JwtModule.registerAsync(jwtConfig),
     MailerModule,
