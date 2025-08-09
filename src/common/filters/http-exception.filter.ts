@@ -17,21 +17,24 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
     const status = exception.getStatus();
+    const message = exception.message;
 
-    const errorResponse = {
-      success: false,
-      message: exception.message,
-      errors: exception.getResponse(),
+    // Solo logear errores 5xx como ERROR, el resto como WARN o DEBUG
+    if (status >= 500) {
+      this.logger.error(
+        `${request.method} ${request.url} ${status} - ${message}`,
+      );
+    } else if (status >= 400) {
+      this.logger.warn(
+        `${request.method} ${request.url} ${status} - ${message}`,
+      );
+    }
+
+    response.status(status).json({
+      statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      method: request.method,
-    };
-
-    this.logger.error(
-      `${request.method} ${request.url} ${status} - ${exception.message}`,
-      exception.stack,
-    );
-
-    response.status(status).json(errorResponse);
+      message,
+    });
   }
 }
