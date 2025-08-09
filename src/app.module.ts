@@ -1,5 +1,6 @@
 // src/app.module.ts
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -63,6 +64,7 @@ import { ContextsModule } from './lib/buffer.module';
         { ttl: 60000, limit: 100 }, // configurar mediante appConfig si se desea
       ],
     }),
+    ScheduleModule.forRoot(),
     // módulos de la aplicación
     ContextsModule,
     AuthModule,

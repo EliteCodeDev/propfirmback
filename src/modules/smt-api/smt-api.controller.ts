@@ -9,6 +9,9 @@ export class SmtApiController {
     @Param('accountId') accountId: string,
     @Body() data: any,
   ) {
-    // await this.mtIngestionService.ingestAccountData(accountId, data);
+    return this.smtApiService.handleIngestionAccount({
+      login: accountId,
+      ...data,
+    });
   }
 }
