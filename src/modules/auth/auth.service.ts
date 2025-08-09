@@ -34,10 +34,11 @@ export class AuthService {
   /** Registro SIN afiliado */
   async register(dto: RegisterDto) {
     const { username, email, password, firstName, lastName, phone } = dto;
+    const lowerCaseEmail = email.toLowerCase();
 
     // 1) evitar duplicados
     const exists = await this.userRepo.findOne({
-      where: [{ email }, { username }],
+      where: [{ email: lowerCaseEmail }, { username }],
     });
     if (exists) {
       throw new ConflictException(
@@ -50,7 +51,7 @@ export class AuthService {
 
     // 3) generar token de confirmacion
     const confirmationToken = this.jwtService.sign(
-      { email },
+      { email: lowerCaseEmail },
       {
         secret: this.configService.get<string>('JWT_EMAIL_CONFIRM_SECRET'),
         expiresIn: this.configService.get<string>('JWT_EMAIL_CONFIRM_EXPIRES'),
@@ -60,7 +61,7 @@ export class AuthService {
     // 4) crear y guardar usuario
     const user = this.userRepo.create({
       username,
-      email,
+      email: lowerCaseEmail,
       passwordHash,
       firstName,
       lastName,
@@ -96,8 +97,9 @@ export class AuthService {
   /** Login */
   async login(dto: LoginDto) {
     const { email, password } = dto;
+    const lowerCaseEmail = email.toLowerCase();
     const user = await this.userRepo.findOne({
-      where: { email },
+      where: { email: lowerCaseEmail },
       relations: ['userRoles', 'userRoles.role'],
     });
     if (!user || !(await BcryptUtil.compare(password, user.passwordHash))) {
@@ -145,7 +147,8 @@ export class AuthService {
 
   /** Solicitar reset de contraseña */
   async requestPasswordReset(dto: ResetPasswordDto) {
-    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+    const lowerCaseEmail = dto.email.toLowerCase();
+    const user = await this.userRepo.findOne({ where: { email: lowerCaseEmail } });
     if (!user) throw new NotFoundException('User not found');
     const resetToken = this.jwtService.sign(
       { email: user.email, sub: user.userID },
@@ -185,8 +188,9 @@ export class AuthService {
       }
 
       // 2) Buscar usuario y verificar que el token sea el mismo
+      const lowerCaseEmail = payload.email.toLowerCase();
       const user = await this.userRepo.findOne({
-        where: { email: payload.email },
+        where: { email: lowerCaseEmail },
       });
       if (!user || user.resetPasswordToken !== token) {
         throw new UnauthorizedException('Invalid or expired token');
@@ -215,8 +219,9 @@ export class AuthService {
         throw new UnauthorizedException('Invalid token');
       }
 
+      const lowerCaseEmail = payload.email.toLowerCase();
       const user = await this.userRepo.findOne({
-        where: { email: payload.email },
+        where: { email: lowerCaseEmail },
       });
 
       if (!user || user.confirmationToken !== token) {
