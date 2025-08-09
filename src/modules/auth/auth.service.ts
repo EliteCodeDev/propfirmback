@@ -34,7 +34,7 @@ export class AuthService {
   /** Registro SIN afiliado */
   async register(dto: RegisterDto) {
     const { username, email, password, firstName, lastName, phone } = dto;
-    const lowerCaseEmail = email.toLowerCase();
+    const lowerCaseEmail = email.toLowerCase().trim();
 
     // 1) evitar duplicados
     const exists = await this.userRepo.findOne({
@@ -97,7 +97,7 @@ export class AuthService {
   /** Login */
   async login(dto: LoginDto) {
     const { email, password } = dto;
-    const lowerCaseEmail = email.toLowerCase();
+    const lowerCaseEmail = email.toLowerCase().trim();
     const user = await this.userRepo.findOne({
       where: { email: lowerCaseEmail },
       relations: ['userRoles', 'userRoles.role'],
@@ -147,7 +147,7 @@ export class AuthService {
 
   /** Solicitar reset de contraseña */
   async requestPasswordReset(dto: ResetPasswordDto) {
-    const lowerCaseEmail = dto.email.toLowerCase();
+    const lowerCaseEmail = dto.email.toLowerCase().trim();
     const user = await this.userRepo.findOne({ where: { email: lowerCaseEmail } });
     if (!user) throw new NotFoundException('User not found');
     const resetToken = this.jwtService.sign(
@@ -188,7 +188,7 @@ export class AuthService {
       }
 
       // 2) Buscar usuario y verificar que el token sea el mismo
-      const lowerCaseEmail = payload.email.toLowerCase();
+      const lowerCaseEmail = payload.email.toLowerCase().trim();
       const user = await this.userRepo.findOne({
         where: { email: lowerCaseEmail },
       });
@@ -219,7 +219,7 @@ export class AuthService {
         throw new UnauthorizedException('Invalid token');
       }
 
-      const lowerCaseEmail = payload.email.toLowerCase();
+      const lowerCaseEmail = payload.email.toLowerCase().trim();
       const user = await this.userRepo.findOne({
         where: { email: lowerCaseEmail },
       });
