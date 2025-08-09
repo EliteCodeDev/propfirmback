@@ -1,5 +1,13 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsObject } from 'class-validator';
+import { ApiProperty, PartialType, OmitType } from '@nestjs/swagger';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsObject,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class AccountIngestDto {
   @ApiProperty({ description: 'Account login / identifier' })
@@ -33,11 +41,19 @@ export class AccountIngestDto {
 
   @ApiProperty({ required: false, type: () => Object })
   @IsOptional()
-  openPositions?: any;
+  @IsObject()
+  openPositions?: {
+    open?: any[]; // TODO: tipar con OpenPosition
+    ResumePositionOpen?: Record<string, any>; // resumen
+  };
 
   @ApiProperty({ required: false, type: () => Object })
   @IsOptional()
-  closedPositions?: any;
+  @IsObject()
+  closedPositions?: {
+    closed?: any[]; // TODO: tipar con ClosePosition
+    ResumePositionClose?: Record<string, any>;
+  };
 }
 
 export class AccountIngestPartialDto extends PartialType(AccountIngestDto) {}
@@ -46,3 +62,8 @@ export class AccountResponseDto extends AccountIngestDto {
   @ApiProperty({ type: String })
   lastUpdate: Date;
 }
+
+// Payload usado en POST (login viene por path param)
+export class AccountIngestPayloadDto extends PartialType(
+  OmitType(AccountIngestDto, ['login'] as const),
+) {}

@@ -1,10 +1,11 @@
 import { Controller, Post, Param, Body, Get } from '@nestjs/common';
 import { SmtApiService } from './smt-api.service';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import {
   AccountIngestPartialDto,
   AccountResponseDto,
 } from './dto/account-ingest.dto';
+import { AccountIngestPayloadDto } from './dto/account-ingest.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('SMT-API')
@@ -42,13 +43,60 @@ export class SmtApiController {
     description: 'Account ingested/updated',
     type: AccountResponseDto,
   })
+  @ApiBody({
+    type: AccountIngestPayloadDto,
+    examples: {
+      basic: {
+        summary: 'Minimal payload',
+        value: { balance: 1000, equity: 980 },
+      },
+      full: {
+        summary: 'Full payload',
+        value: {
+          userID: 'user-123',
+          balance: 12000.5,
+          equity: 11890.2,
+          metaStats: { dailyPnL: -50, maxDrawdownPct: 3.2 },
+          validation: { breaches: [], updatedAt: new Date().toISOString() },
+          openPositions: {
+            open: [
+              { ticket: '12345', symbol: 'EURUSD', volume: 1, profit: 25.4 },
+            ],
+            ResumePositionOpen: { totalVolume: 1, totalProfit: 25.4 },
+          },
+          closedPositions: {
+            closed: [
+              { ticket: '54321', symbol: 'GBPUSD', volume: 1, profit: -10 },
+            ],
+            ResumePositionClose: { totalVolume: 1, totalProfit: -10 },
+          },
+        },
+      },
+    },
+  })
   async ingestAccountData(
     @Param('accountId') accountId: string,
-    @Body() data: AccountIngestPartialDto,
+    @Body() data: AccountIngestPayloadDto,
   ) {
+    // Normalizar para que cumpla con la interfaz interna Account
+    const payload: any = { ...data };
+    if (payload.openPositions) {
+      payload.openPositions = {
+        open: payload.openPositions.open || [],
+        ResumePositionOpen:
+          payload.openPositions.ResumePositionOpen || ({} as any),
+      };
+    }
+    if (payload.closedPositions) {
+      payload.closedPositions = {
+        closed: payload.closedPositions.closed || [],
+        ResumePositionClose:
+          payload.closedPositions.ResumePositionClose || ({} as any),
+      };
+    }
     return this.smtApiService.handleIngestionAccount({
       login: accountId,
-      ...data,
+      ...payload,
     });
   }
 }
