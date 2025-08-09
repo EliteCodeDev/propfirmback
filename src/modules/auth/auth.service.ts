@@ -71,7 +71,7 @@ export class AuthService {
 
     // 5) Enviar email de confirmación
     const baseUrl = this.configService.get<string>('BACKEND_URL');
-    const confirmationLink = `${baseUrl}/auth/confirm-email?token=${confirmationToken}`;
+    const confirmationLink = `${baseUrl}/api/auth/confirm-email?token=${confirmationToken}`;
 
     await this.mailerService.sendMail({
       to: saved.email,
