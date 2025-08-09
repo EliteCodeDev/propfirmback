@@ -27,7 +27,7 @@ export class Affiliate {
   level: number;
 
   @Column({
-    type: 'enum',
+    type: 'varchar',
     enum: AffiliateStatus,
     default: AffiliateStatus.ACTIVE,
   })

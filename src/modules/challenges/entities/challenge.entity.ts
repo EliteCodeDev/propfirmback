@@ -26,10 +26,10 @@ export class Challenge {
   @Column({ type: 'uuid', nullable: true })
   relationID: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   startDate: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   endDate: Date;
 
   @Column({ type: 'int', nullable: true })
@@ -39,7 +39,7 @@ export class Challenge {
   dynamicBalance: number;
 
   @Column({
-    type: 'enum',
+    type: 'varchar',
     enum: ChallengeStatus,
     default: ChallengeStatus.INNITIAL,
     nullable: true,

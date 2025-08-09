@@ -23,7 +23,7 @@ export class PasswordReset {
   @Column()
   userID: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'datetime' })
   expiresAt: Date;
 
   @Column({ type: 'boolean', default: false })

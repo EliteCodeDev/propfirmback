@@ -15,7 +15,7 @@ export class ChallengeDetails {
   @Column({ type: 'text', nullable: true })
   rulesValidation: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   lastUpdate: Date;
 
   // Relations

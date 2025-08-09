@@ -27,7 +27,7 @@ export class Withdrawal {
   observation: string;
 
   @Column({
-    type: 'enum',
+    type: 'varchar',
     enum: WithdrawalStatus,
     default: WithdrawalStatus.PENDING,
   })

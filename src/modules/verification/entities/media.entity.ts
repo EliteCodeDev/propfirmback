@@ -18,7 +18,7 @@ export class Media {
   url: string;
 
   @Column({
-    type: 'enum',
+    type: 'varchar',
     enum: MediaType,
   })
   type: MediaType;

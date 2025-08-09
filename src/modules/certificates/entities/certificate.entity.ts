@@ -25,7 +25,7 @@ export class Certificate {
   @Column({ type: 'uuid' })
   challengeID: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   certificateDate: Date;
 
   // Relations

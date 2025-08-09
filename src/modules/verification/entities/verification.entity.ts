@@ -20,14 +20,14 @@ export class Verification {
   userID: string;
 
   @Column({
-    type: 'enum',
+    type: 'varchar',
     enum: VerificationStatus,
     default: VerificationStatus.PENDING,
   })
   status: VerificationStatus;
 
   @Column({
-    type: 'enum',
+    type: 'varchar',
     enum: DocumentType,
   })
   documentType: DocumentType;
@@ -41,10 +41,10 @@ export class Verification {
   @CreateDateColumn()
   submittedAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   approvedAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   rejectedAt: Date;
 
   // Relations

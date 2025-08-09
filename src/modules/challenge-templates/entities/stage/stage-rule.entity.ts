@@ -7,7 +7,7 @@ export class StageRule {
   ruleID: string;
 
   @Column({
-    type: 'enum',
+    type: 'varchar',
     enum: StageRuleType,
     default: StageRuleType.NUMBER, // Default type can be adjusted as needed
     nullable: false,
