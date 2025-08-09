@@ -1,18 +1,23 @@
 // src/modules/users/users.controller.ts
 
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   Query,
   UseGuards,
-  Request
+  Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -21,9 +26,12 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
+//swagger
 @ApiTags('Users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)          // 1) JWT obligatorio en TODO el controlador
+//
+
+@UseGuards(JwtAuthGuard) // 1) JWT obligatorio en TODO el controlador
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
