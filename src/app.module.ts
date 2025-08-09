@@ -37,7 +37,7 @@ import { ExternalCredentialsModule } from './modules/external-credentials/extern
 
 import { AppController } from './app.controller';
 
-import { ContextsModule } from './common/lib/buffer.module';
+import { ContextsModule } from './lib/buffer.module';
 
 @Module({
   imports: [
