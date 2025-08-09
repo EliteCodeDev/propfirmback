@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Verification } from './verification.entity';
-import { MediaType } from 'src/common/enums/media-type.enum';
+import { MediaType } from '../../../common/enums/media-type.enum';
 
 @Entity('Media')
 export class Media {

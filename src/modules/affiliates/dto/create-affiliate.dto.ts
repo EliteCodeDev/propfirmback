@@ -8,7 +8,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { AffiliateStatus } from 'src/common/enums/affiliate-status.enum';
+import { AffiliateStatus } from '../../../common/enums/affiliate-status.enum';
 
 export class CreateAffiliateDto {
   @ApiProperty({ example: 'REF123ABC' })

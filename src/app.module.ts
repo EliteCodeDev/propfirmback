@@ -39,7 +39,7 @@ import { AppController } from './app.controller';
       isGlobal: true,
       load: [mailerConfig],
       validationSchema,
-      envFilePath: '.env',
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
       cache: true,
     }),
     // base de datos

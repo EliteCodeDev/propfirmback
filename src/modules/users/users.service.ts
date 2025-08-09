@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { Repository, Like } from 'typeorm';
 import { UserAccount } from './entities/user-account.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -122,10 +122,6 @@ export class UsersService {
     user.updatedAt = new Date();
 
     return this.userRepository.save(user);
-  }
-
-  async updateResetToken(id: string, resetToken: string): Promise<void> {
-    await this.userRepository.update(id, { resetPasswordToken: resetToken });
   }
 
   async remove(id: string): Promise<void> {

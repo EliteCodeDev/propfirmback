@@ -8,20 +8,28 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { MailerModule } from '../mailer/mailer.module';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { PasswordResetService } from './password-reset.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserAccount]),         // sólo UserAccount
-    JwtModule.registerAsync({                         // tu configuración jwtConfig
-      useFactory: () => ({
-        secret: process.env.JWT_SECRET,
-        signOptions: { expiresIn: '15m' },
+    TypeOrmModule.forFeature([UserAccount, PasswordResetToken]),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN'),
+        },
       }),
-      inject: [],
+      inject: [ConfigService],
     }),
     MailerModule,
+    ConfigModule,
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, PasswordResetService],
   controllers: [AuthController],
+  exports: [AuthService, PasswordResetService],
 })
 export class AuthModule {}

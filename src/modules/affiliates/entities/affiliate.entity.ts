@@ -10,7 +10,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
-import { AffiliateStatus } from 'src/common/enums/affiliate-status.enum';
+import { AffiliateStatus } from '../../../common/enums/affiliate-status.enum';
 
 @Entity('Affiliate')
 export class Affiliate {

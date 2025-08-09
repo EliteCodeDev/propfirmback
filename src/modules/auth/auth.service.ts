@@ -19,13 +19,14 @@ import { ConfirmResetDto } from './dto/confirm-reset.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from '../../common/utils/bcrypt.util';
 import { MailerService } from '../mailer/mailer.service';
+import { PasswordResetService } from './password-reset.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserAccount)
     private userRepo: Repository<UserAccount>,
-
+    private readonly passwordResetService: PasswordResetService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private mailerService: MailerService,
@@ -121,8 +122,7 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepo.findOne({ where: { email } });
     if (user && (await BcryptUtil.compare(password, user.passwordHash))) {
-      const { passwordHash, resetPasswordToken, confirmationToken, ...rest } =
-        user;
+      const { passwordHash, confirmationToken, ...rest } = user;
       return rest;
     }
     return null;
@@ -149,17 +149,15 @@ export class AuthService {
   async requestPasswordReset(dto: ResetPasswordDto) {
     const lowerCaseEmail = dto.email.toLowerCase().trim();
     const user = await this.userRepo.findOne({ where: { email: lowerCaseEmail } });
-    if (!user) throw new NotFoundException('User not found');
-    const resetToken = this.jwtService.sign(
-      { email: user.email, sub: user.userID },
-      { expiresIn: '1h' },
-    );
-    await this.userRepo.update(user.userID, { resetPasswordToken: resetToken });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-    // Enviar email con el link de reseteo
+    const { token } = await this.passwordResetService.createToken(user);
+
     const resetLink = `${this.configService.get<string>(
       'FRONTEND_URL',
-    )}/reset-password?token=${resetToken}`;
+    )}/reset-password?token=${token}`;
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -178,35 +176,24 @@ export class AuthService {
   async confirmPasswordReset(dto: ConfirmResetDto) {
     const { token, password } = dto;
 
-    try {
-      // 1) Verificar token
-      const payload = this.jwtService.verify(token, {
-        secret: this.configService.get<string>('jwt.secret'),
-      });
-      if (!payload.email) {
-        throw new UnauthorizedException('Invalid token');
-      }
-
-      // 2) Buscar usuario y verificar que el token sea el mismo
-      const lowerCaseEmail = payload.email.toLowerCase().trim();
-      const user = await this.userRepo.findOne({
-        where: { email: lowerCaseEmail },
-      });
-      if (!user || user.resetPasswordToken !== token) {
-        throw new UnauthorizedException('Invalid or expired token');
-      }
-
-      // 3) Hashear y actualizar contraseña
-      const passwordHash = await BcryptUtil.hash(password);
-      await this.userRepo.update(user.userID, {
-        passwordHash,
-        resetPasswordToken: null, // Invalidar token
-      });
-
-      return { message: 'Password has been reset successfully' };
-    } catch (error) {
+    const resetToken = await this.passwordResetService.findToken(token);
+    if (!resetToken || new Date() > resetToken.expiresAt) {
       throw new UnauthorizedException('Invalid or expired token');
     }
+
+    const user = await this.userRepo.findOne({
+      where: { userID: resetToken.userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const passwordHash = await BcryptUtil.hash(password);
+    await this.userRepo.update(user.userID, { passwordHash });
+
+    await this.passwordResetService.deleteToken(token);
+
+    return { message: 'Password has been reset successfully' };
   }
 
   /** Confirmar email */
@@ -263,8 +250,7 @@ export class AuthService {
   }
 
   private excludePassword(user: UserAccount) {
-    const { passwordHash, resetPasswordToken, confirmationToken, ...rest } =
-      user;
+    const { passwordHash, confirmationToken, ...rest } = user;
     return rest;
   }
 }

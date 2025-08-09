@@ -8,7 +8,7 @@ import {
 import { UserAccount } from './user-account.entity';
 import { Role } from '../../rbac/entities/role.entity';
 
-@Entity('UserRole')
+@Entity('user_roles')
 export class UserRole {
   @PrimaryColumn('uuid')
   userID: string;

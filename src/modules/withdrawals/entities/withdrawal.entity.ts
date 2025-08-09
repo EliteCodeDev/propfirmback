@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
-import { WithdrawalStatus } from 'src/common/enums/withdrawal-status.enum';
+import { WithdrawalStatus } from '../../../common/enums/withdrawal-status.enum';
 @Entity('Withdrawal')
 export class Withdrawal {
   @PrimaryGeneratedColumn('uuid')

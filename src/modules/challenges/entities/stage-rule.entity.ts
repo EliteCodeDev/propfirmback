@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { StageParameter } from './stage-parameter.entity';
-import { StageRuleType } from 'src/common/enums/stage-rule-type.enum';
+import { StageRuleType } from '../../../common/enums/stage-rule-type.enum';
 @Entity('StageRule')
 export class StageRule {
   @PrimaryGeneratedColumn('uuid')

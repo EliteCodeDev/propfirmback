@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Withdrawal } from './entities/withdrawal.entity';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
-import { WithdrawalStatus } from 'src/common/enums/withdrawal-status.enum';
+import { WithdrawalStatus } from '../../common/enums/withdrawal-status.enum';
 @Injectable()
 export class WithdrawalsService {
   constructor(

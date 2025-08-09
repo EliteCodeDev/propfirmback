@@ -9,8 +9,8 @@ import {
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Media } from './media.entity';
-import { VerificationStatus } from 'src/common/enums/verification-status.enum';
-import { DocumentType } from 'src/common/enums/verification-document-type.enum';
+import { VerificationStatus } from '../../../common/enums/verification-status.enum';
+import { DocumentType } from '../../../common/enums/verification-document-type.enum';
 @Entity('Verification')
 export class Verification {
   @PrimaryGeneratedColumn('uuid')

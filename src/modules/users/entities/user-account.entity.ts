@@ -19,7 +19,7 @@ import { Withdrawal } from '../../withdrawals/entities/withdrawal.entity';
 import { CustomerOrder } from '../../orders/entities/customer-order.entity';
 import { Certificate } from '../../certificates/entities/certificate.entity';
 
-@Entity('UserAccount')
+@Entity('user_accounts')
 export class UserAccount {
   @PrimaryGeneratedColumn('uuid')
   userID: string;
@@ -40,9 +40,6 @@ export class UserAccount {
   @Column({ length: 100, nullable: true })
   lastName?: string;
 
-  @Column({ length: 255, nullable: true })
-  @Exclude()
-  resetPasswordToken?: string;
 
   @Column({ length: 255, nullable: true })
   @Exclude()

@@ -7,7 +7,7 @@ import {
   IsEnum,
   IsBoolean,
 } from 'class-validator';
-import { ChallengeStatus } from 'src/common/enums/challenge-status.enum';
+import { ChallengeStatus } from '../../../common/enums/challenge-status.enum';
 
 export class CreateChallengeDto {
   @ApiProperty({ required: false })

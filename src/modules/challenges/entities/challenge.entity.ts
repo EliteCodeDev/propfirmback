@@ -14,7 +14,7 @@ import { ChallengeDetails } from './challenge-details.entity';
 import { Certificate } from '../../certificates/entities/certificate.entity';
 import { CustomerOrder } from '../../orders/entities/customer-order.entity';
 import { Withdrawal } from '../../withdrawals/entities/withdrawal.entity';
-import { ChallengeStatus } from 'src/common/enums/challenge-status.enum';
+import { ChallengeStatus } from '../../../common/enums/challenge-status.enum';
 @Entity('Challenge')
 export class Challenge {
   @PrimaryGeneratedColumn('uuid')

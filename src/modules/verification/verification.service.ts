@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Verification } from './entities/verification.entity';
 import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
-import { VerificationStatus } from 'src/common/enums/verification-status.enum';
+import { VerificationStatus } from '../../common/enums/verification-status.enum';
 
 @Injectable()
 export class VerificationService {
