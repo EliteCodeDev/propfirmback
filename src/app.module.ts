@@ -35,6 +35,7 @@ import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { ChallengeTemplatesModule } from './modules/challenge-templates/challenge-templates.module';
 import { ExternalCredentialsModule } from './modules/external-credentials/external-credentials.module';
+import { SmtApiModule } from './modules/smt-api/smt-api.module';
 
 import { AppController } from './app.controller';
 
@@ -80,6 +81,7 @@ import { ContextsModule } from './lib/buffer.module';
     WithdrawalsModule,
     RbacModule,
     ExternalCredentialsModule,
+    SmtApiModule,
   ],
   controllers: [
     AppController, // GET /api → health-check
