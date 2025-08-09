@@ -1,16 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { BufferService } from '../../lib/buffer.service';
 import { Account } from '../../common/utils/account';
 
 @Injectable()
 export class SmtApiService {
+  private readonly logger = new Logger(SmtApiService.name);
   constructor(private readonly buffer: BufferService) {}
 
   async handleIngestionAccount(data: Partial<Account> & { login: string }) {
-    return this.buffer.upsertAccount(data.login, (prev) => {
+    this.logger.debug(`[handleIngestionAccount] login=${data.login}`);
+    const result = await this.buffer.upsertAccount(data.login, (prev) => {
       const base: Account = prev || ({} as Account);
       return { ...base, ...data } as Account;
     });
+    this.logger.debug(
+      `[handleIngestionAccount] stored login=${data.login} balance=${result.balance} equity=${result.equity}`,
+    );
+    return result;
   }
   async loginToAccount(accountId: string, credentials: any) {
     // logica para iniciar sesion en la cuenta en la api
@@ -21,13 +27,18 @@ export class SmtApiService {
 
   async getAccount(login: string) {
     const acc = await this.buffer.getAccount(login);
-    if (!acc)
+    if (!acc) {
+      this.logger.debug(`[getAccount] login=${login} not-found`);
       throw new NotFoundException(`Account ${login} not found in buffer`);
+    }
+    this.logger.debug(`[getAccount] login=${login} found`);
     return acc;
   }
 
   async listAccounts() {
     const entries = await this.buffer.listEntries();
-    return entries.map(([login, account]) => ({ login, ...account }));
+    const mapped = entries.map(([login, account]) => ({ login, ...account }));
+    this.logger.debug(`[listAccounts] returned=${mapped.length}`);
+    return mapped;
   }
 }

@@ -11,10 +11,14 @@ export class BufferService {
     id: string,
     mutator: (prev: Account | undefined) => Account,
   ) {
-    const current = this.provider.get(id);
-    const updated = mutator(current);
+    this.logger.debug(`[upsertAccount] id=${id} INIT`);
+    const before = this.provider.get(id);
+    const updated = mutator(before);
     updated.lastUpdate = new Date();
     this.provider.set(id, updated);
+    this.logger.debug(
+      `[upsertAccount] id=${id} ${before ? 'UPDATED' : 'CREATED'} lastUpdate=${updated.lastUpdate.toISOString()}`,
+    );
     return updated;
   }
 
@@ -24,11 +28,15 @@ export class BufferService {
   }
 
   async getAccount(id: string) {
-    return this.provider.get(id);
+    const acc = this.provider.get(id);
+    this.logger.debug(`[getAccount] id=${id} found=${!!acc}`);
+    return acc;
   }
 
   async listEntries() {
-    return this.provider.entries();
+    const entries = this.provider.entries();
+    this.logger.debug(`[listEntries] count=${entries.length}`);
+    return entries;
   }
 
   async keys() {
