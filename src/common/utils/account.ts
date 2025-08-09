@@ -1,4 +1,6 @@
 import { DataOpenPositions, DataClosePositions } from '../types/mt4/data.type';
+import { OpenPosition,ResumenPositionOpen,ClosePosition,ResumePositionClose } from './positions'; 
+
 
 export class Account {
   userID: string;
@@ -6,9 +8,15 @@ export class Account {
   balance: number;
   equity: number;
 
-  openPositions: DataOpenPositions; // Assuming this is an object with position details
+  openPositions: {
+    open: OpenPosition[],
+    ResumePositionOpen: ResumenPositionOpen
+  }; // Assuming this is an object with position details
 
-  closedPositions: DataClosePositions; // Assuming this is an object with closed position details
+  closedPositions: {
+    closed: ClosePosition[],
+    ResumePositionClose: ResumePositionClose
+  }; // Assuming this is an object with closed position details
   lastUpdate: Date;
 
   // data posterior al analisis de las posiciones
