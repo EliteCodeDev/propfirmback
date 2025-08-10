@@ -1,11 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { BrokerAccountsService } from './broker-accounts.service';
 import { CreateBrokerAccountDto } from './dto/create-broker-account.dto';
 import { UpdateBrokerAccountDto } from './dto/update-broker-account.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Broker Accounts')
 @ApiBearerAuth()
@@ -41,7 +56,10 @@ export class BrokerAccountsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update broker account' })
-  update(@Param('id') id: string, @Body() updateBrokerAccountDto: UpdateBrokerAccountDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateBrokerAccountDto: UpdateBrokerAccountDto,
+  ) {
     return this.brokerAccountsService.update(id, updateBrokerAccountDto);
   }
 

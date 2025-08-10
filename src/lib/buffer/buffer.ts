@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Account } from '../common/utils/account';
+import { Account } from 'src/common/utils/account';
 @Injectable() //una sola instancia del buffer estara en toda la aplicacion
 export class ContextBuffer {
   private buffer: Map<string, Account> = new Map(); //login, objeto con infromacion

@@ -39,7 +39,7 @@ import { SmtApiModule } from './modules/smt-api/smt-api.module';
 
 import { AppController } from './app.controller';
 
-import { ContextsModule } from './lib/buffer.module';
+import { ContextsModule } from './lib/buffer/buffer.module';
 
 @Module({
   imports: [

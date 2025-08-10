@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { BufferService } from '../../lib/buffer.service';
-import { Account } from '../../common/utils/account';
+import { BufferService } from 'src/lib/buffer/buffer.service';
+import { Account } from 'src/common/utils/account';
 
 @Injectable()
 export class SmtApiService {

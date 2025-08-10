@@ -1,4 +1,4 @@
-import { DataOpenPositions, DataClosePositions } from '../types/mt4/data.type';
+
 import { OpenPosition,ResumenPositionOpen,ClosePosition,ResumePositionClose } from './positions'; 
 
 

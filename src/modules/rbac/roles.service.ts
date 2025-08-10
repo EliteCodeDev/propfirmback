@@ -12,7 +12,7 @@ import { RolePermission } from './entities/role-permission.entity';
 import { UserRole } from '../users/entities/user-role.entity';
 
 import { CreateRoleDto } from './dto/create-role.dto';
-import { BaseQueryDto } from '../../common/dto/base-query.dto';
+import { BaseQueryDto } from 'src/common/dto/base-query.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { AssignRoleDto } from './dto/assign-role.dto';
 

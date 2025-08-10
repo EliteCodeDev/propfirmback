@@ -16,7 +16,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
-import { BcryptUtil } from '../../common/utils/bcrypt';
+import { BcryptUtil } from 'src/common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
@@ -168,8 +168,7 @@ export class AuthService {
       secret:
         this.configService.get<string>('jwt.refreshSecret') ||
         this.configService.get<string>('jwt.secret'),
-      expiresIn:
-        this.configService.get<string>('jwt.refreshExpiresIn') || '7d',
+      expiresIn: this.configService.get<string>('jwt.refreshExpiresIn') || '7d',
     });
 
     return { access_token: accessToken, refresh_token: refreshToken };

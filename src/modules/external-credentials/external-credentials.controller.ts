@@ -1,17 +1,34 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ExternalCredentialsService } from './external-credentials.service';
 import { CreateExternalCredentialDto } from './dto/create-external-credential.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('External Credentials')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('external-credentials')
 export class ExternalCredentialsController {
-  constructor(private readonly externalCredentialsService: ExternalCredentialsService) {}
+  constructor(
+    private readonly externalCredentialsService: ExternalCredentialsService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -47,7 +64,10 @@ export class ExternalCredentialsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Update external credential' })
-  update(@Param('id') id: string, @Body() updateData: Partial<CreateExternalCredentialDto>) {
+  update(
+    @Param('id') id: string,
+    @Body() updateData: Partial<CreateExternalCredentialDto>,
+  ) {
     return this.externalCredentialsService.update(id, updateData);
   }
 

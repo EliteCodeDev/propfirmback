@@ -8,6 +8,7 @@ import {
 import { AccountIngestPayloadDto } from './dto/account-ingest.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 
+@Public()
 @ApiTags('SMT-API')
 @Controller('smt-api')
 export class SmtApiController {
@@ -23,7 +24,7 @@ export class SmtApiController {
   async listAccounts() {
     return this.smtApiService.listAccounts();
   }
-  @Public()
+  // @Public()
   @Get('/accounts/:accountId')
   @ApiOperation({ summary: 'Get a specific account from buffer' })
   @ApiResponse({

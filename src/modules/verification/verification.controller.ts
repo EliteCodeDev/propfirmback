@@ -1,11 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { VerificationService } from './verification.service';
 import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Verification')
 @ApiBearerAuth()
@@ -17,7 +33,10 @@ export class VerificationController {
   @Post()
   @ApiOperation({ summary: 'Submit verification request' })
   create(@Request() req, @Body() createVerificationDto: CreateVerificationDto) {
-    return this.verificationService.create(req.user.userID, createVerificationDto);
+    return this.verificationService.create(
+      req.user.userID,
+      createVerificationDto,
+    );
   }
 
   @Get()
@@ -44,7 +63,10 @@ export class VerificationController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Update verification status' })
-  update(@Param('id') id: string, @Body() updateVerificationDto: UpdateVerificationDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateVerificationDto: UpdateVerificationDto,
+  ) {
     return this.verificationService.update(id, updateVerificationDto);
   }
 

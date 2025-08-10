@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Permission } from './entities/permission.entity';
 import { CreatePermissionDto } from './dto/create-permission.dto';
-import { BaseQueryDto } from '../../common/dto/base-query.dto';
+import { BaseQueryDto } from 'src/common/dto/base-query.dto';
 
 @Injectable()
 export class PermissionsService {
@@ -14,7 +18,9 @@ export class PermissionsService {
   ) {}
 
   async create(dto: CreatePermissionDto): Promise<Permission> {
-    const exists = await this.permissionRepository.findOne({ where: { name: dto.name } });
+    const exists = await this.permissionRepository.findOne({
+      where: { name: dto.name },
+    });
     if (exists) throw new ConflictException('Permission already exists');
     const permission = this.permissionRepository.create(dto);
     return this.permissionRepository.save(permission);
@@ -28,7 +34,7 @@ export class PermissionsService {
     return this.permissionRepository.findAndCount({
       take: limit,
       skip: (page - 1) * limit,
-      order: { name: 'ASC' },    // <-- ordenamos por name en lugar de un campo inexistente
+      order: { name: 'ASC' }, // <-- ordenamos por name en lugar de un campo inexistente
     });
   }
 
@@ -40,7 +46,10 @@ export class PermissionsService {
     return permission;
   }
 
-  async update(id: string, dto: Partial<CreatePermissionDto>): Promise<Permission> {
+  async update(
+    id: string,
+    dto: Partial<CreatePermissionDto>,
+  ): Promise<Permission> {
     const permission = await this.findOne(id);
     Object.assign(permission, dto);
     return this.permissionRepository.save(permission);

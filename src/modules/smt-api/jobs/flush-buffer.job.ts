@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { BufferService } from '../../../lib/buffer.service';
+import { BufferService } from 'src/lib/buffer/buffer.service';
 
 @Injectable()
 export class FlushBufferJob {

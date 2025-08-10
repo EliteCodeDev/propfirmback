@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BufferProvider } from './buffer.interface';
-import { Account } from '../common/utils/account';
+import { Account } from 'src/common/utils/account';
 
 @Injectable()
 export class MemoryBufferProvider implements BufferProvider<Account> {

@@ -23,11 +23,11 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { AssignRoleDto } from './dto/assign-role.dto';
 import { Role } from './entities/role.entity';
-import { BaseQueryDto } from '../../common/dto/base-query.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Auth } from '../../common/decorators/auth.decorator';
-import { ApiPaginatedResponse } from '../../common/decorators/api-paginated-response.decorator';
+import { BaseQueryDto } from 'src/common/dto/base-query.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Auth } from 'src/common/decorators/auth.decorator';
+import { ApiPaginatedResponse } from 'src/common/decorators/api-paginated-response.decorator';
 
 @ApiTags('Roles')
 @Controller('roles')
