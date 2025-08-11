@@ -1,0 +1,25 @@
+[33mf8e8df2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/nodemailer-integration[m[33m, [m[1;31morigin/feat/nodemailer-integration[m[33m)[m HEAD@{0}: pull: Fast-forward
+[33m40a7e75[m HEAD@{1}: pull: Fast-forward
+[33m858d932[m HEAD@{2}: pull: Fast-forward
+[33m81362bd[m HEAD@{3}: pull: Fast-forward
+[33m1c46109[m HEAD@{4}: pull: Fast-forward
+[33mdf8b2cf[m HEAD@{5}: pull: Fast-forward
+[33m68f1744[m HEAD@{6}: pull: Fast-forward
+[33m2fa8fb2[m HEAD@{7}: pull: Fast-forward
+[33mbaa2380[m HEAD@{8}: pull: Fast-forward
+[33m43b5f0a[m HEAD@{9}: pull: Fast-forward
+[33me7f7c87[m HEAD@{10}: pull: Fast-forward
+[33m4b11d75[m HEAD@{11}: pull: Fast-forward
+[33m218b89f[m HEAD@{12}: pull: Fast-forward
+[33mee2ffb0[m HEAD@{13}: commit (merge): .
+[33md29aebc[m HEAD@{14}: checkout: moving from feat/nodemailer-integration to feat/nodemailer-integration
+[33md29aebc[m HEAD@{15}: reset: moving to HEAD
+[33md29aebc[m HEAD@{16}: reset: moving to HEAD
+[33md29aebc[m HEAD@{17}: commit: .
+[33m7c1166a[m HEAD@{18}: checkout: moving from main to feat/nodemailer-integration
+[33mc137582[m[33m ([m[1;32mmain[m[33m)[m HEAD@{19}: pull: Fast-forward
+[33ma2e4825[m HEAD@{20}: commit: Initial commit
+[33m00ac8f9[m HEAD@{21}: Branch: renamed refs/heads/main to refs/heads/main
+[33m00ac8f9[m HEAD@{23}: pull: Fast-forward
+[33m87f41a2[m HEAD@{24}: commit (merge): Merge branch 'main' of https://github.com/EliteCodeDev/propfirmback
+[33m53545f6[m HEAD@{25}: commit (initial): Initial commit
