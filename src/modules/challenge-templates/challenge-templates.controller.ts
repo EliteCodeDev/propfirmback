@@ -38,11 +38,13 @@ import { UpdateRelationStageDto } from './dto/update/update-relation-stage.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Challenge Templates')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+// @ApiBearerAuth()
+// @UseGuards(JwtAuthGuard, RolesGuard)
+// @Roles('admin')
+@Public()
 @Controller('challenge-templates')
 export class ChallengeTemplatesController {
   constructor(

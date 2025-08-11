@@ -5,7 +5,7 @@ export class CreateChallengeRelationDto {
   @ApiProperty({ description: 'Category ID' })
   @IsNotEmpty()
   @IsUUID()
-  subcategoryID: string;
+  categoryID: string;
 
   @ApiProperty({ description: 'Plan ID' })
   @IsNotEmpty()

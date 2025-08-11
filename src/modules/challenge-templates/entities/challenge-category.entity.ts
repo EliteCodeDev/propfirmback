@@ -4,12 +4,12 @@ import { ChallengeRelation } from './challenge-relation.entity';
 @Entity('ChallengeCategory')
 export class ChallengeCategory {
   @PrimaryGeneratedColumn('uuid')
-  subcategoryID: string;
+  categoryID: string;
 
   @Column({ length: 100, unique: true })
   name: string;
 
   // Relations
-  @OneToMany(() => ChallengeRelation, relation => relation.category)
+  @OneToMany(() => ChallengeRelation, (relation) => relation.category)
   relations: ChallengeRelation[];
 }

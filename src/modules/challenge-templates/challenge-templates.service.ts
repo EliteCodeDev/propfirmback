@@ -67,7 +67,7 @@ export class ChallengeTemplatesService {
 
   async findOneCategory(id: string): Promise<ChallengeCategory> {
     const category = await this.challengeCategoryRepository.findOne({
-      where: { subcategoryID: id },
+      where: { categoryID: id },
       relations: ['relations'],
     });
 
