@@ -28,6 +28,6 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
     autoLoadEntities: true,
     retryAttempts: 3,
     retryDelay: 3000,
-    dropSchema: true,
+    dropSchema: false,
   }),
 };

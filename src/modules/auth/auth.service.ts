@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   ConflictException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -18,9 +19,10 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from 'src/common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
-
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(UserAccount)
     private userRepo: Repository<UserAccount>,
@@ -84,12 +86,23 @@ export class AuthService {
       where: { email },
       relations: ['userRoles', 'userRoles.role'],
     });
-    if (!user || !(await BcryptUtil.compare(password, user.passwordHash))) {
+    
+    if (!user) {
+      this.logger.warn(`Login failed for email: ${email} - User not found`);
       throw new UnauthorizedException('Invalid credentials');
     }
+    
+    const isPasswordValid = await BcryptUtil.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      this.logger.warn(`Login failed for email: ${email} - Invalid password`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    
     if (user.isBlocked) {
       throw new UnauthorizedException('Account is blocked');
     }
+    
+    this.logger.log(`Login successful for email: ${email}`);
     return {
       user: this.excludePassword(user),
       ...this.generateTokens(user),
