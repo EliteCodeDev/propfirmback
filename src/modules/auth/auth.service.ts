@@ -21,6 +21,7 @@ import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from 'src/common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
 import { PasswordResetService } from '../password-reset/password-reset.service';
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -63,15 +64,14 @@ export class AuthService {
     });
     const saved = await this.userRepo.save(user);
 
-    // 4) Enviar email de bienvenida
-    const confirmationToken = (await BcryptUtil.hash(saved.email)).replace(
-      /\//g,
-      '',
-    );
+    // 4) Enviar email de bienvenida + confirmación
+    const confirmationToken = (await BcryptUtil.hash(saved.email)).replace(/\//g, '');
     await this.userRepo.update(saved.userID, { confirmationToken });
+
     const confirmationLink = `${this.configService.get<string>(
       'app.clientUrl',
     )}/auth/confirm?token=${confirmationToken}`;
+
     await this.mailerService.sendMail({
       to: saved.email,
       subject: 'Verify your email address',
@@ -94,26 +94,27 @@ export class AuthService {
   /** Login */
   async login(dto: LoginDto) {
     const { email, password } = dto;
+
     const user = await this.userRepo.findOne({
       where: { email },
       relations: ['userRoles', 'userRoles.role'],
     });
-    
+
     if (!user) {
       this.logger.warn(`Login failed for email: ${email} - User not found`);
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     const isPasswordValid = await BcryptUtil.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       this.logger.warn(`Login failed for email: ${email} - Invalid password`);
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     if (user.isBlocked) {
       throw new UnauthorizedException('Account is blocked');
     }
-    
+
     this.logger.log(`Login successful for email: ${email}`);
     return {
       user: this.excludePassword(user),
@@ -125,8 +126,7 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepo.findOne({ where: { email } });
     if (user && (await BcryptUtil.compare(password, user.passwordHash))) {
-      const { passwordHash, resetPasswordToken, confirmationToken, ...rest } =
-        user;
+      const { passwordHash, confirmationToken, ...rest } = user; // ← quitamos resetPasswordToken
       return rest;
     }
     return null;
@@ -153,13 +153,14 @@ export class AuthService {
   async requestPasswordReset(dto: ResetPasswordDto) {
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
     if (!user) throw new NotFoundException('User not found');
+
     const resetToken = this.jwtService.sign(
       { email: user.email, sub: user.userID },
       { expiresIn: '1h' },
     );
+
     await this.passwordResetService.create(user.email, resetToken);
 
-    // Enviar email con el link de reseteo
     const resetLink = `${this.configService.get<string>(
       'app.clientUrl',
     )}/reset-password?token=${resetToken}`;
@@ -197,11 +198,11 @@ export class AuthService {
     });
 
     return { access_token: accessToken, refresh_token: refreshToken };
+    // Si prefieres { accessToken, refreshToken }, cambia nombres arriba y en el consumo.
   }
 
   private excludePassword(user: UserAccount) {
-    const { passwordHash, resetPasswordToken, confirmationToken, ...rest } =
-      user;
+    const { passwordHash, confirmationToken, ...rest } = user; // ← quitamos resetPasswordToken
     return rest;
   }
 
@@ -211,10 +212,12 @@ export class AuthService {
       where: { confirmationToken: token },
     });
     if (!user) throw new NotFoundException('Invalid confirmation token');
+
     await this.userRepo.update(user.userID, {
       isConfirmed: true,
       confirmationToken: null,
     });
+
     return { message: 'Email confirmed successfully' };
   }
 
@@ -225,9 +228,11 @@ export class AuthService {
     const passwordReset = await this.passwordResetService.findOneByToken(token);
     if (!passwordReset) throw new NotFoundException('Invalid password reset token');
 
-    // Opcional: verificar expiración del token (ej. 1 hora)
-    const tokenMaxAge = 60 * 60 * 1000; // 1 hour in ms
-    const isTokenExpired = (new Date().getTime() - passwordReset.createdAt.getTime()) > tokenMaxAge;
+    // Expiración opcional (1 hora)
+    const tokenMaxAge = 60 * 60 * 1000;
+    const isTokenExpired =
+      new Date().getTime() - passwordReset.createdAt.getTime() > tokenMaxAge;
+
     if (isTokenExpired) {
       await this.passwordResetService.remove(passwordReset.id);
       throw new UnauthorizedException('Password reset token has expired');

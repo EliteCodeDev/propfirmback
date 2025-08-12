@@ -26,7 +26,7 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    
+
     const user = this.userRepository.create({
       ...createUserDto,
       passwordHash: hashedPassword,
@@ -124,9 +124,10 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async updateResetToken(id: string, resetToken: string): Promise<void> {
-    await this.userRepository.update(id, { resetPasswordToken: resetToken });
-  }
+  // 👇 Eliminado porque la entidad ya no tiene resetPasswordToken
+  // async updateResetToken(id: string, resetToken: string): Promise<void> {
+  //   await this.userRepository.update(id, { resetPasswordToken: resetToken });
+  // }
 
   async remove(id: string): Promise<void> {
     const user = await this.findById(id);
