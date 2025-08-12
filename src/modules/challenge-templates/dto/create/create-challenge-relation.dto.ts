@@ -2,20 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsUUID, IsNotEmpty } from 'class-validator';
 
 export class CreateChallengeRelationDto {
-  @ApiProperty({ description: 'Category ID' })
-  @IsNotEmpty()
-  @IsUUID()
-  categoryID: string;
-
   @ApiProperty({ description: 'Plan ID' })
   @IsNotEmpty()
   @IsUUID()
   planID: string;
-
-  @ApiProperty({
-    description: 'Balance ID',
-    required: false,
-  })
+  @ApiProperty({ description: 'Category ID' })
   @IsUUID()
-  balanceID?: string;
+  categoryID: string;
 }
