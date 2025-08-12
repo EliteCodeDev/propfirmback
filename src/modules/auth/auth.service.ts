@@ -21,6 +21,7 @@ import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from 'src/common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
 import { PasswordResetService } from '../password-reset/password-reset.service';
+import { Role } from '../rbac/entities/role.entity';
 
 @Injectable()
 export class AuthService {
@@ -29,6 +30,8 @@ export class AuthService {
   constructor(
     @InjectRepository(UserAccount)
     private userRepo: Repository<UserAccount>,
+    @InjectRepository(Role)
+    private roleRepo: Repository<Role>,
 
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -53,19 +56,42 @@ export class AuthService {
     // 2) hash the password
     const passwordHash = await BcryptUtil.hash(password);
 
-    // 3) create and save user
-    const user = this.userRepo.create({
+    // 3) crear y guardar usuario
+    // determinar rol por defecto
+    let roleIdToAssign: Role | undefined = undefined;
+    const firstUserSuperadmin = this.configService.get<boolean>(
+      'app.firstUserSuperadmin',
+    );
+    const usersCount = await this.userRepo.count();
+    // Si es el primer usuario y la flag está activa, lo promovemos a super_admin independientemente del seeding
+    if (firstUserSuperadmin && usersCount === 0) {
+      const superAdminRole = await this.roleRepo.findOne({
+        where: { name: 'super_admin' },
+      });
+      roleIdToAssign = superAdminRole;
+    } else {
+      const defaultRole = await this.roleRepo.findOne({
+        where: { name: 'user' },
+      });
+      roleIdToAssign = defaultRole;
+    }
+
+    const user = await this.userRepo.create({
       username,
       email,
       passwordHash,
       firstName,
       lastName,
       phone,
+      role: roleIdToAssign,
     });
     const saved = await this.userRepo.save(user);
 
     // 4) Send welcome + confirmation email
-    const confirmationToken = (await BcryptUtil.hash(saved.email)).replace(/\//g, '');
+    const confirmationToken = (await BcryptUtil.hash(saved.email)).replace(
+      /\//g,
+      '',
+    );
     await this.userRepo.update(saved.userID, { confirmationToken });
 
     const confirmationLink = `${this.configService.get<string>(
@@ -97,7 +123,7 @@ export class AuthService {
 
     const user = await this.userRepo.findOne({
       where: { email },
-      relations: ['userRoles', 'userRoles.role'],
+      relations: ['role'],
     });
 
     if (!user) {
@@ -105,7 +131,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await BcryptUtil.compare(password, user.passwordHash);
+    const isPasswordValid = await BcryptUtil.compare(
+      password,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
       this.logger.warn(`Login failed for email: ${email} - Invalid password`);
       throw new UnauthorizedException('Invalid credentials');
@@ -140,7 +169,7 @@ export class AuthService {
       });
       const user = await this.userRepo.findOne({
         where: { userID: payload.sub },
-        relations: ['userRoles', 'userRoles.role'],
+        relations: ['role'],
       });
       if (!user) throw new UnauthorizedException('User not found');
       return this.generateTokens(user);
@@ -226,7 +255,8 @@ export class AuthService {
     const { token, newPassword } = dto;
 
     const passwordReset = await this.passwordResetService.findOneByToken(token);
-    if (!passwordReset) throw new NotFoundException('Invalid password reset token');
+    if (!passwordReset)
+      throw new NotFoundException('Invalid password reset token');
 
     // Optional expiration (1 hour)
     const tokenMaxAge = 60 * 60 * 1000;
@@ -238,7 +268,9 @@ export class AuthService {
       throw new UnauthorizedException('Password reset token has expired');
     }
 
-    const user = await this.userRepo.findOne({ where: { email: passwordReset.email } });
+    const user = await this.userRepo.findOne({
+      where: { email: passwordReset.email },
+    });
     if (!user) throw new NotFoundException('User not found');
 
     const passwordHash = await BcryptUtil.hash(newPassword);

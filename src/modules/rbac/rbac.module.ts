@@ -15,6 +15,7 @@ import { PermissionsController } from './permissions.controller';
 
 // Services
 import { RolesService } from './roles.service';
+import { UserAccount } from '../users/entities/user-account.entity';
 import { PermissionsService } from './permissions.service';
 import { UsersService } from '../users/users.service';
 

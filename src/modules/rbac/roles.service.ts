@@ -9,7 +9,6 @@ import { Repository } from 'typeorm';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { RolePermission } from './entities/role-permission.entity';
-
 import { CreateRoleDto } from './dto/create-role.dto';
 import { BaseQueryDto } from 'src/common/dto/base-query.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';

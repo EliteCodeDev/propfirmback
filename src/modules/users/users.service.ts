@@ -58,7 +58,7 @@ export class UsersService {
       skip,
       take: limit,
       order: { createdAt: 'DESC' },
-      relations: ['userRoles', 'userRoles.role'],
+      relations: ['role'],
     });
 
     return {
@@ -73,7 +73,7 @@ export class UsersService {
   async findById(id: string): Promise<UserAccount> {
     const user = await this.userRepository.findOne({
       where: { userID: id },
-      relations: ['userRoles', 'userRoles.role', 'address'],
+      relations: ['role', 'address'],
     });
 
     if (!user) {
@@ -86,7 +86,7 @@ export class UsersService {
   async findByEmail(email: string): Promise<UserAccount | null> {
     return this.userRepository.findOne({
       where: { email },
-      relations: ['userRoles', 'userRoles.role'],
+      relations: ['role'],
     });
   }
 

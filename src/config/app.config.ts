@@ -1,3 +1,4 @@
+// src/config/app.config.ts
 import { registerAs } from '@nestjs/config';
 
 export const appConfig = registerAs('app', () => ({
@@ -6,7 +7,10 @@ export const appConfig = registerAs('app', () => ({
   port: parseInt(process.env.PORT, 10) || 1337,
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
-
+  // Seeding / bootstrap flags
+  seedOnBoot: String(process.env.SEED_ON_BOOT).toLowerCase() === 'true',
+  firstUserSuperadmin: String(process.env.FIRST_USER_SUPERADMIN).toLowerCase() === 'true',
+  
   // Security
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',

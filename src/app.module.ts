@@ -37,6 +37,7 @@ import { ChallengeTemplatesModule } from './modules/challenge-templates/challeng
 import { ExternalCredentialsModule } from './modules/external-credentials/external-credentials.module';
 import { SmtApiModule } from './modules/smt-api/smt-api.module';
 import { ApiKeysModule } from './modules/api-keys/api-keys.module';
+import { SeedModule } from './modules/seed/seed.module';
 
 import { AppController } from './app.controller';
 
@@ -47,6 +48,7 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     // config de entorno
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [appConfig],
       validationSchema,
       envFilePath: '.env',
       cache: true,
@@ -84,6 +86,7 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     ExternalCredentialsModule,
     SmtApiModule,
     ApiKeysModule,
+    SeedModule,
   ],
   controllers: [
     AppController, // GET /api → health-check

@@ -75,7 +75,7 @@ export class UserAccount {
   @JoinColumn({ name: 'refAffiliateID' })
   referralAffiliate?: Affiliate;
 
-  @OneToOne(() => Role, (role) => role.user, {
+  @ManyToOne(() => Role, (role) => role.user, {
     nullable: true,
   })
   @JoinColumn({ name: 'roleID' })
