@@ -18,12 +18,15 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from '../../common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
+import { Role } from '../rbac/entities/role.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserAccount)
     private userRepo: Repository<UserAccount>,
+  @InjectRepository(Role)
+  private roleRepo: Repository<Role>,
 
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -48,6 +51,19 @@ export class AuthService {
     const passwordHash = await BcryptUtil.hash(password);
 
     // 3) crear y guardar usuario
+    // determinar rol por defecto
+    let roleIdToAssign: string | undefined = undefined;
+  const firstUserSuperadmin = this.configService.get<boolean>('app.firstUserSuperadmin');
+    const usersCount = await this.userRepo.count();
+  // Si es el primer usuario y la flag está activa, lo promovemos a super_admin independientemente del seeding
+  if (firstUserSuperadmin && usersCount === 0) {
+      const superAdminRole = await this.roleRepo.findOne({ where: { name: 'super_admin' } });
+      roleIdToAssign = superAdminRole?.roleID;
+    } else {
+      const defaultRole = await this.roleRepo.findOne({ where: { name: 'user' } });
+      roleIdToAssign = defaultRole?.roleID;
+    }
+
     const user = this.userRepo.create({
       username,
       email,
@@ -55,6 +71,7 @@ export class AuthService {
       firstName,
       lastName,
       phone,
+  roleID: roleIdToAssign,
     });
     const saved = await this.userRepo.save(user);
 

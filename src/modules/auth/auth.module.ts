@@ -7,12 +7,13 @@ import { AuthController } from './auth.controller';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAccount } from '../users/entities/user-account.entity';
+import { Role } from '../rbac/entities/role.entity';
 import { MailerService } from '../mailer/mailer.service';
 import { MailerModule } from '../mailer/mailer.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserAccount]),         // sólo UserAccount
+  TypeOrmModule.forFeature([UserAccount, Role]),   // UserAccount + Role repo
     JwtModule.registerAsync({                         // tu configuración jwtConfig
       useFactory: () => ({
         secret: process.env.JWT_SECRET,

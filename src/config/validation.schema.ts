@@ -17,6 +17,8 @@ export const validationSchema = Joi.object({
   DATABASE_USERNAME: Joi.string().required(),
   DATABASE_PASSWORD: Joi.string().required(),
   DATABASE_SSL: Joi.boolean().default(false),
+  DB_DROP_SCHEMA: Joi.boolean().default(false),
+  DB_SYNCHRONIZE: Joi.boolean().default(true),
   
   // JWT
   JWT_SECRET: Joi.string().required(),

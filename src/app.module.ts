@@ -10,6 +10,7 @@ import { validationSchema } from './config/validation.schema';
 import mailerConfig from './config/mailer.config';
 import { databaseConfig } from './config/database.config';
 import { jwtConfig } from './config/jwt.config';
+import { appConfig } from './config/app.config';
 
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -30,6 +31,7 @@ import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 import { RbacModule } from './modules/rbac/rbac.module';
 import { ChallengeTemplatesModule } from './modules/challenge-templates/challenge-templates.module';
 import { ExternalCredentialsModule } from './modules/external-credentials/external-credentials.module';
+import { SeedModule } from './modules/seed/seed.module';
 
 import { AppController } from './app.controller';
 
@@ -40,6 +42,7 @@ import { ContextsModule } from './common/lib/buffer.module';
     // config de entorno
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [appConfig],
       validationSchema,
       envFilePath: '.env',
       cache: true,
@@ -70,6 +73,7 @@ import { ContextsModule } from './common/lib/buffer.module';
     WithdrawalsModule,
     RbacModule,
     ExternalCredentialsModule,
+  SeedModule,
   ],
   controllers: [
     AppController, // GET /api → health-check

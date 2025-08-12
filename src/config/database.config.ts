@@ -19,7 +19,7 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
     // Buscar entidades solo dentro de carpetas "entities" (incluyendo subcarpetas)
     entities: [__dirname + '/../**/entities/**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-    synchronize: configService.get('NODE_ENV') === 'development',
+  synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
     logging:
       configService.get('NODE_ENV') === 'development'
         ? ['query', 'error']
@@ -28,6 +28,6 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
     autoLoadEntities: true,
     retryAttempts: 3,
     retryDelay: 3000,
-    dropSchema: true,
+  dropSchema: configService.get('DB_DROP_SCHEMA') === 'true',
   }),
 };
