@@ -16,9 +16,12 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CompletePasswordResetDto } from './dto/complete-password-reset.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from 'src/common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
+import { PasswordResetService } from '../password-reset/password-reset.service';
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -30,6 +33,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private mailerService: MailerService,
+    private passwordResetService: PasswordResetService,
   ) {}
 
   /** Registro SIN afiliado */
@@ -60,13 +64,21 @@ export class AuthService {
     });
     const saved = await this.userRepo.save(user);
 
-    // 4) Enviar email de bienvenida
+    // 4) Enviar email de bienvenida + confirmación
+    const confirmationToken = (await BcryptUtil.hash(saved.email)).replace(/\//g, '');
+    await this.userRepo.update(saved.userID, { confirmationToken });
+
+    const confirmationLink = `${this.configService.get<string>(
+      'app.clientUrl',
+    )}/auth/confirm?token=${confirmationToken}`;
+
     await this.mailerService.sendMail({
       to: saved.email,
-      subject: 'Welcome to Prop Firm',
-      template: 'welcome',
+      subject: 'Verify your email address',
+      template: 'verify-email',
       context: {
         name: saved.firstName,
+        confirmationLink,
       },
     });
 
@@ -82,26 +94,27 @@ export class AuthService {
   /** Login */
   async login(dto: LoginDto) {
     const { email, password } = dto;
+
     const user = await this.userRepo.findOne({
       where: { email },
       relations: ['userRoles', 'userRoles.role'],
     });
-    
+
     if (!user) {
       this.logger.warn(`Login failed for email: ${email} - User not found`);
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     const isPasswordValid = await BcryptUtil.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       this.logger.warn(`Login failed for email: ${email} - Invalid password`);
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     if (user.isBlocked) {
       throw new UnauthorizedException('Account is blocked');
     }
-    
+
     this.logger.log(`Login successful for email: ${email}`);
     return {
       user: this.excludePassword(user),
@@ -113,8 +126,7 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepo.findOne({ where: { email } });
     if (user && (await BcryptUtil.compare(password, user.passwordHash))) {
-      const { passwordHash, resetPasswordToken, confirmationToken, ...rest } =
-        user;
+      const { passwordHash, confirmationToken, ...rest } = user; // ← quitamos resetPasswordToken
       return rest;
     }
     return null;
@@ -141,13 +153,14 @@ export class AuthService {
   async requestPasswordReset(dto: ResetPasswordDto) {
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
     if (!user) throw new NotFoundException('User not found');
+
     const resetToken = this.jwtService.sign(
       { email: user.email, sub: user.userID },
       { expiresIn: '1h' },
     );
-    await this.userRepo.update(user.userID, { resetPasswordToken: resetToken });
 
-    // Enviar email con el link de reseteo
+    await this.passwordResetService.create(user.email, resetToken);
+
     const resetLink = `${this.configService.get<string>(
       'app.clientUrl',
     )}/reset-password?token=${resetToken}`;
@@ -185,11 +198,53 @@ export class AuthService {
     });
 
     return { access_token: accessToken, refresh_token: refreshToken };
+    // Si prefieres { accessToken, refreshToken }, cambia nombres arriba y en el consumo.
   }
 
   private excludePassword(user: UserAccount) {
-    const { passwordHash, resetPasswordToken, confirmationToken, ...rest } =
-      user;
+    const { passwordHash, confirmationToken, ...rest } = user; // ← quitamos resetPasswordToken
     return rest;
+  }
+
+  /** Confirmar email */
+  async confirmEmail(token: string) {
+    const user = await this.userRepo.findOne({
+      where: { confirmationToken: token },
+    });
+    if (!user) throw new NotFoundException('Invalid confirmation token');
+
+    await this.userRepo.update(user.userID, {
+      isConfirmed: true,
+      confirmationToken: null,
+    });
+
+    return { message: 'Email confirmed successfully' };
+  }
+
+  /** Completar reset de contraseña */
+  async completePasswordReset(dto: CompletePasswordResetDto) {
+    const { token, newPassword } = dto;
+
+    const passwordReset = await this.passwordResetService.findOneByToken(token);
+    if (!passwordReset) throw new NotFoundException('Invalid password reset token');
+
+    // Expiración opcional (1 hora)
+    const tokenMaxAge = 60 * 60 * 1000;
+    const isTokenExpired =
+      new Date().getTime() - passwordReset.createdAt.getTime() > tokenMaxAge;
+
+    if (isTokenExpired) {
+      await this.passwordResetService.remove(passwordReset.id);
+      throw new UnauthorizedException('Password reset token has expired');
+    }
+
+    const user = await this.userRepo.findOne({ where: { email: passwordReset.email } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const passwordHash = await BcryptUtil.hash(newPassword);
+    await this.userRepo.update(user.userID, { passwordHash });
+    await this.passwordResetService.remove(passwordReset.id);
+
+    return { message: 'Password has been reset successfully' };
   }
 }
