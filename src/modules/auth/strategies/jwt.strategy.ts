@@ -39,7 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userID: payload.sub,
       email: user.email,
       username: user.username,
-      roles: user.userRoles?.map((ur) => ur.role?.name) || [],
+      roles: user.role?.rolePermissions.map((ur) => ur.role?.name) || [],
       isVerified: user.isVerified,
     };
   }
