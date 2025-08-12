@@ -48,4 +48,7 @@ export const validationSchema = Joi.object({
   SMT_API_URL: Joi.string().required(),
   SMT_API_KEY: Joi.string().required(),
   SMT_API_AUTH_HEADER: Joi.string().default('x-api-key'),
+
+  // API Keys para autenticación de terceros
+  API_KEYS: Joi.string().optional().description('Comma-separated list of valid API keys'),
 });

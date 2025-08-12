@@ -42,12 +42,12 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({
     example: 'e3b0c442-98fc-1c14-9af0-6da39c6fc345',
-    description: 'UUID del afiliado (opcional)',
+    description: 'Affiliate UUID (optional)',
   })
   @IsOptional()
   @IsUUID()
   refAfiliateID?: string;
 
-  // Este campo no se recibe por body, sólo lo utiliza internamente
+  // This field is not received in body, only used internally
   passwordHash?: string;
 }

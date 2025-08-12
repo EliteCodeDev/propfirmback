@@ -50,10 +50,10 @@ export class AuthService {
       );
     }
 
-    // 2) hash de la contraseña
+    // 2) hash the password
     const passwordHash = await BcryptUtil.hash(password);
 
-    // 3) crear y guardar usuario
+    // 3) create and save user
     const user = this.userRepo.create({
       username,
       email,
@@ -64,7 +64,7 @@ export class AuthService {
     });
     const saved = await this.userRepo.save(user);
 
-    // 4) Enviar email de bienvenida + confirmación
+    // 4) Send welcome + confirmation email
     const confirmationToken = (await BcryptUtil.hash(saved.email)).replace(/\//g, '');
     await this.userRepo.update(saved.userID, { confirmationToken });
 
@@ -228,7 +228,7 @@ export class AuthService {
     const passwordReset = await this.passwordResetService.findOneByToken(token);
     if (!passwordReset) throw new NotFoundException('Invalid password reset token');
 
-    // Expiración opcional (1 hora)
+    // Optional expiration (1 hour)
     const tokenMaxAge = 60 * 60 * 1000;
     const isTokenExpired =
       new Date().getTime() - passwordReset.createdAt.getTime() > tokenMaxAge;

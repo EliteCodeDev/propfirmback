@@ -10,6 +10,6 @@ export class ChallengeStage {
   name: string;
 
   // Relations
-  @OneToMany(() => RelationStage, relationStage => relationStage.stage)
+  @OneToMany(() => RelationStage, (relationStage) => relationStage.stage)
   relationStages: RelationStage[];
 }

@@ -3,8 +3,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ResetPasswordDto {
   @ApiProperty({
-    example: 'usuario@ejemplo.com',
-    description: 'Email del usuario que solicita el reinicio de contraseña',
+    example: 'user@example.com',
+    description: 'Email of the user requesting password reset',
   })
   @IsEmail()
   email: string;

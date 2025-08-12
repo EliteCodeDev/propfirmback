@@ -16,7 +16,7 @@ import {
   mailerConfig,
   smtApiConfig,
 } from './config';
-import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { HybridAuthGuard } from './common/guards/hybrid-auth.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -36,6 +36,7 @@ import { RbacModule } from './modules/rbac/rbac.module';
 import { ChallengeTemplatesModule } from './modules/challenge-templates/challenge-templates.module';
 import { ExternalCredentialsModule } from './modules/external-credentials/external-credentials.module';
 import { SmtApiModule } from './modules/smt-api/smt-api.module';
+import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 
 import { AppController } from './app.controller';
 
@@ -66,7 +67,7 @@ import { ContextsModule } from './lib/buffer/buffer.module';
       ],
     }),
     ScheduleModule.forRoot(),
-    // módulos de la aplicación
+    // Application modules
     ContextsModule,
     AuthModule,
     MailerModule,
@@ -82,13 +83,14 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     RbacModule,
     ExternalCredentialsModule,
     SmtApiModule,
+    ApiKeysModule,
   ],
   controllers: [
     AppController, // GET /api → health-check
   ],
   providers: [
     // guards globales
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: HybridAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // filtros globales
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

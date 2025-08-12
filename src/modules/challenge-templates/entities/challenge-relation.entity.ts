@@ -8,9 +8,9 @@ import {
 } from 'typeorm';
 import { ChallengeCategory } from './challenge-category.entity';
 import { ChallengePlan } from './challenge-plan.entity';
-import { ChallengeBalance } from './challenge-balance.entity';
+import { RelationBalance } from './balance';
+import { RelationStage } from './stage';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
-import { RelationStage } from './stage/relation-stage.entity';
 
 @Entity('ChallengeRelation')
 export class ChallengeRelation {
@@ -41,7 +41,9 @@ export class ChallengeRelation {
   @OneToMany(() => RelationStage, (stage) => stage.relation)
   stages: RelationStage[];
 
-  @ManyToOne(() => ChallengeBalance, (balance) => balance.relations)
-  @JoinColumn({ name: 'balanceID' })
-  balance: ChallengeBalance;
+  @OneToMany(
+    () => RelationBalance,
+    (relationBalance) => relationBalance.relation,
+  )
+  relationBalances: RelationBalance[];
 }
