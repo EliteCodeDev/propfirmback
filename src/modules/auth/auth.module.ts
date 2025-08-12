@@ -10,6 +10,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { MailerModule } from '../mailer/mailer.module';
 import { jwtConfig } from '../../config';
+import { PasswordResetModule } from '../password-reset/password-reset.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { jwtConfig } from '../../config';
     ConfigModule,
     JwtModule.registerAsync(jwtConfig),
     MailerModule,
+    PasswordResetModule,
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],

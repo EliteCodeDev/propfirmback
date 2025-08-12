@@ -20,8 +20,10 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CompletePasswordResetDto } from './dto/complete-password-reset.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Public } from 'src/common/decorators/public.decorator';
+import { Query } from '@nestjs/common/decorators';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -54,6 +56,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.requestPasswordReset(dto);
+  }
+
+  @Public()
+  @Get('confirm')
+  async confirm(@Query('token') token: string) {
+    return this.authService.confirmEmail(token);
+  }
+
+  @Public()
+  @Post('reset-password/complete')
+  @HttpCode(HttpStatus.OK)
+  async completePasswordReset(@Body() dto: CompletePasswordResetDto) {
+    return this.authService.completePasswordReset(dto);
   }
 
   @UseGuards(JwtAuthGuard)
