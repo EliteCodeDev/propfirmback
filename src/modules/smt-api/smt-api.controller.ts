@@ -6,6 +6,7 @@ import {
   AccountResponseDto,
 } from './dto/account-ingest.dto';
 import { AccountIngestPayloadDto } from './dto/account-ingest.dto';
+import { ConnectionStatusDto } from './dto/connection-status.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 
 @Public()
@@ -99,5 +100,45 @@ export class SmtApiController {
       login: accountId,
       ...payload,
     });
+  }
+
+  @Post('/connection-status')
+  @ApiOperation({ summary: 'Receive connection status data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Connection status processed successfully',
+  })
+  @ApiBody({
+    type: ConnectionStatusDto,
+    examples: {
+      basic: {
+        summary: 'Connection status example',
+        value: {
+          success_process: [
+            {
+              user: 'user123',
+              status: 200,
+              error: null
+            }
+          ],
+          error_process: [
+            {
+              user: 'user456',
+              status: 500,
+              error: 'Connection failed'
+            }
+          ],
+          status: 200,
+          message: 'Success session'
+        }
+      }
+    }
+  })
+  async getConnectionStatus(@Body() params: ConnectionStatusDto) {
+    // TODO: Implementar lógica para procesar el estado de conexión
+    return {
+      message: 'Connection status received',
+      data: params
+    };
   }
 }
