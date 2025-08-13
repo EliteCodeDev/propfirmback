@@ -3,15 +3,6 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-// Node 20 ya expone globalThis.crypto (WebCrypto). El intento previo de sobrescribirlo causa error
-// TypeError: Cannot set property crypto of #<Object> which has only a getter.
-// Si algún paquete espera WebCrypto y el runtime no lo tuviera (Node <15), se podría usar:
-//   (globalThis as any).crypto = require('crypto').webcrypto;
-// Aquí simplemente validamos y NO reasignamos para evitar el error.
-import { webcrypto as _webcrypto } from 'crypto';
-if (!(globalThis as any).crypto) {
-  (globalThis as any).crypto = _webcrypto; // fallback sólo si no existe
-}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
