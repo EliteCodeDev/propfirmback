@@ -9,7 +9,6 @@ export class OpenPosition {
   swap: string;
   comment?: string;
   profit: string;
-  // Campos específicos de MT5
   closePrice?: string;
 
   constructor() {}

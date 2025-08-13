@@ -2,10 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class DataProcessDto {
   @ApiProperty({
-    description: 'User associated with the process',
-    example: 'user123'
+    description: 'Account associated with the process',
+    example: 'account'
   })
-  user: string;
+  account: string;
 
   @ApiProperty({
     description: 'Process status',
