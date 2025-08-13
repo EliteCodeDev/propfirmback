@@ -16,12 +16,33 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     
-    const { user } = context.switchToHttp().getRequest();
+  const { user } = context.switchToHttp().getRequest();
     
     if (!user || !user.roles) {
       return false;
     }
+    // Normalize roles to a canonical snake_case format and build effective roles via hierarchy
+    const normalize = (r: string) => r?.toLowerCase().replace(/-/g, '_');
+    const ROLE_HIERARCHY: Record<string, string[]> = {
+      super_admin: ['admin', 'user'],
+      admin: ['user'],
+      user: [],
+    };
 
-    return requiredRoles.some((role) => user.roles.includes(role));
+    const userRoles = Array.isArray(user.roles)
+      ? user.roles.map((r: string) => normalize(r)).filter(Boolean)
+      : [];
+
+    // Expand roles by hierarchy (e.g., super_admin -> admin, user)
+    const effective = new Set<string>(userRoles);
+    for (const r of userRoles) {
+      const implied = ROLE_HIERARCHY[r] || [];
+      implied.forEach((x) => effective.add(x));
+    }
+
+    // If required role matches any effective role (after normalization), allow
+    return requiredRoles
+      .map((r) => normalize(r))
+      .some((req) => effective.has(req));
   }
 }

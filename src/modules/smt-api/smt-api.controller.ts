@@ -9,7 +9,7 @@ import { AccountIngestPayloadDto } from './dto/account-ingest.dto';
 import { ConnectionStatusDto } from './dto/connection-status.dto';
 import { HybridAuth } from 'src/common/decorators/hybrid-auth.decorator';
 
-@HybridAuth() // Permite tanto JWT como API key
+@HybridAuth()
 @ApiTags('SMT-API')
 @Controller('smt-api')
 export class SmtApiController {
@@ -25,7 +25,7 @@ export class SmtApiController {
   async listAccounts() {
     return this.smtApiService.listAccounts();
   }
-  // @Public()
+
   @Get('/accounts/:accountId')
   @ApiOperation({ summary: 'Get a specific account from buffer' })
   @ApiResponse({
@@ -79,7 +79,9 @@ export class SmtApiController {
 
   
   async getConnectionStatus(@Body() params: ConnectionStatusDto) {
-    // TODO: Implement logic to process connection status
+
+    
+
     return {
       message: 'Connection status received',
       data: params,

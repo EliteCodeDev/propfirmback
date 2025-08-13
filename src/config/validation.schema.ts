@@ -53,4 +53,6 @@ export const validationSchema = Joi.object({
 
   // API Keys para autenticación de terceros
   API_KEYS: Joi.string().optional().description('Comma-separated list of valid API keys'),
+
+  API_KEY_FUNDED: Joi.string().required(),
 });
