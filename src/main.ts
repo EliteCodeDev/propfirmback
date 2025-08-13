@@ -3,9 +3,6 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as nodeCrypto from 'crypto';
-// @ts-ignore
-global.crypto = nodeCrypto;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,6 +15,9 @@ async function bootstrap() {
         configService.get<string>('CORS_ORIGIN'),
       'http://localhost:3000',
       'http://127.0.0.1:3000',
+      'http://localhost:4002',
+      'http://127.0.0.1:4002',
+
     ],
     credentials: true,
   });
