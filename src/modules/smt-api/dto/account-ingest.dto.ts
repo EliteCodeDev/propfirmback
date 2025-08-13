@@ -51,7 +51,7 @@ export class AccountIngestDto {
   @IsOptional()
   @IsObject()
   closedPositions?: {
-    closed?: any[]; // TODO: tipar con ClosePosition
+    closed?: any[]; // TODO: tipar con ClosedPosition
     ResumePositionClose?: Record<string, any>;
   };
 }

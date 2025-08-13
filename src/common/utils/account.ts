@@ -1,6 +1,9 @@
-
-import { OpenPosition,ResumenPositionOpen,ClosePosition,ResumePositionClose } from './positions'; 
-
+import {
+  OpenPosition,
+  ResumenPositionOpen,
+  ClosedPosition,
+  ResumePositionClose,
+} from './positions';
 
 export class Account {
   userID: string;
@@ -9,13 +12,13 @@ export class Account {
   equity: number;
 
   openPositions: {
-    open: OpenPosition[],
-    ResumePositionOpen: ResumenPositionOpen
+    open: OpenPosition[];
+    ResumePositionOpen: ResumenPositionOpen;
   }; // Assuming this is an object with position details
 
   closedPositions: {
-    closed: ClosePosition[],
-    ResumePositionClose: ResumePositionClose
+    closed: ClosedPosition[];
+    ResumePositionClose: ResumePositionClose;
   }; // Assuming this is an object with closed position details
   lastUpdate: Date;
 

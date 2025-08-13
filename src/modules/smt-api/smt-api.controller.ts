@@ -34,12 +34,16 @@ export class SmtApiController {
     type: AccountResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Account not found' })
+
+
   async getAccount(@Param('accountId') accountId: string) {
     return this.smtApiService.getAccount(accountId);
   }
 
+  
   @Post('/accounts/:accountId')
   @ApiOperation({ summary: 'Ingest / update account data in buffer' })
+
   async ingestAccountData(
     @Param('accountId') accountId: string,
     @Body() data: AccountIngestPayloadDto,
@@ -72,6 +76,8 @@ export class SmtApiController {
     status: 200,
     description: 'Connection status processed successfully',
   })
+
+  
   async getConnectionStatus(@Body() params: ConnectionStatusDto) {
     // TODO: Implement logic to process connection status
     return {

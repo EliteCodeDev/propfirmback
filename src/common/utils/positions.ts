@@ -1,6 +1,6 @@
 export class OpenPosition {
   symbol: string;
-  time: string;
+  timeEnter: string;
   type: string;
   volume: string;
   openPrice: string;
@@ -15,7 +15,7 @@ export class OpenPosition {
   constructor() {}
 }
 
-export class ClosePosition {
+export class ClosedPosition {
   time: string;
   type: string;
   symbol: string;
@@ -86,3 +86,4 @@ export class ResumePositionClose {
   deposit?: string;
   withdrawal?: string;
 }
+
