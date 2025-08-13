@@ -14,6 +14,9 @@ async function bootstrap() {
         configService.get<string>('CORS_ORIGIN'),
       'http://localhost:3000',
       'http://127.0.0.1:3000',
+      'http://localhost:4002',
+      'http://127.0.0.1:4002',
+
     ],
     credentials: true,
   });
