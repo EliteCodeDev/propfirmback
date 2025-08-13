@@ -8,13 +8,14 @@ import { AuthController } from './auth.controller';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAccount } from '../users/entities/user-account.entity';
+import { Role } from '../rbac/entities/role.entity';
 import { MailerModule } from '../mailer/mailer.module';
 import { jwtConfig } from '../../config';
 import { PasswordResetModule } from '../password-reset/password-reset.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserAccount]), // sólo UserAccount
+    TypeOrmModule.forFeature([UserAccount, Role]),
     ConfigModule,
     JwtModule.registerAsync(jwtConfig),
     MailerModule,

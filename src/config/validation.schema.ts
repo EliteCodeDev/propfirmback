@@ -20,7 +20,9 @@ export const validationSchema = Joi.object({
   DATABASE_USERNAME: Joi.string().required(),
   DATABASE_PASSWORD: Joi.string().required(),
   DATABASE_SSL: Joi.boolean().default(false),
-
+  DB_DROP_SCHEMA: Joi.boolean().default(false),
+  DB_SYNCHRONIZE: Joi.boolean().default(true),
+  
   // JWT
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
@@ -48,4 +50,7 @@ export const validationSchema = Joi.object({
   SMT_API_URL: Joi.string().required(),
   SMT_API_KEY: Joi.string().required(),
   SMT_API_AUTH_HEADER: Joi.string().default('x-api-key'),
+
+  // API Keys para autenticación de terceros
+  API_KEYS: Joi.string().optional().description('Comma-separated list of valid API keys'),
 });

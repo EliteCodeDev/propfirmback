@@ -2,19 +2,19 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class DataProcessDto {
   @ApiProperty({
-    description: 'Usuario asociado al proceso',
+    description: 'User associated with the process',
     example: 'user123'
   })
   user: string;
 
   @ApiProperty({
-    description: 'Estado del proceso',
+    description: 'Process status',
     example: 200
   })
   status: number;
 
   @ApiProperty({
-    description: 'Error del proceso si existe',
+    description: 'Process error if exists',
     required: false,
     example: null
   })
@@ -23,7 +23,7 @@ export class DataProcessDto {
 
 export class ConnectionStatusDto {
   @ApiProperty({
-    description: 'Procesos exitosos',
+    description: 'Successful processes',
     type: [DataProcessDto],
     example: [
       {
@@ -36,7 +36,7 @@ export class ConnectionStatusDto {
   success_process: DataProcessDto[];
 
   @ApiProperty({
-    description: 'Procesos con error',
+    description: 'Processes with errors',
     type: [DataProcessDto],
     example: [
       {
@@ -49,13 +49,13 @@ export class ConnectionStatusDto {
   error_process: DataProcessDto[];
 
   @ApiProperty({
-    description: 'Estado de la respuesta',
+    description: 'Response status',
     example: 200
   })
   status: number;
 
   @ApiProperty({
-    description: 'Mensaje de la respuesta',
+    description: 'Response message',
     example: 'Success session'
   })
   message: string;

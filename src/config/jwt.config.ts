@@ -12,7 +12,7 @@ export const jwtConfig: JwtModuleAsyncOptions = {
   }),
 };
 
-// Configuración tipada para acceder vía ConfigService con namespace 'jwt'
+// Typed configuration to access via ConfigService with 'jwt' namespace
 export const jwtConfigValues = registerAs('jwt', () => ({
   secret: process.env.JWT_SECRET,
   expiresIn: process.env.JWT_EXPIRES_IN || '7d',

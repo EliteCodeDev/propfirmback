@@ -10,7 +10,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { UserRole } from './user-role.entity';
 import { Address } from './address.entity';
 import { Affiliate } from '../../affiliates/entities/affiliate.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
@@ -18,6 +17,7 @@ import { Verification } from '../../verification/entities/verification.entity';
 import { Withdrawal } from '../../withdrawals/entities/withdrawal.entity';
 import { CustomerOrder } from '../../orders/entities/customer-order.entity';
 import { Certificate } from '../../certificates/entities/certificate.entity';
+import { Role } from 'src/modules/rbac/entities/role.entity';
 
 @Entity('UserAccount')
 export class UserAccount {
@@ -66,10 +66,6 @@ export class UserAccount {
   @Column({ type: 'uuid', nullable: true })
   refAffiliateID?: string;
 
-  // Relaciones
-  @OneToMany(() => UserRole, (userRole) => userRole.user)
-  userRoles: UserRole[];
-
   @OneToOne(() => Address, (address) => address.user)
   address: Address;
 
@@ -78,6 +74,12 @@ export class UserAccount {
   })
   @JoinColumn({ name: 'refAffiliateID' })
   referralAffiliate?: Affiliate;
+
+  @ManyToOne(() => Role, (role) => role.user, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'roleID' })
+  role: Role;
 
   @OneToMany(() => Challenge, (challenge) => challenge.user)
   challenges: Challenge[];

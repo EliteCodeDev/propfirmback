@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { ChallengeRelation } from './challenge-relation.entity';
+import { ChallengeRelation } from '../challenge-relation.entity';
+import { RelationBalance } from './relation-balance.entity';
 
 @Entity('ChallengeBalance')
 export class ChallengeBalance {
@@ -15,13 +16,16 @@ export class ChallengeBalance {
   @Column({ type: 'boolean', default: false })
   hasDiscount: boolean;
 
-  @Column({ length: 50, nullable: true })
-  discount: string;
+  @Column({ type: 'float', nullable: true })
+  discount: number;
 
   @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
   balance: number;
 
   // Relations
-  @OneToMany(() => ChallengeRelation, (relation) => relation.balance)
-  relations: ChallengeRelation[];
+  @OneToMany(
+    () => RelationBalance,
+    (relationBalance) => relationBalance.balance,
+  )
+  relationBalances: RelationBalance[];
 }

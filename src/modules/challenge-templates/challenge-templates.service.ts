@@ -3,15 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 // Entities
-import { ChallengeCategory } from './entities/challenge-category.entity';
-import { ChallengePlan } from './entities/challenge-plan.entity';
-import { ChallengeBalance } from './entities/challenge-balance.entity';
-import { ChallengeRelation } from './entities/challenge-relation.entity';
-import { ChallengeStage } from './entities/stage/challenge-stage.entity';
-import { RelationStage } from './entities/stage/relation-stage.entity';
-import { StageRule } from './entities/stage/stage-rule.entity';
-import { StageParameter } from './entities/stage/stage-parameter.entity';
-
+import {
+  ChallengeCategory,
+  ChallengePlan,
+  ChallengeBalance,
+  RelationBalance,
+  ChallengeRelation,
+  ChallengeStage,
+  RelationStage,
+  StageRule,
+  StageParameter,
+} from './entities';
 // DTOs
 import { CreateChallengeCategoryDto } from './dto/create/create-challenge-category.dto';
 import { UpdateChallengeCategoryDto } from './dto/update/update-challenge-category.dto';
@@ -29,6 +31,8 @@ import { CreateStageParameterDto } from './dto/create/create-stage-parameter.dto
 import { UpdateStageParameterDto } from './dto/update/update-stage-parameter.dto';
 import { CreateRelationStageDto } from './dto/create/create-relation-stage.dto';
 import { UpdateRelationStageDto } from './dto/update/update-relation-stage.dto';
+import { CreateRelationBalanceDto } from './dto/create/create-relation-balance.dto';
+import { UpdateRelationBalanceDto } from './dto/update/update-relation-balance.dto';
 
 @Injectable()
 export class ChallengeTemplatesService {
@@ -39,6 +43,8 @@ export class ChallengeTemplatesService {
     private challengePlanRepository: Repository<ChallengePlan>,
     @InjectRepository(ChallengeBalance)
     private challengeBalanceRepository: Repository<ChallengeBalance>,
+    @InjectRepository(RelationBalance)
+    private relationBalanceRepository: Repository<RelationBalance>,
     @InjectRepository(ChallengeRelation)
     private challengeRelationRepository: Repository<ChallengeRelation>,
     @InjectRepository(ChallengeStage)
@@ -136,19 +142,20 @@ export class ChallengeTemplatesService {
     dto: CreateChallengeBalanceDto,
   ): Promise<ChallengeBalance> {
     const balance = this.challengeBalanceRepository.create(dto);
+    
     return this.challengeBalanceRepository.save(balance);
   }
 
   async findAllBalances(): Promise<ChallengeBalance[]> {
     return this.challengeBalanceRepository.find({
-      relations: ['relations'],
+      relations: ['relationBalances'],
     });
   }
 
   async findOneBalance(id: string): Promise<ChallengeBalance> {
     const balance = await this.challengeBalanceRepository.findOne({
       where: { balanceID: id },
-      relations: ['relations'],
+      relations: ['relationBalances'],
     });
 
     if (!balance) {
@@ -182,14 +189,14 @@ export class ChallengeTemplatesService {
 
   async findAllRelations(): Promise<ChallengeRelation[]> {
     return this.challengeRelationRepository.find({
-      relations: ['category', 'plan', 'balance', 'stages', 'challenges'],
+      relations: ['category', 'plan', 'relationBalances', 'stages', 'challenges'],
     });
   }
 
   async findOneRelation(id: string): Promise<ChallengeRelation> {
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID: id },
-      relations: ['category', 'plan', 'balance', 'stages', 'challenges'],
+      relations: ['category', 'plan', 'relationBalances', 'stages', 'challenges'],
     });
 
     if (!relation) {
@@ -374,5 +381,46 @@ export class ChallengeTemplatesService {
   async removeRelationStage(id: string): Promise<void> {
     const relationStage = await this.findOneRelationStage(id);
     await this.relationStageRepository.remove(relationStage);
+  }
+
+  // Relation Balances
+  async createRelationBalance(
+    dto: CreateRelationBalanceDto,
+  ): Promise<RelationBalance> {
+    const relationBalance = this.relationBalanceRepository.create(dto);
+    return this.relationBalanceRepository.save(relationBalance);
+  }
+
+  async findAllRelationBalances(): Promise<RelationBalance[]> {
+    return this.relationBalanceRepository.find({
+      relations: ['balance', 'relation'],
+    });
+  }
+
+  async findOneRelationBalance(id: string): Promise<RelationBalance> {
+    const relationBalance = await this.relationBalanceRepository.findOne({
+      where: { relationBalanceID: id },
+      relations: ['balance', 'relation'],
+    });
+
+    if (!relationBalance) {
+      throw new NotFoundException('Relation balance not found');
+    }
+
+    return relationBalance;
+  }
+
+  async updateRelationBalance(
+    id: string,
+    dto: UpdateRelationBalanceDto,
+  ): Promise<RelationBalance> {
+    const relationBalance = await this.findOneRelationBalance(id);
+    Object.assign(relationBalance, dto);
+    return this.relationBalanceRepository.save(relationBalance);
+  }
+
+  async removeRelationBalance(id: string): Promise<void> {
+    const relationBalance = await this.findOneRelationBalance(id);
+    await this.relationBalanceRepository.remove(relationBalance);
   }
 }

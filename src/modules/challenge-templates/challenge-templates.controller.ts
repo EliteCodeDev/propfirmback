@@ -33,6 +33,8 @@ import { CreateStageParameterDto } from './dto/create/create-stage-parameter.dto
 import { UpdateStageParameterDto } from './dto/update/update-stage-parameter.dto';
 import { CreateRelationStageDto } from './dto/create/create-relation-stage.dto';
 import { UpdateRelationStageDto } from './dto/update/update-relation-stage.dto';
+import { CreateRelationBalanceDto } from './dto/create/create-relation-balance.dto';
+import { UpdateRelationBalanceDto } from './dto/update/update-relation-balance.dto';
 
 // Guards & Decorators
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -370,5 +372,46 @@ export class ChallengeTemplatesController {
   @ApiOperation({ summary: 'Delete relation stage' })
   removeRelationStage(@Param('id') id: string) {
     return this.challengeTemplatesService.removeRelationStage(id);
+  }
+
+  // Relation Balances
+  @Post('relation-balances')
+  @ApiOperation({ summary: 'Create a new relation balance' })
+  createRelationBalance(
+    @Body() createRelationBalanceDto: CreateRelationBalanceDto,
+  ) {
+    return this.challengeTemplatesService.createRelationBalance(
+      createRelationBalanceDto,
+    );
+  }
+
+  @Get('relation-balances')
+  @ApiOperation({ summary: 'Get all relation balances' })
+  findAllRelationBalances() {
+    return this.challengeTemplatesService.findAllRelationBalances();
+  }
+
+  @Get('relation-balances/:id')
+  @ApiOperation({ summary: 'Get relation balance by ID' })
+  findOneRelationBalance(@Param('id') id: string) {
+    return this.challengeTemplatesService.findOneRelationBalance(id);
+  }
+
+  @Patch('relation-balances/:id')
+  @ApiOperation({ summary: 'Update relation balance' })
+  updateRelationBalance(
+    @Param('id') id: string,
+    @Body() updateRelationBalanceDto: UpdateRelationBalanceDto,
+  ) {
+    return this.challengeTemplatesService.updateRelationBalance(
+      id,
+      updateRelationBalanceDto,
+    );
+  }
+
+  @Delete('relation-balances/:id')
+  @ApiOperation({ summary: 'Delete relation balance' })
+  removeRelationBalance(@Param('id') id: string) {
+    return this.challengeTemplatesService.removeRelationBalance(id);
   }
 }

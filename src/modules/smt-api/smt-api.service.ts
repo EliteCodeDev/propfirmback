@@ -7,16 +7,20 @@ export class SmtApiService {
   private readonly logger = new Logger(SmtApiService.name);
   constructor(private readonly buffer: BufferService) {}
 
-  async handleIngestionAccount(data: Partial<Account> & { login: string }) {
-    this.logger.debug(`[handleIngestionAccount] login=${data.login}`);
-    const result = await this.buffer.upsertAccount(data.login, (prev) => {
-      const base: Account = prev || ({} as Account);
-      return { ...base, ...data } as Account;
-    });
-    this.logger.debug(
-      `[handleIngestionAccount] stored login=${data.login} balance=${result.balance} equity=${result.equity}`,
-    );
-    return result;
+  // async handleIngestionAccount(data: Partial<Account> & { login: string }) {
+  //   this.logger.debug(`[handleIngestionAccount] login=${data.login}`);
+  //   const result = await this.buffer.upsertAccount(data.login, (prev) => {
+  //     const base: Account = prev || ({} as Account);
+  //     return { ...base, ...data } as Account;
+  //   });
+  //   this.logger.debug(
+  //     `[handleIngestionAccount] stored login=${data.login} balance=${result.balance} equity=${result.equity}`,
+  //   );
+  //   return result;
+  // }
+  // }
+  async handleIngestionAccount(data: any) {
+    this.logger.debug(`[handleIngestionAccount] login=${data}`);
   }
   async loginToAccount(accountId: string, credentials: any) {
     // logica para iniciar sesion en la cuenta en la api

@@ -3,6 +3,10 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as nodeCrypto from 'crypto';
+// @ts-ignore
+global.crypto = nodeCrypto;
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
@@ -31,13 +35,13 @@ async function bootstrap() {
     }),
   );
 
-  // Prefijo global
+  // Global prefix
   app.setGlobalPrefix(configService.get<string>('app.apiPrefix') || 'api');
 
   // Swagger
   const swaggerConfig = new DocumentBuilder()
     .setTitle('PropFirm API')
-    .setDescription('API para la plataforma PropFirm')
+    .setDescription('API for the PropFirm platform')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

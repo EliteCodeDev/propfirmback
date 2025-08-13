@@ -7,9 +7,9 @@ import {
 } from './dto/account-ingest.dto';
 import { AccountIngestPayloadDto } from './dto/account-ingest.dto';
 import { ConnectionStatusDto } from './dto/connection-status.dto';
-import { Public } from 'src/common/decorators/public.decorator';
+import { HybridAuth } from 'src/common/decorators/hybrid-auth.decorator';
 
-@Public()
+@HybridAuth() // Permite tanto JWT como API key
 @ApiTags('SMT-API')
 @Controller('smt-api')
 export class SmtApiController {
@@ -118,27 +118,27 @@ export class SmtApiController {
             {
               user: 'user123',
               status: 200,
-              error: null
-            }
+              error: null,
+            },
           ],
           error_process: [
             {
               user: 'user456',
               status: 500,
-              error: 'Connection failed'
-            }
+              error: 'Connection failed',
+            },
           ],
           status: 200,
-          message: 'Success session'
-        }
-      }
-    }
+          message: 'Success session',
+        },
+      },
+    },
   })
   async getConnectionStatus(@Body() params: ConnectionStatusDto) {
-    // TODO: Implementar lógica para procesar el estado de conexión
+    // TODO: Implement logic to process connection status
     return {
       message: 'Connection status received',
-      data: params
+      data: params,
     };
   }
 }

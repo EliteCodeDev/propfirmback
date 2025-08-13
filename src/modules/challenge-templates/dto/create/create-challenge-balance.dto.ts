@@ -36,14 +36,12 @@ export class CreateChallengeBalanceDto {
   hasDiscount?: boolean = false;
 
   @ApiProperty({
-    description: 'Discount information',
-    maxLength: 50,
+    description: 'Discount amount',
     required: false,
   })
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  discount?: string;
+  @IsNumber()
+  discount?: number;
 
   @ApiProperty({
     description: 'Balance amount',

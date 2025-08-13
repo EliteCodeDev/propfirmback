@@ -140,14 +140,10 @@ export class RolesController {
   @Auth('admin', 'super_admin')
   @ApiOperation({ summary: 'Remove role from user' })
   @ApiParam({ name: 'userID', description: 'User UUID' })
-  @ApiParam({ name: 'roleId', description: 'Role UUID' })
   @ApiResponse({ status: 200, description: 'Role removed successfully' })
   @ApiResponse({ status: 404, description: 'Role assignment not found' })
-  removeRole(
-    @Param('userID', ParseUUIDPipe) userID: string,
-    @Param('roleId', ParseUUIDPipe) roleId: string,
-  ): Promise<void> {
-    return this.rolesService.removeRole(userID, roleId);
+  removeRole(@Param('userID', ParseUUIDPipe) userID: string): Promise<void> {
+    return this.rolesService.removeRole(userID);
   }
 
   @Get('user/:userID')
@@ -158,7 +154,7 @@ export class RolesController {
     status: 200,
     description: 'User roles retrieved successfully',
   })
-  getUserRoles(@Param('userID', ParseUUIDPipe) userID: string) {
-    return this.rolesService.getUserRoles(userID);
+  getUserRole(@Param('userID', ParseUUIDPipe) userID: string): Promise<Role> {
+    return this.rolesService.getUserRole(userID);
   }
 }
