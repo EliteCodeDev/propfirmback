@@ -49,7 +49,7 @@ export class SmtApiService {
   }
 
 
-  async connectionStatusService(data: ConnectionStatusDto) {
+  async connectionStatusService(data: any) {
     console.log('ConnectionStatusDto received:', data);
     return {
       message: 'Connection status received',

@@ -9,8 +9,10 @@ import { AccountIngestPayloadDto } from './dto/account-ingest.dto';
 import { ConnectionStatusDto } from './dto/connection-status.dto';
 import { HybridAuth } from 'src/common/decorators/hybrid-auth.decorator';
 import { AccountDataDto } from './dto/account-data/data.dto';
+import { Public } from 'src/common/decorators/public.decorator';
 
-@HybridAuth()
+// @HybridAuth()
+@Public()
 @ApiTags('SMT-API')
 @Controller('/smt-api')
 export class SmtApiController {
@@ -56,7 +58,7 @@ export class SmtApiController {
     status: 200,
     description: 'Connection status processed successfully',
   })
-  async getConnectionStatus(@Body() data: ConnectionStatusDto) {
+  async getConnectionStatus(@Body() data: any) {
     return await this.smtApiService.connectionStatusService(data);
   }
 }
