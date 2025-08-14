@@ -11,6 +11,7 @@ export interface dailyTotalDrawdownResult {
 }
 
 export interface tradingDaysResult {
+  status: boolean;
   numDays: number;
   positionsPerDay: Record<string, (OpenPosition | ClosedPosition)[]>;
 }
@@ -21,6 +22,7 @@ export interface consecutiveInactiveDaysResult {
   status: boolean;
 }
 export interface riskEvaluationResult {
+  status: boolean;
   profitTarget: profitTargetResult;
   dailyDrawdown: dailyTotalDrawdownResult;
   maxDrawdown: dailyTotalDrawdownResult;

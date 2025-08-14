@@ -40,6 +40,13 @@ export function riskEvaluation(
     params.inactiveDays,
   );
   return {
+    status:
+      profitTarget.status &&
+      dailyDrawdown.status &&
+      maxDrawdown.status &&
+      tradingDays.status &&
+      inactiveDays.status,
+
     profitTarget,
     dailyDrawdown,
     maxDrawdown,
