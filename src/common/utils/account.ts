@@ -9,24 +9,31 @@ import { MaxMinBalance, AverageMetrics } from './risk';
 export class Account {
   userID: string;
   login: string;
-  balance: number; //current balance
+
+  balance: Balance;
+
+  // dailyBalanceHistory: number[];
   equity: number;
 
   openPositions: {
     open: OpenPosition[];
     ResumePositionOpen: ResumenPositionOpen;
+    numPositions: number;
   }; // Assuming this is an object with position details
 
   closedPositions: {
     closed: ClosedPosition[];
     ResumePositionClose: ResumePositionClose;
+    numPositions: number;
   }; // Assuming this is an object with closed position details
   lastUpdate: Date;
 
+  createDateTime: Date;
+
   // data posterior al analisis de las posiciones
 
-  metaStats: Object;
-  riskValidation: Object;
+  metaStats: MetaStats;
+  riskValidation: RiskValidation;
 }
 export class LoginAccount {
   login: string;
@@ -35,15 +42,19 @@ export class LoginAccount {
   ip: string;
   platform: string;
 }
-export class metaStats {
+export class MetaStats {
   maxMinBalance: MaxMinBalance;
   averageMetrics: AverageMetrics;
-  lastUpdate: Date;
   numTrades: number;
 }
-export class riskValidation {
+export class RiskValidation {
   profitTarget: number;
   dailyTotalDrawdown: number;
   tradingDays: number;
   inactiveDays: number;
+}
+export class Balance {
+  currentBalance: number;
+  initialBalance: number;
+  dailyBalance: number;
 }

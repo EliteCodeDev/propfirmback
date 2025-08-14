@@ -3,6 +3,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Account } from 'src/common/utils/account';
 import * as riskFunctions from 'src/common/functions';
+import { RiskParams } from 'src/common/utils';
+import { riskEvaluationResult } from 'src/common/types/risk-results';
 
 @Injectable()
 export class RulesEvaluationJob {
@@ -12,59 +14,47 @@ export class RulesEvaluationJob {
   @Cron(CronExpression.EVERY_10_SECONDS)
   async evaluate() {
     // Verificar si hay cuentas en el buffer
-    const bufferSize = await this.buffer.size();
-    if (bufferSize === 0) {
-      this.logger.debug('Buffer vacío, saltando evaluación de reglas');
-      return;
-    }
+    try {
+      const bufferSize = await this.buffer.size();
+      if (bufferSize === 0) {
+        this.logger.debug('Buffer vacío, saltando evaluación de reglas');
+        return;
+      }
 
-    this.logger.debug(
-      `Iniciando evaluación de reglas para ${bufferSize} cuentas`,
-    );
+      this.logger.debug(
+        `Iniciando evaluación de reglas para ${bufferSize} cuentas`,
+      );
 
-    // Procesar todas las cuentas en paralelo usando el nuevo método optimizado
-    const results = await this.buffer.processAllParallel(
-      async (id: string, account: Account) => {
-        // Aplicar funciones de evaluación de riesgo
-        const validation = await this.evaluateAccountRules(account);
+      // Procesar todas las cuentas en paralelo usando el nuevo método optimizado
+      const results = await this.buffer.processAllParallel(
+        async (id: string, account: Account) => {
+          // Aplicar funciones de evaluación de riesgo
+          const validation = await this.evaluateAccountRules(
+            account,
+            {} as RiskParams,
+          );
 
-        // Actualizar la cuenta con los resultados de validación
-        await this.buffer.upsertAccount(id, (prevAccount) => {
-          const updatedAccount = prevAccount || account;
-          updatedAccount.riskValidation = {
-            updatedAt: new Date(),
-            breaches: validation.breaches || [],
+          return {
+            id,
+            validation,
           };
-          return updatedAccount;
-        });
+        },
+        {
+          skipEmpty: true,
+          logErrors: true,
+        },
+      );
 
-        return {
-          id,
-          processed: true,
-          breaches: validation.breaches?.length || 0,
-        };
-      },
-      {
-        skipEmpty: true,
-        logErrors: true,
-      },
-    );
+      // Calcular estadísticas del procesamiento
+      const successful = results.filter((r) => r !== null).length;
 
-    // Calcular estadísticas del procesamiento
-    const successful = results.filter((r) => r !== null).length;
-    const totalBreaches = results
-      .filter((r) => r !== null)
-      .reduce((sum, r) => sum + (r as any).breaches, 0);
-
-    this.logger.debug(
-      `RulesEvaluationJob completado: procesadas=${successful}/${bufferSize}, infracciones=${totalBreaches}`,
-    );
-
-    // Log estadísticas del buffer
-    // const stats = await this.buffer.getStats();
-    // this.logger.debug(
-    //   `Buffer stats: total=${stats.total}, conValidación=${stats.withValidation}, conInfracciones=${stats.withBreaches}`
-    // );
+      this.logger.debug(
+        `RulesEvaluationJob completado: procesadas=${successful}/${bufferSize}, 
+      validaciones=${results.filter((r) => r !== null && r.validation).length}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error en RulesEvaluationJob: `, error);
+    }
   }
 
   /**
@@ -72,35 +62,24 @@ export class RulesEvaluationJob {
    * @param account Cuenta a evaluar
    * @returns Resultado de la evaluación
    */
-  private async evaluateAccountRules(account: Account): Promise<{
-    breaches: string[];
-    riskScore?: number;
-  }> {
+  private async evaluateAccountRules(
+    account: Account,
+    RiskParams: RiskParams,
+  ): Promise<riskEvaluationResult> {
     try {
       // Aquí se pueden aplicar las funciones de riesgo específicas
       // Por ahora, implementación básica que se puede expandir
-      const breaches: string[] = [];
+      // const breaches: string[] = [];
 
-      // Ejemplo de evaluaciones que se pueden implementar:
-      // - Verificar drawdown máximo
-      // - Verificar profit target
-      // - Verificar trading days
-      // - Verificar lot size limits
-      // - etc.
+      const riskEvaluation = riskFunctions.riskEvaluation(account, RiskParams);
 
       // TODO: Implementar evaluaciones específicas usando riskFunctions
       // const riskEvaluation = await riskFunctions.evaluateRisk(account);
 
-      return {
-        breaches,
-        riskScore: 0, // Placeholder
-      };
+      return riskEvaluation;
     } catch (error) {
       this.logger.error(`Error evaluando reglas para cuenta:`, error);
-      return {
-        breaches: ['EVALUATION_ERROR'],
-        riskScore: -1,
-      };
+      return {} as riskEvaluationResult;
     }
   }
 }
