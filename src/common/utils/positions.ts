@@ -1,45 +1,38 @@
 export class OpenPosition {
-  symbol: string;
-  timeEnter: string;
-  type: string;
-  volume: string;
-  openPrice: string;
-  sl: string;
-  tp: string;
-  swap: string;
-  comment?: string;
-  profit: string;
-  closePrice?: string;
+  OrderId: string;
+  Symbol: string;
+  TimeOpen: string;
+  Type: string;
+  Volume: number;
+  OpenPrice: number;
+  SL: number;
+  TP: number;
+  ClosePrice: number;
+  Swap: number;
+  Profit: number;
+  Commentary: string;
 
-  constructor() {}
+  constructor() { }
 }
 
 export class ClosedPosition {
-  time: string;
-  type: string;
-  symbol: string;
-  sl: string | number;
-  tp: string | number;
-  swap: string | number;
-  closePrice: string | number;
+  OrderId: string;
+  TimeOpen: string;
+  Type: string;
+  Volume: number;
+  Symbol: string;
+  OpenPrice: number;
+  SL: number;
+  TP: number;
+  TimeClose: string;
+  ClosePrice: number;
+  Commission: number;
+  Rate: number;
+  Swap: number;
+  Profit: number;
+  Commentary: string;
 
-  profit: number;
-  // Campos específicos de MT5
-  timeEnter?: string;
-  ticket?: string;
-  volume?: number;
-  price?: number;
-  timeExit?: string;
-  commission?: number;
-  rate?: number;
-
-  commentary?: string;
-  // Campos específicos de MT4
-  order?: string;
-  volume4?: string;
-  openPrice?: string;
-
-  constructor() {}
+  constructor() { }
 }
 
 export class UserData {
@@ -47,42 +40,37 @@ export class UserData {
   user: string;
   server: string;
   login: string;
+
+  constructor() { }
 }
 
 export class ResumenPositionOpen {
-  balance: string;
-  profit: string; // Profit (MT5) / Benefit (MT4)
-  comment?: string; // Comment (MT5) / Comentary (MT4) / Commentary (MT4)
+  Balance: number;
+  Commentary: string;
+  Equity: number;
+  Margin: number;
+  FreeMargin: number;
+  Level: number;
+  Profit: number;
 
-  // Campos específicos de MT5
-  equity?: string; // Solo en MT5
-  margin?: string; // Solo en MT5
-  freeMargin?: string; // Solo en MT5
-  level?: string; // Solo en MT5
+  constructor(){
 
-  // Campos específicos de MT4
-  commentary?: string; // Solo en MT4 (diferente a comment)
-  equidad?: string; // Solo en MT4 (Equidad vs Equity)
-  marginFree?: string; // Solo en MT4 (MarginFree vs FreeMargin)
-  marginLevel?: string; // Solo en MT4
-  totalProfit?: string; // Solo en MT4
+  }
 }
 
 export class ResumePositionClose {
-  balance: string;
-  totalBenefit: string;
+  Profit_Lose: number;
+  Credit: number;
+  Deposit: number;
+  Withdrawal: number;
+  Profit: number;
+  Swap: number;
+  Rate: number;
+  Commission: number;
+  Balance: number;
 
-  // Campos específicos de MT5
-  credit?: string;
-  recharge?: string;
-  withdraw?: string;
-  commission?: string;
-  rate?: string;
-  swap?: string;
+  constructor(){
 
-  // Campos específicos de MT4
-  benefitLose?: string;
-  deposit?: string;
-  withdrawal?: string;
+  }
 }
 

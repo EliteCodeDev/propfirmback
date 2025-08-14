@@ -1,32 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { DataProcessDto } from './account.dto';
 
-export class DataProcessDto {
-  @ApiProperty({
-    description: 'Account associated with the process',
-    example: 'id123',
-    required: true
-  })
-  @IsString()
-  account!: string;
-
-  @ApiProperty({
-    description: 'Process status',
-    example: 200
-  })
-  @IsNumber()
-  @IsOptional()
-  status?: number;
-
-  @ApiProperty({
-    description: 'Process error if exists',
-    required: false,
-    example: null
-  })
-  @IsOptional()
-  error?: any;
-}
 
 export class ConnectionStatusDto {
   @ApiProperty({
@@ -37,7 +13,7 @@ export class ConnectionStatusDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => DataProcessDto)
-  success_process!: DataProcessDto[];
+  success_process: DataProcessDto[];
 
   @ApiProperty({
     description: 'Processes with errors',
@@ -47,7 +23,7 @@ export class ConnectionStatusDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => DataProcessDto)
-  error_process!: DataProcessDto[];
+  error_process: DataProcessDto[];
 
   @ApiProperty({ description: 'Response status', example: 200 })
   @IsNumber()

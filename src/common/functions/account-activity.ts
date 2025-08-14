@@ -91,7 +91,7 @@ export function groupPositionsByDays(
   const allPositions = mergePositions(openPositions, closedPositions);
   const grouped = allPositions.reduce(
     (acc, position) => {
-      const date = new Date(position.timeEnter).toISOString().split('T')[0];
+      const date = new Date(position.TimeOpen).toISOString().split('T')[0];
       if (!acc[date]) {
         acc[date] = [];
       }

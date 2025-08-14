@@ -114,6 +114,7 @@ export class AuthService {
       message: 'User registered successfully',
       user: this.excludePassword(saved),
       ...tokens,
+      status: 201,
     };
   }
 
