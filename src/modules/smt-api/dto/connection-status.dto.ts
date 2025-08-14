@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class DataProcessDto {
   @ApiProperty({
@@ -31,41 +32,29 @@ export class ConnectionStatusDto {
   @ApiProperty({
     description: 'Successful processes',
     type: [DataProcessDto],
-    example: [
-      {
-        user: 'user123',
-        status: 200,
-        error: null
-      }
-    ]
+    example: [{ account: 'user123', status: 200, error: null }]
   })
-  success_process!: DataProcessDto[] | [];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DataProcessDto)
+  success_process!: DataProcessDto[];
 
   @ApiProperty({
     description: 'Processes with errors',
     type: [DataProcessDto],
-    example: [
-      {
-        user: 'user456',
-        status: 500,
-        error: 'Connection failed'
-      }
-    ]
+    example: [{ account: 'user456', status: 500, error: 'Connection failed' }]
   })
-  error_process!: DataProcessDto[] | [];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DataProcessDto)
+  error_process!: DataProcessDto[];
 
-  @ApiProperty({
-    description: 'Response status',
-    example: 200
-  })
+  @ApiProperty({ description: 'Response status', example: 200 })
   @IsNumber()
   @IsOptional()
   status?: number;
 
-  @ApiProperty({
-    description: 'Response message',
-    example: 'Success session'
-  })
+  @ApiProperty({ description: 'Response message', example: 'Success session' })
   @IsString()
   @IsOptional()
   message?: string;

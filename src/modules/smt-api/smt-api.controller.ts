@@ -1,4 +1,4 @@
-import { Controller, Post, Param, Body, Get } from '@nestjs/common';
+import { Controller, Post, Param, Body, Get, UseGuards } from '@nestjs/common';
 import { SmtApiService } from './smt-api.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import {
@@ -9,8 +9,11 @@ import { AccountIngestPayloadDto } from './dto/account-ingest.dto';
 import { ConnectionStatusDto } from './dto/connection-status.dto';
 import { HybridAuth } from 'src/common/decorators/hybrid-auth.decorator';
 import { AccountDataDto } from './dto/account-data/data.dto';
+import { Public } from 'src/common/decorators/public.decorator';
+import { ApiKeyGuard } from "./guards/api-key.guard"
 
-@HybridAuth()
+// @HybridAuth()
+@Public()
 @ApiTags('SMT-API')
 @Controller('/smt-api')
 export class SmtApiController {
@@ -41,6 +44,7 @@ export class SmtApiController {
 
   
   @Post('/accounts/:accountId')
+  @UseGuards(ApiKeyGuard)
   @ApiOperation({ summary: 'Ingest / update account data in buffer' })
   async ingestAccountData(
     @Param('accountId') accountId: string,
@@ -48,9 +52,9 @@ export class SmtApiController {
   ) {
     return this.smtApiService.saveDataAccountService(accountId, data);
   }
-
-
+  
   @Post('/connection-status')
+  @UseGuards(ApiKeyGuard)
   @ApiOperation({ summary: 'Receive connection status data' })
   @ApiResponse({
     status: 200,
