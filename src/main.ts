@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as bodyParser from 'body-parser';
 // src/main.ts (al inicio del archivo)
 import * as nodeCrypto from 'node:crypto';
 (global as any).crypto ??= nodeCrypto; // asegura crypto.randomUUID()
@@ -11,6 +12,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+  //app.use(bodyParser.json({ limit: '500mb' }));
+  //app.use(bodyParser.urlencoded({ limit: '500mb', extended: true }));
   // CORS
   app.enableCors({
     origin: [

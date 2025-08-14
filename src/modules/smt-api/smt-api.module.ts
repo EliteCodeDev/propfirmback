@@ -13,7 +13,7 @@ import { ChallengeDetails } from '../challenges/entities/challenge-details.entit
   imports: [
     ConfigModule.forFeature(smtApiConfig),
     HttpModule,
-    ApiKeysModule,
+    // ApiKeysModule,
     TypeOrmModule.forFeature([Challenge, ChallengeDetails]),
   ],
   controllers: [SmtApiController],
