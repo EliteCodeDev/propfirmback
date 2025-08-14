@@ -8,7 +8,6 @@ export class AverageMetrics {
   losingTrades: number;
   winRate: number;
   lossRate: number;
-
   averageProfit: number;
   averageLoss: number;
 

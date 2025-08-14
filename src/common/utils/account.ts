@@ -5,6 +5,9 @@ import {
   ResumePositionClose,
 } from './positions';
 import { MaxMinBalance, AverageMetrics } from './risk';
+import { riskEvaluationResult } from '../types/risk-results';
+
+export type AccountStatus = 'active' | 'completed' | 'failed' | 'pending';
 
 export class Account {
   userID: string;
@@ -13,8 +16,8 @@ export class Account {
   balance: Balance;
 
   // dailyBalanceHistory: number[];
-  equity: number;
 
+  status: AccountStatus;
   openPositions: {
     open: OpenPosition[];
     ResumePositionOpen: ResumenPositionOpen;
@@ -33,7 +36,7 @@ export class Account {
   // data posterior al analisis de las posiciones
 
   metaStats: MetaStats;
-  riskValidation: RiskValidation;
+  riskValidation: riskEvaluationResult;
 }
 export class LoginAccount {
   login: string;
@@ -43,6 +46,7 @@ export class LoginAccount {
   platform: string;
 }
 export class MetaStats {
+  equity: number;
   maxMinBalance: MaxMinBalance;
   averageMetrics: AverageMetrics;
   numTrades: number;

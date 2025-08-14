@@ -54,7 +54,7 @@ export function getMoreStats(account: Account) {
   );
   const maxMinBalance = this.maxMinBalance(
     balance.currentBalance,
-    account.equity,
+    account.metaStats.equity,
     account.metaStats.maxMinBalance,
   );
   const numTrades = this.numTrades(openPositions.open, closedPositions.closed);
