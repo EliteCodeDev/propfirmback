@@ -4,7 +4,7 @@ import { AxiosRequestConfig } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigType } from '@nestjs/config';
 import { smtApiConfig } from 'src/config';
-
+import { LoginAccount } from 'src/common/utils';
 interface AuthResponse {
   token: string;
   expiresIn?: number;
@@ -101,6 +101,21 @@ export class SmtApiClient {
   // Ejemplo para posiciones (si existe)
   async mt5GetPositions(params?: { login?: string }) {
     return this.request('get', '/mt5/user/positions', { params });
+  }
+
+  async loginAll(accounts: LoginAccount[]) {
+    return this.request('post', '/auth/login-all', {
+      data: accounts,
+    });
+  }
+  async browserStatus() {
+    return this.request('get', '/browser/status');
+  }
+  async createBrowser() {
+    return this.request('post', '/browser/create');
+  }
+  async deleteBrowser() {
+    return this.request('delete', '/browser/delete');
   }
 
   // Método genérico para endpoints no modelados aún

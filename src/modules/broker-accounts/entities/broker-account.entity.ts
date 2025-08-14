@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { Challenge } from '../../challenges/entities/challenge.entity';
 
 @Entity('BrokerAccount')
@@ -15,6 +21,9 @@ export class BrokerAccount {
   @Column({ length: 150, nullable: true })
   server: string;
 
+  @Column({ length: 45, nullable: true })
+  serverIp: string;
+
   @Column({ length: 20, nullable: true })
   platform: string;
 
@@ -29,6 +38,6 @@ export class BrokerAccount {
   innitialBalance: number;
 
   // Relations
-  @OneToMany(() => Challenge, challenge => challenge.brokerAccount)
+  @OneToMany(() => Challenge, (challenge) => challenge.brokerAccount)
   challenges: Challenge[];
 }
