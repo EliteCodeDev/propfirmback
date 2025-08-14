@@ -1,6 +1,6 @@
 export class OpenPosition {
   symbol: string;
-  time: string;
+  timeEnter: string;
   type: string;
   volume: string;
   openPrice: string;
@@ -9,13 +9,12 @@ export class OpenPosition {
   swap: string;
   comment?: string;
   profit: string;
-  // Campos específicos de MT5
   closePrice?: string;
 
   constructor() {}
 }
 
-export class ClosePosition {
+export class ClosedPosition {
   time: string;
   type: string;
   symbol: string;
@@ -86,3 +85,4 @@ export class ResumePositionClose {
   deposit?: string;
   withdrawal?: string;
 }
+

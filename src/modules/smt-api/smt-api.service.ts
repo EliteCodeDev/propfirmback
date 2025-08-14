@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Account } from 'src/common/utils/account';
+import { DataProcessDto, ConnectionStatusDto } from './dto/connection-status.dto';
+import { AccountDataDto } from './dto/account-data/data.dto';
 
 @Injectable()
 export class SmtApiService {
@@ -44,5 +46,22 @@ export class SmtApiService {
     const mapped = entries.map(([login, account]) => ({ login, ...account }));
     this.logger.debug(`[listAccounts] returned=${mapped.length}`);
     return mapped;
+  }
+
+
+  async connectionStatusService(data: ConnectionStatusDto) {
+    console.log('ConnectionStatusDto received:', data);
+    return {
+      message: 'Connection status received',
+      status: 200
+    }
+  }
+
+  async saveDataAccountService(id: string, data: AccountDataDto) {
+    console.log('AccountDataDto received:', id, data);
+    return {
+      message: 'Account data received',
+      status: 200
+    }
   }
 }

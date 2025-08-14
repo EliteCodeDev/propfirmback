@@ -1,24 +1,30 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class DataProcessDto {
   @ApiProperty({
-    description: 'User associated with the process',
-    example: 'user123'
+    description: 'Account associated with the process',
+    example: 'id123',
+    required: true
   })
-  user: string;
+  @IsString()
+  account!: string;
 
   @ApiProperty({
     description: 'Process status',
     example: 200
   })
-  status: number;
+  @IsNumber()
+  @IsOptional()
+  status?: number;
 
   @ApiProperty({
     description: 'Process error if exists',
     required: false,
     example: null
   })
-  error: any;
+  @IsOptional()
+  error?: any;
 }
 
 export class ConnectionStatusDto {
@@ -33,7 +39,7 @@ export class ConnectionStatusDto {
       }
     ]
   })
-  success_process: DataProcessDto[];
+  success_process!: DataProcessDto[] | [];
 
   @ApiProperty({
     description: 'Processes with errors',
@@ -46,17 +52,21 @@ export class ConnectionStatusDto {
       }
     ]
   })
-  error_process: DataProcessDto[];
+  error_process!: DataProcessDto[] | [];
 
   @ApiProperty({
     description: 'Response status',
     example: 200
   })
-  status: number;
+  @IsNumber()
+  @IsOptional()
+  status?: number;
 
   @ApiProperty({
     description: 'Response message',
     example: 'Success session'
   })
-  message: string;
+  @IsString()
+  @IsOptional()
+  message?: string;
 }

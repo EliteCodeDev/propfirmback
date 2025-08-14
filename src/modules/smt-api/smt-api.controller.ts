@@ -1,6 +1,6 @@
 import { Controller, Post, Param, Body, Get } from '@nestjs/common';
 import { SmtApiService } from './smt-api.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import {
   AccountIngestPartialDto,
   AccountResponseDto,
@@ -8,10 +8,11 @@ import {
 import { AccountIngestPayloadDto } from './dto/account-ingest.dto';
 import { ConnectionStatusDto } from './dto/connection-status.dto';
 import { HybridAuth } from 'src/common/decorators/hybrid-auth.decorator';
+import { AccountDataDto } from './dto/account-data/data.dto';
 
-@HybridAuth() // Permite tanto JWT como API key
+@HybridAuth()
 @ApiTags('SMT-API')
-@Controller('smt-api')
+@Controller('/smt-api')
 export class SmtApiController {
   constructor(private readonly smtApiService: SmtApiService) {}
 
@@ -25,7 +26,7 @@ export class SmtApiController {
   async listAccounts() {
     return this.smtApiService.listAccounts();
   }
-  // @Public()
+
   @Get('/accounts/:accountId')
   @ApiOperation({ summary: 'Get a specific account from buffer' })
   @ApiResponse({
@@ -38,33 +39,16 @@ export class SmtApiController {
     return this.smtApiService.getAccount(accountId);
   }
 
+  
   @Post('/accounts/:accountId')
   @ApiOperation({ summary: 'Ingest / update account data in buffer' })
   async ingestAccountData(
     @Param('accountId') accountId: string,
-    @Body() data: AccountIngestPayloadDto,
+    @Body() data: AccountDataDto,
   ) {
-    // Normalizar para que cumpla con la interfaz interna Account
-    const payload: any = { ...data };
-    if (payload.openPositions) {
-      payload.openPositions = {
-        open: payload.openPositions.open || [],
-        ResumePositionOpen:
-          payload.openPositions.ResumePositionOpen || ({} as any),
-      };
-    }
-    if (payload.closedPositions) {
-      payload.closedPositions = {
-        closed: payload.closedPositions.closed || [],
-        ResumePositionClose:
-          payload.closedPositions.ResumePositionClose || ({} as any),
-      };
-    }
-    return this.smtApiService.handleIngestionAccount({
-      login: accountId,
-      ...payload,
-    });
+    return this.smtApiService.saveDataAccountService(accountId, data);
   }
+
 
   @Post('/connection-status')
   @ApiOperation({ summary: 'Receive connection status data' })
@@ -72,11 +56,7 @@ export class SmtApiController {
     status: 200,
     description: 'Connection status processed successfully',
   })
-  async getConnectionStatus(@Body() params: ConnectionStatusDto) {
-    // TODO: Implement logic to process connection status
-    return {
-      message: 'Connection status received',
-      data: params,
-    };
+  async getConnectionStatus(@Body() data: ConnectionStatusDto) {
+    return await this.smtApiService.connectionStatusService(data);
   }
 }

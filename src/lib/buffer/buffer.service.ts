@@ -72,6 +72,111 @@ export class BufferService {
     return entries;
   }
 
+  /**
+   * Obtiene todas las cuentas como array de objetos con id y account
+   * Optimizado para procesamiento paralelo
+   */
+  async getAll() {
+    const entries = this.provider.entries();
+    const data = entries.map(([id, account]) => ({
+      id,
+      account,
+    }));
+    this.logger.debug(`[getAll] count=${data.length}`);
+    return data;
+  }
+
+  /**
+   * Procesa todas las cuentas en paralelo usando map + Promise.all
+   * @param processor Función que procesa cada cuenta individualmente
+   * @param options Opciones de procesamiento
+   */
+  async processAllParallel<T>(
+    processor: (id: string, account: Account) => Promise<T>,
+    options: { skipEmpty?: boolean; logErrors?: boolean } = {},
+  ): Promise<Array<T | null>> {
+    const { skipEmpty = true, logErrors = true } = options;
+    const bufferSize = await this.size();
+
+    if (bufferSize === 0) {
+      this.logger.debug(
+        '[processAllParallel] Buffer vacío, saltando procesamiento',
+      );
+      return [];
+    }
+
+    const entries = this.provider.entries();
+    this.logger.debug(
+      `[processAllParallel] Procesando ${entries.length} cuentas`,
+    );
+
+    const processes = entries.map(async ([id, account]) => {
+      try {
+        if (skipEmpty && !account) return null;
+        return await processor(id, account);
+      } catch (error) {
+        if (logErrors) {
+          this.logger.error(
+            `[processAllParallel] Error procesando cuenta ${id}:`,
+            error,
+          );
+        }
+        return null;
+      }
+    });
+
+    if (processes.length === 0) return [];
+
+    const results = await Promise.all(processes);
+    const successful = results.filter((r) => r !== null).length;
+    const failed = results.length - successful;
+
+    this.logger.debug(
+      `[processAllParallel] Completado: exitosas=${successful}, fallidas=${failed}`,
+    );
+
+    return results;
+  }
+
+  /**
+   * Filtra cuentas por una condición específica
+   * @param predicate Función de filtrado
+   */
+  async filterAccounts(
+    predicate: (id: string, account: Account) => boolean,
+  ): Promise<Array<{ id: string; account: Account }>> {
+    const entries = this.provider.entries();
+    const filtered = entries
+      .filter(([id, account]) => account && predicate(id, account))
+      .map(([id, account]) => ({ id, account }));
+
+    this.logger.debug(
+      `[filterAccounts] Filtradas ${filtered.length} de ${entries.length} cuentas`,
+    );
+    return filtered;
+  }
+
+  /**
+   * Obtiene estadísticas del buffer
+   */
+  // async getStats() {
+  //   const entries = this.provider.entries();
+  //   const total = entries.length;
+  //   const withValidation = entries.filter(([, account]) =>
+  //     account?.validation?.updatedAt
+  //   ).length;
+  //   const withBreaches = entries.filter(([, account]) =>
+  //     account?.validation?.breaches?.length > 0
+  //   ).length;
+
+  //   return {
+  //     total,
+  //     withValidation,
+  //     withBreaches,
+  //     withoutValidation: total - withValidation
+  //   };
+  // }
+
   async keys() {
     return this.provider.keys();
   }
@@ -82,5 +187,15 @@ export class BufferService {
 
   async delete(id: string) {
     return this.provider.delete(id);
+  }
+
+  /**
+   * Limpia completamente el buffer
+   */
+  async clear() {
+    if (this.provider.clear) {
+      this.provider.clear();
+      this.logger.warn('[clear] Buffer completamente limpiado');
+    }
   }
 }
