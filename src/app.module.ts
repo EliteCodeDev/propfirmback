@@ -39,8 +39,6 @@ import { SmtApiModule } from './modules/smt-api/smt-api.module';
 import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { SeedModule } from './modules/seed/seed.module';
 
-import { AppController } from './app.controller';
-
 import { ContextsModule } from './lib/buffer/buffer.module';
 import { TasksModule } from './tasks/tasks.module';
 
@@ -91,7 +89,7 @@ import { TasksModule } from './tasks/tasks.module';
     TasksModule,
   ],
   controllers: [
-    AppController, // GET /api → health-check
+    //aea
   ],
   providers: [
     // guards globales

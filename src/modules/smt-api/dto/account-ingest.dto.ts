@@ -3,11 +3,8 @@ import {
   IsString,
   IsNumber,
   IsOptional,
-  IsObject,
-  IsArray,
-  ValidateNested,
+  IsObject
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class AccountIngestDto {
   @ApiProperty({ description: 'Account login / identifier' })
