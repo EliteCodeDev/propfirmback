@@ -1,10 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { RolePermission } from './role-permission.entity';
 import { UserAccount } from 'src/modules/users/entities/user-account.entity';
 
@@ -17,12 +11,12 @@ export class Role {
   name: string;
 
   @Column({ length: 255, nullable: true })
-  description: string;
+  description?: string; // opcional porque la columna es nullable
 
-  // Relations
   @OneToMany(() => RolePermission, (rolePermission) => rolePermission.role)
   rolePermissions: RolePermission[];
 
-  @OneToOne(() => UserAccount, (userAccount) => userAccount.role)
-  user: UserAccount;
+  // Un rol puede tener muchos usuarios
+  @OneToMany(() => UserAccount, (user) => user.role)
+  users: UserAccount[];
 }

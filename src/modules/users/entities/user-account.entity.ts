@@ -62,24 +62,20 @@ export class UserAccount {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Ahora opcional: puede ser NULL si no viene referralCode
   @Column({ type: 'uuid', nullable: true })
   refAffiliateID?: string;
 
   @OneToOne(() => Address, (address) => address.user)
   address: Address;
 
-  @ManyToOne(() => Affiliate, (affiliate) => affiliate.users, {
-    nullable: true,
-  })
+  @ManyToOne(() => Affiliate, (affiliate) => affiliate.users, { nullable: true })
   @JoinColumn({ name: 'refAffiliateID' })
   referralAffiliate?: Affiliate;
 
-  @ManyToOne(() => Role, (role) => role.user, {
-    nullable: true,
-  })
+  // inverse side hacia Role.users
+  @ManyToOne(() => Role, (role) => role.users, { nullable: true })
   @JoinColumn({ name: 'roleID' })
-  role: Role;
+  role?: Role;
 
   @OneToMany(() => Challenge, (challenge) => challenge.user)
   challenges: Challenge[];

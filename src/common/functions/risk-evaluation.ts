@@ -7,8 +7,8 @@ import {
   consecutiveInactiveDays,
 } from './index';
 
-export function riskEvaluation(account: Account, riskParams: RiskParams) {
-  const { balance, dailyTotalDrawdown, tradingDays, inactiveDays } = account;
+// export function riskEvaluation(account: Account, riskParams: RiskParams) {
+//   const { balance, dailyTotalDrawdown, tradingDays, inactiveDays } = account;
 
-  const profitTarget = calculateProfitTarget(balance);
-}
+//   const profitTarget = calculateProfitTarget(balance);
+// }
