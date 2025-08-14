@@ -1,4 +1,3 @@
-import { ac } from '@faker-js/faker/dist/airline-CLphikKp';
 import { Account, RiskParams } from '../utils';
 import {
   calculateProfitTarget,
@@ -6,10 +5,13 @@ import {
   calculateTradingDays,
   consecutiveInactiveDays,
 } from './index';
+import { riskEvaluationResult } from '../types/risk-results';
 
-export function riskEvaluation(account: Account, riskParams: RiskParams) {
-  const { balance, metaStats, riskValidation, openPositions, closedPositions } =
-    account;
+export function riskEvaluation(
+  account: Account,
+  riskParams: RiskParams,
+): riskEvaluationResult {
+  const { balance, openPositions, closedPositions } = account;
   const params = riskParams;
   const profitTarget = calculateProfitTarget(
     params.profitTarget,
@@ -37,4 +39,11 @@ export function riskEvaluation(account: Account, riskParams: RiskParams) {
     account.createDateTime,
     params.inactiveDays,
   );
+  return {
+    profitTarget,
+    dailyDrawdown,
+    maxDrawdown,
+    tradingDays,
+    inactiveDays,
+  };
 }
