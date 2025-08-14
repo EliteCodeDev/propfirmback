@@ -1,10 +1,10 @@
 import { Module, Global } from '@nestjs/common';
-import { MemoryBufferProvider } from './memory-buffer.provider';
+import { ClassBuffer } from './buffer';
 import { BufferService } from './buffer.service';
 
 @Global()
 @Module({
-  providers: [MemoryBufferProvider, BufferService],
-  exports: [MemoryBufferProvider, BufferService],
+  providers: [ClassBuffer, BufferService],
+  exports: [ClassBuffer, BufferService],
 })
 export class ContextsModule {}

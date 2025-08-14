@@ -14,18 +14,18 @@ import { ApiKeyGuard } from "./guards/api-key.guard"
 export class SmtApiController {
   constructor(private readonly smtApiService: SmtApiService) {}
 
-  @Get('/accounts')
-  @ApiOperation({ summary: 'List all accounts in buffer' })
-  async listAccounts() {
-    return this.smtApiService.listAccounts();
-  }
+  // @Get('/accounts')
+  // @ApiOperation({ summary: 'List all accounts in buffer' })
+  // async listAccounts() {
+  //   return this.smtApiService.listAccounts();
+  // }
 
-  @Get('/accounts/:accountId')
-  @ApiOperation({ summary: 'Get a specific account from buffer' })
-  @ApiResponse({ status: 404, description: 'Account not found' })
-  async getAccount(@Param('accountId') accountId: string) {
-    return this.smtApiService.getAccount(accountId);
-  }
+  // @Get('/accounts/:accountId')
+  // @ApiOperation({ summary: 'Get a specific account from buffer' })
+  // @ApiResponse({ status: 404, description: 'Account not found' })
+  // async getAccount(@Param('accountId') accountId: string) {
+  //   return this.smtApiService.getAccount(accountId);
+  // }
 
   @Post('/accounts/:accountId')
   @UseGuards(ApiKeyGuard)
