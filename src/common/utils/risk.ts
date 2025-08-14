@@ -23,5 +23,10 @@ export class AverageMetrics {
   }
 }
 export class RiskParams {
-  
+  profitTarget: number;
+  dailyDrawdown: number;
+  maxDrawdown: number;
+  lossPerTrade: number;
+  tradingDays: number;
+  inactiveDays: number;
 }
