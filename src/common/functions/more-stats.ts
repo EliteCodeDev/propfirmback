@@ -34,9 +34,9 @@ export function averageMetrics(
 
   metrics.totalTrades = numTrades(openPositions, closedPositions);
   metrics.winningTrades = closedPositions.filter(
-    (pos) => pos.profit > 0,
+    (pos) => pos.Profit > 0,
   ).length;
-  metrics.losingTrades = closedPositions.filter((pos) => pos.profit < 0).length;
+  metrics.losingTrades = closedPositions.filter((pos) => pos.Profit < 0).length;
 
   if (metrics.totalTrades > 0) {
     metrics.winRate = (metrics.winningTrades / metrics.totalTrades) * 100;
@@ -54,7 +54,7 @@ export function getMoreStats(account: Account) {
   );
   const maxMinBalance = this.maxMinBalance(
     balance.currentBalance,
-    account.equity,
+    account.metaStats.equity,
     account.metaStats.maxMinBalance,
   );
   const numTrades = this.numTrades(openPositions.open, closedPositions.closed);

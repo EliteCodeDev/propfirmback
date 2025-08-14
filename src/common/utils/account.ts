@@ -5,6 +5,9 @@ import {
   ResumePositionClose,
 } from './positions';
 import { MaxMinBalance, AverageMetrics } from './risk';
+import { riskEvaluationResult } from '../types/risk-results';
+
+export type AccountStatus = 'active' | 'completed' | 'failed' | 'pending';
 
 
 class PositionsClassType {
@@ -112,6 +115,7 @@ export class LoginAccount {
 }
 
 export class MetaStats {
+  equity: number;
   maxMinBalance: MaxMinBalance;
   averageMetrics: AverageMetrics;
   numTrades: number;
