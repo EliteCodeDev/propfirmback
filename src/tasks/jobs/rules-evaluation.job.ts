@@ -31,10 +31,10 @@ export class RulesEvaluationJob {
         // Actualizar la cuenta con los resultados de validación
         await this.buffer.upsertAccount(id, (prevAccount) => {
           const updatedAccount = prevAccount || account;
-          updatedAccount.riskValidation = {
-            updatedAt: new Date(),
-            breaches: validation.breaches || [],
-          };
+          // updatedAccount.riskValidation = {
+          //   updatedAt: new Date(),
+          //   breaches: validation.breaches || [],
+          // };
           return updatedAccount;
         });
 
