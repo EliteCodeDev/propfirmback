@@ -22,3 +22,6 @@ export class AverageMetrics {
     this.averageLoss = 0;
   }
 }
+export class RiskParams {
+  
+}

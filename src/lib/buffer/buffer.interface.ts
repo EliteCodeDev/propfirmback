@@ -7,4 +7,10 @@ export interface BufferProvider<T> {
   keys(): Promise<string[]> | string[];
   entries(): Promise<[string, T][]> | [string, T][];
   size(): Promise<number> | number;
+  
+  // Métodos optimizados para procesamiento paralelo
+  getAll(): Promise<Array<{ id: string; value: T }>> | Array<{ id: string; value: T }>;
+  filter(predicate: (key: string, value: T) => boolean): Promise<Array<[string, T]>> | Array<[string, T]>;
+  isEmpty(): Promise<boolean> | boolean;
+  getMultiple(keys: string[]): Promise<Array<T | undefined>> | Array<T | undefined>;
 }
