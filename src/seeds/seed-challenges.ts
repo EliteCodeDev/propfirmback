@@ -38,7 +38,7 @@ async function bootstrap() {
         relationID: null,
         startDate: start,
         endDate: end,
-        numPhase: faker.number.int({ min: 1, max: 2 }),
+        numPhase: faker.number.int({ min: 1, max: 3 }),
         dynamicBalance: Number(faker.finance.amount({ min: 1000, max: 100000, dec: 2 })),
         status,
         isActive: true,
