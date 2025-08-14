@@ -125,6 +125,22 @@ async function bootstrap() {
       role: userRole,
     });
 
+    // 4) 10 usuarios adicionales con contraseña "password"
+    for (let i = 1; i <= 30; i++) {
+      const id = String(i).padStart(2, '0');
+      await ensureUser(ds, {
+        username: `user${id}`,
+        email: `user${id}@example.com`,
+        password: 'password',
+        firstName: 'User',
+        lastName: id,
+        isConfirmed: true,
+        isVerified: true,
+        isBlocked: false,
+        role: userRole,
+      });
+    }
+
     console.log('🎉 Seed de usuarios completado.');
   } catch (err) {
     console.error('❌ Error durante el seed:', err);
