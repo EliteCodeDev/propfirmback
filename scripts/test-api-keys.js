@@ -63,7 +63,7 @@ async function testApiKeyHeader() {
   const options = {
     hostname: 'localhost',
     port: 3000,
-    path: '/api/smt-api/accounts',
+    path: '/          ',
     method: 'GET',
     headers: {
       'x-api-key': API_KEY,
