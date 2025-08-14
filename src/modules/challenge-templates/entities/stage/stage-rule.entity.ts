@@ -14,6 +14,13 @@ export class StageRule {
   })
   ruleType: StageRuleType;
 
+  @Column({
+    type: 'varchar',
+    length: 255,
+    unique: true,
+  })
+  ruleSlug: string;
+
   @Column({ length: 255, nullable: true })
   ruleName: string;
 

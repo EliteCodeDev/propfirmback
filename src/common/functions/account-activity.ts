@@ -10,6 +10,7 @@ export function calculateTradingDays(
   //
   const positionsByDays = groupPositionsByDays(openPositions, closedPositions);
   return {
+    status: true,
     numDays: Object.keys(positionsByDays).length,
     positionsPerDay: positionsByDays,
   };
