@@ -1,8 +1,4 @@
-interface profitTargetResult {
-  status: boolean;
-  profit: number;
-  profitTarget: number;
-}
+import { profitTargetResult } from '../types/risk-results';
 export function calculateProfitTarget(
   paramProfitTarget: number, // Profit target parameter (in numeric % e.g 5 = 5%)
   currentBalance: number, // daily or initial balance

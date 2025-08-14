@@ -32,8 +32,8 @@ export class Account {
 
   // data posterior al analisis de las posiciones
 
-  metaStats: Object;
-  riskValidation: Object;
+  metaStats: MetaStats;
+  riskValidation: RiskValidation;
 }
 export class LoginAccount {
   login: string;
@@ -42,12 +42,12 @@ export class LoginAccount {
   ip: string;
   platform: string;
 }
-export class metaStats {
+export class MetaStats {
   maxMinBalance: MaxMinBalance;
   averageMetrics: AverageMetrics;
   numTrades: number;
 }
-export class riskValidation {
+export class RiskValidation {
   profitTarget: number;
   dailyTotalDrawdown: number;
   tradingDays: number;

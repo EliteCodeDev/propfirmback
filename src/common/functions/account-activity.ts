@@ -1,15 +1,8 @@
 import { ClosedPosition, OpenPosition } from 'src/common/utils';
-interface tradingDaysResult {
-  numDays: number;
-  positionsPerDay: Record<string, (OpenPosition | ClosedPosition)[]>;
-}
-interface consecutiveInactiveDaysResult {
-  startDate: string | null;
-  endDate: string | null;
-  inactiveDays: number;
-  status: boolean;
-}
-
+import {
+  tradingDaysResult,
+  consecutiveInactiveDaysResult,
+} from '../types/risk-results';
 export function calculateTradingDays(
   openPositions: OpenPosition[],
   closedPositions: ClosedPosition[],

@@ -7,6 +7,8 @@ import {
   ClosedPosition,
   MaxMinBalance,
   AverageMetrics,
+  Balance,
+  Account,
 } from 'src/common/utils';
 
 export function maxMinBalance(
@@ -42,4 +44,18 @@ export function averageMetrics(
   }
 
   return metrics;
+}
+
+export function getMoreStats(account: Account) {
+  const { balance, openPositions, closedPositions } = account;
+  const metrics = this.averageMetrics(
+    openPositions.open,
+    closedPositions.closed,
+  );
+  const maxMinBalance = this.maxMinBalance(
+    balance.currentBalance,
+    account.equity,
+    account.metaStats.maxMinBalance,
+  );
+  const numTrades = this.numTrades(openPositions.open, closedPositions.closed);
 }
