@@ -7,6 +7,8 @@ export const appConfig = registerAs('app', () => ({
   port: parseInt(process.env.PORT, 10) || 1337,
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+  apiUrl: process.env.CLIENT_URL || 'http://localhost:4002',
+  
   // Seeding / bootstrap flags
   seedOnBoot: String(process.env.SEED_ON_BOOT).toLowerCase() === 'true',
   firstUserSuperadmin: String(process.env.FIRST_USER_SUPERADMIN).toLowerCase() === 'true',

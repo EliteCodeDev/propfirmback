@@ -48,8 +48,7 @@ export class SmtApiService {
     return mapped;
   }
 
-
-  async connectionStatusService(data: any) {
+  async connectionStatusService(data: ConnectionStatusDto) {
     console.log('ConnectionStatusDto received:', data);
     return {
       message: 'Connection status received',
