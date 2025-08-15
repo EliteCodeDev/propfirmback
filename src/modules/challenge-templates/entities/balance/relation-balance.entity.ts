@@ -21,7 +21,7 @@ export class RelationBalance {
   @Column({ type: 'uuid' })
   relationID: string;
 
-  @Column({ type: 'float', nullable: true })
+  @Column({ type: 'float', nullable: true, default: 0 })
   price: number;
 
   @Column({ type: 'boolean', default: true })
@@ -30,7 +30,7 @@ export class RelationBalance {
   @Column({ type: 'boolean', default: false })
   hasDiscount: boolean;
 
-  @Column({ type: 'float', nullable: true })
+  @Column({ type: 'float', nullable: true, default: 0 })
   discount: number;
 
   // Relations
