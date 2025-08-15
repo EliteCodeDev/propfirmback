@@ -22,21 +22,23 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Orders')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+// @ApiBearerAuth()
+
+@Public()
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Post()
+  @Post('create')
   @ApiOperation({ summary: 'Create a new order' })
   create(@Request() req, @Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(req.user.userID, createOrderDto);
   }
 
-  @Get()
+  @Get('get-all')
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Get all orders' })
