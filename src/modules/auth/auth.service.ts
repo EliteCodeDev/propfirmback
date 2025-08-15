@@ -22,6 +22,7 @@ import { BcryptUtil } from 'src/common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
 import { PasswordResetService } from '../password-reset/password-reset.service';
 import { Role } from '../rbac/entities/role.entity';
+import { date } from 'joi';
 
 @Injectable()
 export class AuthService {
@@ -151,6 +152,15 @@ export class AuthService {
       ...this.generateTokens(user),
     };
   }
+  async adminLogin(dto: LoginDto) {
+    const user = await this.login(dto);
+    if (!user || user.user.role.name !== 'admin')
+      throw new UnauthorizedException('Invalid credentials');
+    this.logger.log(
+      `${new Date().toISOString()} Admin login successful for user: ${user.user.username}`,
+    );
+    return user;
+  }
 
   /** Para Passport LocalStrategy */
   async validateUser(email: string, password: string): Promise<any> {
@@ -211,7 +221,11 @@ export class AuthService {
   /* — Helpers privados — */
 
   private generateTokens(user: UserAccount) {
-    const payload = { email: user.email, sub: user.userID };
+    const payload = {
+      sub: user.userID,
+      email: user.email,
+      role: user.role.name,
+    };
 
     // Access token
     const accessToken = this.jwtService.sign(payload, {

@@ -44,6 +44,12 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post('/admin/login')
+  @HttpCode(HttpStatus.OK)
+  async adminLogin(@Body() dto: LoginDto) {
+    return this.authService.adminLogin(dto);
+  }
+
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
