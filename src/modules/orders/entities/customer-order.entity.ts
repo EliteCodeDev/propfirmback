@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
-
+import { OrderStatus } from 'src/common/enums/order-status.enum';
 @Entity('CustomerOrder')
 export class CustomerOrder {
   @PrimaryGeneratedColumn('uuid')
@@ -21,7 +21,7 @@ export class CustomerOrder {
   dateCreated: Date;
 
   @Column({ length: 30 })
-  statusOrder: string;
+  statusOrder: OrderStatus;
 
   @Column({ type: 'bigint', nullable: true })
   wooID: number;

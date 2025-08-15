@@ -61,7 +61,11 @@ export class ActivateSmtApiJob implements OnModuleInit {
       'ActivateSmtApiJob: Número de cuentas a activar: ' +
         activeAccounts.length,
     );
+
+    //meter cuentas en el buffer
+
     // activar cuentas
+
     return await this.smtApiClient.loginAll(activeAccounts);
   }
 }
