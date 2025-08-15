@@ -22,7 +22,7 @@ export const validationSchema = Joi.object({
   DATABASE_SSL: Joi.boolean().default(false),
   DB_DROP_SCHEMA: Joi.boolean().default(false),
   DB_SYNCHRONIZE: Joi.boolean().default(true),
-  
+
   // JWT
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
@@ -52,8 +52,17 @@ export const validationSchema = Joi.object({
   SMT_API_AUTH_HEADER: Joi.string().default('x-api-key'),
 
   // API Keys para autenticación de terceros
-  API_KEYS: Joi.string().optional().description('Comma-separated list of valid API keys'),
+  API_KEYS: Joi.string()
+    .optional()
+    .description('Comma-separated list of valid API keys'),
 
   API_KEY_FUNDED: Joi.string().required(),
   API_URL_SCRAP: Joi.string().required().default('https://localhost:40002'),
+
+  // QR Code
+  QR_CODE_WIDTH: Joi.number().default(300),
+  QR_CODE_HEIGHT: Joi.number().default(300),
+
+  // FRONTEND
+  FRONTEND_URL: Joi.string().default('http://localhost:3000'),
 });
