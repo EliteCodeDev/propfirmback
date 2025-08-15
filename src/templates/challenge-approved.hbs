@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{object}} – FundingHero</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin:0; 
+      padding:20px; 
+      background:#f5f5f5; 
+      color:#333; 
+    }
+    .email-container { 
+      max-width:400px; 
+      margin:0 auto; 
+      background:#fff; 
+      padding:20px; 
+      border-radius:8px; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .banner { 
+      width:100%; 
+      height:auto; 
+      border-radius:8px 8px 0 0; 
+      margin-bottom:20px; 
+    }
+    .title { 
+      color:#E6B800; 
+      font-size:24px; 
+      font-weight:bold; 
+      margin-bottom:20px; 
+    }
+    .user-greeting { 
+      color:#333; 
+      font-size:18px; 
+      font-weight:bold; 
+      margin-bottom:15px; 
+    }
+    .main-message { 
+      color:#333; 
+      font-size:16px; 
+      font-weight:bold; 
+      margin-bottom:15px; 
+    }
+    .certificate-message { 
+      background:#f8f9fa; 
+      border-left:4px solid #E6B800; 
+      padding:12px 15px; 
+      margin-bottom:20px; 
+      color:#333; 
+      font-size:14px; 
+      border-radius:0 6px 6px 0; 
+    }
+    .description { 
+      color:#666; 
+      font-size:14px; 
+      line-height:1.4; 
+      margin-bottom:20px; 
+    }
+    .challenge-box { 
+      background:#fff; 
+      padding:15px; 
+      border-radius:6px; 
+      border:2px solid #E6B800; 
+      margin-bottom:20px; 
+    }
+    .status-info { 
+      color:#333; 
+      font-size:14px; 
+      margin-bottom:8px; 
+    }
+    .highlight { 
+      color:#E6B800; 
+      font-weight:bold; 
+    }
+    .amount-highlight { 
+      color:#B8860B; 
+      font-weight:bold; 
+      font-size:18px; 
+    }
+    .action-button { 
+      background:#E6B800; 
+      color:#fff; 
+      padding:12px 20px; 
+      border:none; 
+      border-radius:6px; 
+      font-size:16px; 
+      font-weight:bold; 
+      text-align:center; 
+      display:block; 
+      margin:20px 0; 
+      cursor:pointer; 
+      text-decoration:none; 
+      width:100%;
+      box-sizing:border-box;
+    }
+    .action-button:hover { 
+      background:#B8860B; 
+    }
+    .certificate-button { 
+      margin-top:10px; 
+    }
+    .footer-text { 
+      color:#666; 
+      font-size:12px; 
+      margin-top:20px; 
+    }
+    .company-name { 
+      color:#E6B800; 
+      font-weight:bold; 
+    }
+    .copyright { 
+      color:#999; 
+      font-size:11px; 
+      margin-top:15px; 
+      text-align:center; 
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+    <div class="title">{{object}}</div>
+    <div class="user-greeting">Hello {{firstName}} {{lastName}}</div>
+    <div class="main-message">Congratulations, your challenge has been approved!</div>
+    <div class="certificate-message">🎉 <strong>Great news!</strong> You have been awarded a completion certificate for your outstanding performance.</div>
+    <div class="description">Below are your credentials for the next challenge phase:</div>
+
+    <div class="challenge-box">
+      <div class="status-info"><strong>Old Login:</strong> <span class="highlight">{{old_login}}</span></div>
+      <div class="status-info"><strong>New Login:</strong> <span class="highlight">{{login}}</span></div>
+      <div class="status-info"><strong>Password:</strong> <span class="highlight">{{password}}</span></div>
+      <div class="status-info"><strong>Server:</strong> <span class="highlight">{{server}}</span></div>
+      <div class="status-info"><strong>Account Size:</strong> <span class="amount-highlight">${{account_size}}</span></div>
+      <div class="status-info"><strong>Profit Target:</strong> <span class="highlight">${{profit_target}}</span></div>
+    </div>
+
+    <a href="{{landingUrl}}" class="action-button" target="_blank">Go to Dashboard</a>
+    
+    <a href="{{certificateUrl}}" class="action-button certificate-button" target="_blank">View Your Certificate</a>
+
+    <div class="footer-text">
+      Best regards,<br><br>
+      <span class="company-name">FundingHero</span> Team
+    </div>
+    <div class="copyright">
+      © {{currentYear}} <span class="company-name">FundingHero</span>. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

@@ -50,4 +50,12 @@ export class CreateUserDto {
 
   // This field is not received in body, only used internally
   passwordHash?: string;
+
+  @ApiPropertyOptional({
+    example: 'e3b0c442-98fc-1c14-9af0-6da39c6fc345',
+    description: 'Optional Role UUID to assign on creation',
+  })
+  @IsOptional()
+  @IsUUID()
+  roleId?: string;
 }
