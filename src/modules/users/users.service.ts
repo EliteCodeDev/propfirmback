@@ -1,17 +1,20 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository, ILike, Brackets } from 'typeorm';
 import { UserAccount } from './entities/user-account.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import * as bcrypt from 'bcrypt';
+import { Role } from '../rbac/entities/role.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserAccount)
-    private userRepository: Repository<UserAccount>,
+  private userRepository: Repository<UserAccount>,
+  @InjectRepository(Role)
+  private roleRepository: Repository<Role>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserAccount> {
@@ -32,6 +35,18 @@ export class UsersService {
       passwordHash: hashedPassword,
     });
 
+    // Si viene roleId válido, asignamos ese rol; si no, intentamos por defecto 'user'
+    try {
+      const targetRole = createUserDto.roleId
+        ? await this.roleRepository.findOne({ where: { roleID: createUserDto.roleId } })
+        : await this.roleRepository.findOne({ where: { name: 'user' } });
+      if (targetRole) {
+        user.role = targetRole;
+      }
+    } catch {
+      // ignorar si no se encuentra el rol para no bloquear la creación
+    }
+
     return this.userRepository.save(user);
   }
 
@@ -39,27 +54,36 @@ export class UsersService {
     const { page = 1, limit = 10, search, isVerified, isBlocked } = query;
     const skip = (page - 1) * limit;
 
-    const whereConditions: any = {};
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role');
 
-    if (search) {
-      whereConditions.username = Like(`%${search}%`);
+    if (typeof isVerified === 'boolean') {
+      qb.andWhere('user.isVerified = :isVerified', { isVerified });
+    }
+    if (typeof isBlocked === 'boolean') {
+      qb.andWhere('user.isBlocked = :isBlocked', { isBlocked });
     }
 
-    if (isVerified !== undefined) {
-      whereConditions.isVerified = isVerified;
+    const trimmed = (search || '').trim();
+    if (trimmed) {
+      const pattern = `%${trimmed}%`;
+      qb.andWhere(
+        new Brackets((sub) => {
+          sub
+            .where('user.username ILIKE :pattern', { pattern })
+            .orWhere('user.email ILIKE :pattern', { pattern })
+            .orWhere('user.firstName ILIKE :pattern', { pattern })
+            .orWhere('user.lastName ILIKE :pattern', { pattern })
+            // Match concatenated firstName + ' ' + lastName
+            .orWhere("COALESCE(user.firstName,'') || ' ' || COALESCE(user.lastName,'') ILIKE :pattern", { pattern });
+        }),
+      );
     }
 
-    if (isBlocked !== undefined) {
-      whereConditions.isBlocked = isBlocked;
-    }
+    qb.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
 
-    const [users, total] = await this.userRepository.findAndCount({
-      where: whereConditions,
-      skip,
-      take: limit,
-      order: { createdAt: 'DESC' },
-      relations: ['role'],
-    });
+    const [users, total] = await qb.getManyAndCount();
 
     return {
       data: users,
