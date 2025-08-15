@@ -2,20 +2,27 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Verification } from './entities/verification.entity';
+import { Media } from './entities/media.entity';
 import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
 import { VerificationStatus } from 'src/common/enums/verification-status.enum';
+import { MediaType } from 'src/common/enums/media-type.enum';
+import { StorageService } from 'src/lib/storage/storage.service';
 
 @Injectable()
 export class VerificationService {
   constructor(
     @InjectRepository(Verification)
     private verificationRepository: Repository<Verification>,
+    @InjectRepository(Media)
+    private mediaRepository: Repository<Media>,
+    private storageService: StorageService,
   ) {}
 
   async create(
     userID: string,
     createVerificationDto: CreateVerificationDto,
+    files?: any[],
   ): Promise<Verification> {
     const verification = this.verificationRepository.create({
       ...createVerificationDto,
@@ -23,7 +30,30 @@ export class VerificationService {
       status: VerificationStatus.PENDING,
     });
 
-    return this.verificationRepository.save(verification);
+    const savedVerification = await this.verificationRepository.save(verification);
+
+    // Si hay archivos, guardarlos en Media
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const filePath = await this.storageService.saveFile(
+          userID,
+          savedVerification.verificationID,
+          file
+        );
+        
+        // Crear registro en Media
+        const media = this.mediaRepository.create({
+          url: this.storageService.getFileUrl(filePath),
+          type: this.getMediaType(file.mimetype),
+          scope: 'verification',
+          verificationID: savedVerification.verificationID,
+        });
+        
+        await this.mediaRepository.save(media);
+      }
+    }
+
+    return savedVerification;
   }
 
   async findAll(query: any) {
@@ -115,6 +145,26 @@ export class VerificationService {
 
   async remove(id: string): Promise<void> {
     const verification = await this.findOne(id);
+    
+    // Eliminar archivos físicos si existen registros en Media
+    if (verification.media && verification.media.length > 0) {
+      for (const media of verification.media) {
+        // Extraer ruta del archivo de la URL
+        const filePath = media.url.replace('/api/files/', '');
+        await this.storageService.deleteFile(filePath);
+      }
+    }
+    
     await this.verificationRepository.remove(verification);
+  }
+
+  private getMediaType(mimetype: string): MediaType {
+    if (mimetype.startsWith('image/')) {
+      return MediaType.IMAGE;
+    } else if (mimetype === 'application/pdf') {
+      return MediaType.DOCUMENT;
+    } else {
+      return MediaType.DOCUMENT; // Default
+    }
   }
 }

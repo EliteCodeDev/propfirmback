@@ -40,6 +40,7 @@ import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { SeedModule } from './modules/seed/seed.module';
 
 import { ContextsModule } from './lib/buffer/buffer.module';
+import { StorageModule } from './lib/storage/storage.module';
 import { TasksModule } from './tasks/tasks.module';
 
 @Module({
@@ -70,6 +71,7 @@ import { TasksModule } from './tasks/tasks.module';
     ScheduleModule.forRoot(),
     // Application modules
     ContextsModule,
+    StorageModule,
     AuthModule,
     MailerModule,
     UsersModule,
