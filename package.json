@@ -22,8 +22,12 @@
   "seed:withdrawals": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/withdrawals.seed.ts",
   "seed:users": "ts-node -r tsconfig-paths/register src/seeds/seed-users.ts",
   "seed:challenges": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-challenges.ts",
-    "seed:broker-accounts": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-broker-accounts.ts",
-    "seed:challenge-templates": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-challenge-templates.ts"
+  "seed:broker-accounts": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-broker-accounts.ts",
+  "seed:challenge-templates": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-challenge-templates.ts",
+  "seed:challenges:real": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-challenges-real.ts",
+  "seed:broker-accounts:real": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-broker-accounts-real.ts",
+  "seed:db-sync": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/db-sync.ts",
+  "seed:user:specific": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-specific-user.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
