@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer';
+import nodemailer, { Transporter } from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as handlebars from 'handlebars';
@@ -23,7 +22,12 @@ export class MailerService {
   }
 
   async sendMail({ to, subject, template, context }) {
-    const templatePath = path.join(process.cwd(), 'src', 'templates', `${template}.hbs`);
+    const templatePath = path.join(
+      process.cwd(),
+      'src',
+      'templates',
+      `${template}.hbs`,
+    );
     const templateString = fs.readFileSync(templatePath, 'utf-8');
     const compiledTemplate = handlebars.compile(templateString);
     const html = compiledTemplate(context);
