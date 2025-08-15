@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ExternalCredential } from './entities/external-credential.entity';
-import { CreateExternalCredentialDto } from './dto/create-external-credential.dto';
+import { ExternalCredential } from '../entities';
+import { CreateExternalCredentialDto } from '../dto/create-external-credential.dto';
 
 @Injectable()
 export class ExternalCredentialsService {

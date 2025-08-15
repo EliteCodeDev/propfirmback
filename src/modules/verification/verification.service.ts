@@ -7,7 +7,7 @@ import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
 import { VerificationStatus } from 'src/common/enums/verification-status.enum';
 import { MediaType } from 'src/common/enums/media-type.enum';
-import { StorageService } from 'src/lib/storage/storage.service';
+import { StorageService } from 'src/modules/storage/storage.service';
 
 @Injectable()
 export class VerificationService {
@@ -30,7 +30,8 @@ export class VerificationService {
       status: VerificationStatus.PENDING,
     });
 
-    const savedVerification = await this.verificationRepository.save(verification);
+    const savedVerification =
+      await this.verificationRepository.save(verification);
 
     // Si hay archivos, guardarlos en Media
     if (files && files.length > 0) {
@@ -38,9 +39,9 @@ export class VerificationService {
         const filePath = await this.storageService.saveFile(
           userID,
           savedVerification.verificationID,
-          file
+          file,
         );
-        
+
         // Crear registro en Media
         const media = this.mediaRepository.create({
           url: this.storageService.getFileUrl(filePath),
@@ -48,7 +49,7 @@ export class VerificationService {
           scope: 'verification',
           verificationID: savedVerification.verificationID,
         });
-        
+
         await this.mediaRepository.save(media);
       }
     }
@@ -145,7 +146,7 @@ export class VerificationService {
 
   async remove(id: string): Promise<void> {
     const verification = await this.findOne(id);
-    
+
     // Eliminar archivos físicos si existen registros en Media
     if (verification.media && verification.media.length > 0) {
       for (const media of verification.media) {
@@ -154,7 +155,7 @@ export class VerificationService {
         await this.storageService.deleteFile(filePath);
       }
     }
-    
+
     await this.verificationRepository.remove(verification);
   }
 

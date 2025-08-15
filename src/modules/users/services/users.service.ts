@@ -1,20 +1,21 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Brackets } from 'typeorm';
-import { UserAccount } from './entities/user-account.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserQueryDto } from './dto/user-query.dto';
+import { UserAccount } from '../entities';
 import * as bcrypt from 'bcrypt';
-import { Role } from '../rbac/entities/role.entity';
-
+import { Role } from 'src/modules/rbac/entities/role.entity';
+import { CreateUserDto, UserQueryDto, UpdateUserDto } from '../dto';
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserAccount)
-  private userRepository: Repository<UserAccount>,
-  @InjectRepository(Role)
-  private roleRepository: Repository<Role>,
+    private userRepository: Repository<UserAccount>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserAccount> {
@@ -38,7 +39,9 @@ export class UsersService {
     // Si viene roleId válido, asignamos ese rol; si no, intentamos por defecto 'user'
     try {
       const targetRole = createUserDto.roleId
-        ? await this.roleRepository.findOne({ where: { roleID: createUserDto.roleId } })
+        ? await this.roleRepository.findOne({
+            where: { roleID: createUserDto.roleId },
+          })
         : await this.roleRepository.findOne({ where: { name: 'user' } });
       if (targetRole) {
         user.role = targetRole;
@@ -76,7 +79,10 @@ export class UsersService {
             .orWhere('user.firstName ILIKE :pattern', { pattern })
             .orWhere('user.lastName ILIKE :pattern', { pattern })
             // Match concatenated firstName + ' ' + lastName
-            .orWhere("COALESCE(user.firstName,'') || ' ' || COALESCE(user.lastName,'') ILIKE :pattern", { pattern });
+            .orWhere(
+              "COALESCE(user.firstName,'') || ' ' || COALESCE(user.lastName,'') ILIKE :pattern",
+              { pattern },
+            );
         }),
       );
     }
@@ -131,14 +137,19 @@ export class UsersService {
     }
 
     if (updateUserDto.username && updateUserDto.username !== user.username) {
-      const existingUsername = await this.findByUsername(updateUserDto.username);
+      const existingUsername = await this.findByUsername(
+        updateUserDto.username,
+      );
       if (existingUsername) {
         throw new ConflictException('Username already taken');
       }
     }
 
     if (updateUserDto.password) {
-      updateUserDto.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
+      updateUserDto.passwordHash = await bcrypt.hash(
+        updateUserDto.password,
+        10,
+      );
       delete updateUserDto.password;
     }
 

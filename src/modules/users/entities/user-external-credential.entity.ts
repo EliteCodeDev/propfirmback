@@ -1,5 +1,5 @@
 import { Entity, PrimaryColumn, Column, OneToOne, JoinColumn } from 'typeorm';
-import { UserAccount } from '../../users/entities/user-account.entity';
+import { UserAccount } from './user-account.entity';
 
 @Entity('ExternalCredential')
 export class ExternalCredential {

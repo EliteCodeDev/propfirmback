@@ -16,32 +16,29 @@ import {
   mailerConfig,
   smtApiConfig,
 } from './config';
-import { HybridAuthGuard } from './common/guards/hybrid-auth.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
-import { AuthModule } from './modules/auth/auth.module';
-import { MailerModule } from './modules/mailer/mailer.module';
-import { UsersModule } from './modules/users/users.module';
-import { AffiliatesModule } from './modules/affiliates/affiliates.module';
-import { ChallengesModule } from './modules/challenges/challenges.module';
-import { BrokerAccountsModule } from './modules/broker-accounts/broker-accounts.module';
-import { CertificatesModule } from './modules/certificates/certificates.module';
-import { OrdersModule } from './modules/orders/orders.module';
-import { VerificationModule } from './modules/verification/verification.module';
-import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
-import { RbacModule } from './modules/rbac/rbac.module';
-import { ChallengeTemplatesModule } from './modules/challenge-templates/challenge-templates.module';
-import { ExternalCredentialsModule } from './modules/external-credentials/external-credentials.module';
-import { SmtApiModule } from './modules/smt-api/smt-api.module';
-import { ApiKeysModule } from './modules/api-keys/api-keys.module';
-import { SeedModule } from './modules/seed/seed.module';
-
-import { ContextsModule } from './lib/buffer/buffer.module';
-import { StorageModule } from './lib/storage/storage.module';
+import {
+  AuthModule,
+  MailerModule,
+  UsersModule,
+  AffiliatesModule,
+  ChallengeTemplatesModule,
+  ChallengesModule,
+  BrokerAccountsModule,
+  CertificatesModule,
+  OrdersModule,
+  VerificationModule,
+  WithdrawalsModule,
+  RbacModule,
+  SmtApiModule,
+  StorageModule,
+} from 'src/modules';
 import { TasksModule } from './tasks/tasks.module';
+import { ContextsModule } from './lib/buffer/buffer.module';
 
 @Module({
   imports: [
@@ -84,10 +81,7 @@ import { TasksModule } from './tasks/tasks.module';
     VerificationModule,
     WithdrawalsModule,
     RbacModule,
-    ExternalCredentialsModule,
     SmtApiModule,
-    ApiKeysModule,
-    SeedModule,
     TasksModule,
   ],
   controllers: [
@@ -95,7 +89,7 @@ import { TasksModule } from './tasks/tasks.module';
   ],
   providers: [
     // guards globales
-    { provide: APP_GUARD, useClass: HybridAuthGuard },
+    // { provide: APP_GUARD, useClass: HybridAuthGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // filtros globales
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

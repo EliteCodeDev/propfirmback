@@ -5,7 +5,6 @@ import { SmtApiController } from './smt-api.controller';
 import { ConfigModule } from '@nestjs/config';
 import { smtApiConfig } from '../../config';
 import { SmtApiClient } from './client/smt-api.client';
-import { ApiKeysModule } from '../api-keys/api-keys.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Challenge } from '../challenges/entities/challenge.entity';
 import { ChallengeDetails } from '../challenges/entities/challenge-details.entity';

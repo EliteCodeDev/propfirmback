@@ -4,7 +4,7 @@ import { VerificationController } from './verification.controller';
 import { VerificationService } from './verification.service';
 import { Verification } from './entities/verification.entity';
 import { Media } from './entities/media.entity';
-import { StorageService } from 'src/lib/storage/storage.service';
+import { StorageService } from 'src/modules/storage/storage.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Verification, Media])],

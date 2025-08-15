@@ -2,10 +2,9 @@ import { Controller, Post, Param, Body, Get, UseGuards } from '@nestjs/common';
 import { SmtApiService } from './smt-api.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ConnectionStatusDto } from './dto/connection-data/connection.dto';
-import { HybridAuth } from 'src/common/decorators/hybrid-auth.decorator';
 import { AccountDataDto } from './dto/account-data/data.dto';
 import { Public } from 'src/common/decorators/public.decorator';
-import { ApiKeyGuard } from "./guards/api-key.guard"
+import { ApiKeyGuard } from './guards/api-key.guard';
 
 // @HybridAuth()
 @Public()
@@ -36,7 +35,7 @@ export class SmtApiController {
   ) {
     return this.smtApiService.saveDataAccountService(accountId, data);
   }
-  
+
   @Post('/connection-status')
   @UseGuards(ApiKeyGuard)
   @ApiOperation({ summary: 'Receive connection status data' })
