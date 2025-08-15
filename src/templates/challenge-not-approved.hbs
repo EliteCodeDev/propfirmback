@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenge Not Approved – FundingHero</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin:0; 
+      padding:20px; 
+      background:#f5f5f5; 
+      color:#333; 
+    }
+    .email-container { 
+      max-width:400px; 
+      margin:0 auto; 
+      background:#fff; 
+      padding:20px; 
+      border-radius:8px; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .banner { 
+      width:100%; 
+      height:auto; 
+      border-radius:8px 8px 0 0; 
+      margin-bottom:20px; 
+    }
+    .title { 
+      color:#333; 
+      font-size:24px; 
+      font-weight:bold; 
+      margin-bottom:30px; 
+    }
+    .user-greeting { 
+      color:#333; 
+      font-size:18px; 
+      font-weight:bold; 
+      margin-bottom:20px; 
+    }
+    .main-message { 
+      color:#333; 
+      font-size:16px; 
+      font-weight:bold; 
+      margin-bottom:20px; 
+    }
+    .description { 
+      color:#666; 
+      font-size:14px; 
+      line-height:1.4; 
+      margin-bottom:15px; 
+    }
+    .challenge-box { 
+      background:#fff; 
+      padding:15px; 
+      border-radius:6px; 
+      border:2px solid #E6B800; 
+      margin:20px 0; 
+    }
+    .highlight { 
+      color:#E6B800; 
+      font-weight:bold; 
+    }
+    .status-info { 
+      color:#333; 
+      font-size:14px; 
+      margin-bottom:8px; 
+    }
+    .amount-highlight { 
+      color:#B8860B; 
+      font-weight:bold; 
+      font-size:18px; 
+    }
+    .violation-box { 
+      background:#fef2f2; 
+      padding:15px; 
+      border-radius:6px; 
+      border:2px solid #dc2626; 
+      margin:20px 0; 
+    }
+    .violation-text { 
+      color:#dc2626; 
+      font-weight:bold; 
+      font-size:14px; 
+      line-height:1.4; 
+    }
+    .reason-box { 
+      background:#fff3cd; 
+      padding:15px; 
+      border-radius:6px; 
+      border:2px solid #ffc107; 
+      margin:20px 0; 
+    }
+    .reason-text { 
+      color:#856404; 
+      font-weight:bold; 
+      font-size:14px; 
+      line-height:1.6; 
+    }
+    .action-button { 
+      background:#E6B800; 
+      color:#fff; 
+      padding:12px 20px; 
+      border:none; 
+      border-radius:6px; 
+      font-size:16px; 
+      font-weight:bold; 
+      width:100%; 
+      margin:10px 0; 
+      text-align:center; 
+      text-decoration:none; 
+      display:block; 
+      cursor:pointer; 
+      box-sizing:border-box; 
+    }
+    .action-button:hover { 
+      background:#B8860B; 
+    }
+    .action-button-secondary { 
+      background:#DAA520; 
+      color:#fff; 
+      padding:12px 20px; 
+      border:none; 
+      border-radius:6px; 
+      font-size:14px; 
+      font-weight:bold; 
+      width:100%; 
+      margin:10px 0; 
+      text-align:center; 
+      text-decoration:none; 
+      display:block; 
+      cursor:pointer; 
+      box-sizing:border-box; 
+    }
+    .footer-text { 
+      color:#666; 
+      font-size:12px; 
+      margin-top:20px; 
+    }
+    .copyright { 
+      color:#999; 
+      font-size:11px; 
+      margin-top:15px; 
+      text-align:center; 
+    }
+    .company-name { 
+      color:#E6B800; 
+      font-weight:bold; 
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+    
+    <div class="title">Challenge Not Approved</div>
+    
+    <div class="user-greeting">Hello Trader</div>
+    
+    <div class="main-message">Your challenge was not approved</div>
+    
+    <div class="description">
+      We've reviewed your trading challenge and found that some rules were violated. Please review the details below and don't worry, you can try again!
+    </div>
+    
+    <div class="challenge-box">
+      <div class="status-info"><strong>Challenge Type:</strong> <span class="highlight">{{challenge_type}}</span></div>
+      <div class="status-info"><strong>Account Size:</strong> <span class="amount-highlight">${{account_size}}</span></div>
+      <div class="status-info"><strong>Challenge ID:</strong> <span class="highlight">{{challenge_id}}</span></div>
+      <div class="status-info"><strong>Status:</strong> <span style="color:#dc2626; font-weight:bold;">Not Approved</span></div>
+    </div>
+    
+    <div class="reason-box">
+      <div class="status-info"><strong>Reason for Disapproval:</strong></div>
+      <div class="reason-text">{{disapproval_reason}}</div>
+    </div>
+    
+    <div class="description">
+      You can review your performance metrics and the detailed breakdown in your dashboard. Our support team is available to help you understand these requirements better.
+    </div>
+    
+    <a href="{{landingUrl}}" class="action-button" target="_blank">View Performance</a>
+    
+    <a href="{{new_challenge_url}}" class="action-button-secondary" target="_blank">Start New Challenge</a>
+    
+    <div class="description">
+      <span class="highlight">Our team is here to help you succeed!</span>
+    </div>
+    
+    <div class="footer-text">
+      Best regards,<br><br>
+      <span class="company-name">FundingHero</span> Team
+    </div>
+    
+    <div class="copyright">
+      © 2025 <span class="company-name">FundingHero</span>. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

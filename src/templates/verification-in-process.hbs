@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificación en Proceso – FundingHero</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin:0; 
+      padding:20px; 
+      background:#f5f5f5; 
+      color:#333; 
+    }
+    .email-container { 
+      max-width:400px; 
+      margin:0 auto; 
+      background:#fff; 
+      padding:20px; 
+      border-radius:8px; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06); 
+    }
+    .banner { 
+      width:100%; 
+      height:auto; 
+      border-radius:8px 8px 0 0; 
+      margin-bottom:20px; 
+    }
+    .title { 
+      color:#E6B800; 
+      font-size:24px; 
+      font-weight:bold; 
+      margin-bottom:30px; 
+      text-align:center; 
+    }
+    .user-greeting { 
+      color:#333; 
+      font-size:18px; 
+      font-weight:bold; 
+      margin-bottom:20px; 
+      text-align:center; 
+    }
+    .main-message { 
+      color:#333; 
+      font-size:16px; 
+      font-weight:normal; 
+      margin-bottom:20px; 
+      text-align:center; 
+      line-height:1.6; 
+    }
+    .highlight { 
+      color:#B8860B; 
+      font-weight:bold; 
+    }
+    .footer-text { 
+      color:#666; 
+      font-size:12px; 
+      margin-top:20px; 
+      text-align:center; 
+    }
+    .company-name { 
+      color:#E6B800; 
+      font-weight:bold; 
+    }
+    .copyright { 
+      color:#999; 
+      font-size:11px; 
+      margin-top:15px; 
+      text-align:center; 
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+
+    <div class="title">Verificación en Proceso</div>
+    <div class="user-greeting">Hola {{firstName}} {{lastName}}</div>
+    <div class="main-message">
+      Hemos recibido tus documentos correctamente y hemos iniciado el <span class="highlight">proceso de verificación</span>.<br><br>
+      Este proceso puede tardar entre <span class="highlight">1 y 2 días hábiles</span>.<br><br>
+      Te notificaremos por este medio tan pronto se complete.<br><br>
+      Gracias por tu confianza.
+    </div>
+
+    <div class="footer-text">
+      Saludos cordiales,<br><br>
+      El equipo de <span class="company-name">FundingHero</span>
+    </div>
+
+    <div class="copyright">
+      © {{currentYear}} <span class="company-name">FundingHero</span>. Todos los derechos reservados.
+    </div>
+  </div>
+</body>
+</html>

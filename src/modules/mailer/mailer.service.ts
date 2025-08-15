@@ -23,7 +23,12 @@ export class MailerService {
   }
 
   async sendMail({ to, subject, template, context }) {
-    const templatePath = path.join(process.cwd(), 'src', 'templates', `${template}.hbs`);
+    const templatePath = path.join(
+      process.cwd(),
+      'src',
+      'templates',
+      `${template}.hbs`,
+    );
     const templateString = fs.readFileSync(templatePath, 'utf-8');
     const compiledTemplate = handlebars.compile(templateString);
     const html = compiledTemplate(context);
