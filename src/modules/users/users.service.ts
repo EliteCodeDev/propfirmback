@@ -6,12 +6,15 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import * as bcrypt from 'bcrypt';
+import { Role } from '../rbac/entities/role.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserAccount)
-    private userRepository: Repository<UserAccount>,
+  private userRepository: Repository<UserAccount>,
+  @InjectRepository(Role)
+  private roleRepository: Repository<Role>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserAccount> {
@@ -31,6 +34,18 @@ export class UsersService {
       ...createUserDto,
       passwordHash: hashedPassword,
     });
+
+    // Si viene roleId válido, asignamos ese rol; si no, intentamos por defecto 'user'
+    try {
+      const targetRole = createUserDto.roleId
+        ? await this.roleRepository.findOne({ where: { roleID: createUserDto.roleId } })
+        : await this.roleRepository.findOne({ where: { name: 'user' } });
+      if (targetRole) {
+        user.role = targetRole;
+      }
+    } catch {
+      // ignorar si no se encuentra el rol para no bloquear la creación
+    }
 
     return this.userRepository.save(user);
   }
