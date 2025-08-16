@@ -37,6 +37,8 @@ import {
   SmtApiModule,
   StorageModule,
 } from 'src/modules';
+// Seed on boot support
+import { SeedOnBootModule } from './seeds/seed-on-boot.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ContextsModule } from './lib/buffer/buffer.module';
 
@@ -81,7 +83,8 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     VerificationModule,
     WithdrawalsModule,
     RbacModule,
-    SmtApiModule,
+  SmtApiModule,
+  SeedOnBootModule,
     TasksModule,
   ],
   controllers: [
