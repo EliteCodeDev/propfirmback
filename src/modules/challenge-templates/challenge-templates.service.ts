@@ -15,24 +15,27 @@ import {
   StageParameter,
 } from './entities';
 // DTOs
-import { CreateChallengeCategoryDto } from './dto/create/create-challenge-category.dto';
-import { UpdateChallengeCategoryDto } from './dto/update/update-challenge-category.dto';
-import { CreateChallengePlanDto } from './dto/create/create-challenge-plan.dto';
-import { UpdateChallengePlanDto } from './dto/update/update-challenge-plan.dto';
-import { CreateChallengeBalanceDto } from './dto/create/create-challenge-balance.dto';
-import { UpdateChallengeBalanceDto } from './dto/update/update-challenge-balance.dto';
-import { CreateChallengeRelationDto } from './dto/create/create-challenge-relation.dto';
-import { UpdateChallengeRelationDto } from './dto/update/update-challenge-relation.dto';
-import { CreateChallengeStageDto } from './dto/create/create-challenge-stage.dto';
-import { UpdateChallengeStageDto } from './dto/update/update-challenge-stage.dto';
-import { CreateStageRuleDto } from './dto/create/create-stage-rule.dto';
-import { UpdateStageRuleDto } from './dto/update/update-stage-rule.dto';
-import { CreateStageParameterDto } from './dto/create/create-stage-parameter.dto';
-import { UpdateStageParameterDto } from './dto/update/update-stage-parameter.dto';
-import { CreateRelationStageDto } from './dto/create/create-relation-stage.dto';
-import { UpdateRelationStageDto } from './dto/update/update-relation-stage.dto';
-import { CreateRelationBalanceDto } from './dto/create/create-relation-balance.dto';
-import { UpdateRelationBalanceDto } from './dto/update/update-relation-balance.dto';
+import {
+  CreateChallengeCategoryDto,
+  CreateChallengePlanDto,
+  CreateChallengeBalanceDto,
+  CreateChallengeRelationDto,
+  CreateChallengeStageDto,
+  CreateStageRuleDto,
+  CreateStageParameterDto,
+  CreateRelationStageDto,
+  CreateRelationBalanceDto,
+  UpdateChallengeCategoryDto,
+  UpdateChallengePlanDto,
+  UpdateChallengeBalanceDto,
+  UpdateChallengeRelationDto,
+  UpdateChallengeStageDto,
+  UpdateStageRuleDto,
+  UpdateStageParameterDto,
+  UpdateRelationStageDto,
+  UpdateRelationBalanceDto,
+  CreateRelationBalancesDto,
+} from './dto';
 
 @Injectable()
 export class ChallengeTemplatesService {
@@ -142,7 +145,7 @@ export class ChallengeTemplatesService {
     dto: CreateChallengeBalanceDto,
   ): Promise<ChallengeBalance> {
     const balance = this.challengeBalanceRepository.create(dto);
-    
+
     return this.challengeBalanceRepository.save(balance);
   }
 
@@ -189,14 +192,26 @@ export class ChallengeTemplatesService {
 
   async findAllRelations(): Promise<ChallengeRelation[]> {
     return this.challengeRelationRepository.find({
-      relations: ['category', 'plan', 'relationBalances', 'stages', 'challenges'],
+      relations: [
+        'category',
+        'plan',
+        'relationBalances',
+        'stages',
+        'challenges',
+      ],
     });
   }
 
   async findOneRelation(id: string): Promise<ChallengeRelation> {
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID: id },
-      relations: ['category', 'plan', 'relationBalances', 'stages', 'challenges'],
+      relations: [
+        'category',
+        'plan',
+        'relationBalances',
+        'stages',
+        'challenges',
+      ],
     });
 
     if (!relation) {
@@ -389,6 +404,17 @@ export class ChallengeTemplatesService {
   ): Promise<RelationBalance> {
     const relationBalance = this.relationBalanceRepository.create(dto);
     return this.relationBalanceRepository.save(relationBalance);
+  }
+
+  async createRelationBalances(
+    dtos: CreateRelationBalancesDto,
+  ): Promise<RelationBalance[]> {
+    let relationBalances: RelationBalance[] = [];
+    for (const dto of dtos.relationBalances) {
+      relationBalances.push(this.relationBalanceRepository.create(dto));
+    }
+    await this.relationBalanceRepository.save(relationBalances);
+    return relationBalances;
   }
 
   async findAllRelationBalances(): Promise<RelationBalance[]> {

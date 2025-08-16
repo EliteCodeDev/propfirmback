@@ -67,7 +67,7 @@ export class AuthService {
     // Si es el primer usuario y la flag está activa, lo promovemos a super_admin independientemente del seeding
     if (firstUserSuperadmin && usersCount === 0) {
       const superAdminRole = await this.roleRepo.findOne({
-        where: { name: 'super_admin' },
+        where: { name: 'admin' },
       });
       roleIdToAssign = superAdminRole;
     } else {
@@ -224,7 +224,7 @@ export class AuthService {
     const payload = {
       sub: user.userID,
       email: user.email,
-      role: user.role.name,
+      role: user.role?.name,
     };
 
     // Access token

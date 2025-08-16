@@ -1,0 +1,35 @@
+{
+  "challengeRelation": {
+    "challengePlanID": "string",
+    "challengeCategoryID": "string"
+  },
+  "relationBalance": {
+    "challengeRelationID": "string",
+    "balances": [
+      {
+        "challengeBalanceID": "string",
+        "price": "number",
+        "isActive": "boolean",
+        "hasDiscount": "boolean",
+        "discount": "number"
+      }
+    ]
+  },
+  "relationStages": {
+    "challengeRelationID": "string",
+    "stages": [
+      {
+        "stageID": "string",
+        "stageName": "string",
+        "isActive": "boolean",
+        "rules": [
+          {
+            "ruleID": "string",
+            "ruleName": "string",
+            "ruleValue": "string"
+          }
+        ]
+      }
+    ]
+  }
+}
