@@ -294,4 +294,39 @@ export class AuthService {
 
     return { message: 'Password has been reset successfully' };
   }
+
+  /** Reenviar correo de confirmación */
+  async resendConfirmationEmail(email: string) {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isConfirmed) {
+      throw new ConflictException('Email is already confirmed');
+    }
+
+    // Generar nuevo token de confirmación
+    const confirmationToken = (await BcryptUtil.hash(user.email)).replace(
+      /\//g,
+      '',
+    );
+    await this.userRepo.update(user.userID, { confirmationToken });
+
+    const confirmationLink = `${this.configService.get<string>(
+      'app.clientUrl',
+    )}/auth/confirm?token=${confirmationToken}`;
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Verify your email address',
+      template: 'verify-email',
+      context: {
+        name: user.firstName,
+        confirmationLink,
+      },
+    });
+
+    return { message: 'Confirmation email sent successfully' };
+  }
 }
