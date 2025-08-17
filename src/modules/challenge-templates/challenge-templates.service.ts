@@ -125,7 +125,18 @@ export class ChallengeTemplatesService {
 
     return plan;
   }
+  async findOnePlanByWooID(wooID: number): Promise<ChallengePlan> {
+    const plan = await this.challengePlanRepository.findOne({
+      where: { wooID },
+      relations: ['relations'],
+    });
 
+    if (!plan) {
+      throw new NotFoundException('Challenge plan not found');
+    }
+
+    return plan;
+  }
   async updatePlan(
     id: string,
     dto: UpdateChallengePlanDto,
@@ -409,10 +420,19 @@ export class ChallengeTemplatesService {
   async createRelationBalances(
     dtos: CreateRelationBalancesDto,
   ): Promise<RelationBalance[]> {
-    let relationBalances: RelationBalance[] = [];
-    for (const dto of dtos.relationBalances) {
-      relationBalances.push(this.relationBalanceRepository.create(dto));
-    }
+    // Map incoming DTOs (which use challengeRelationID and challengeBalanceID)
+    // to the RelationBalance entity fields (relationID and balanceID)
+    const relationBalances: RelationBalance[] = dtos.relationBalances.map((dto) =>
+      this.relationBalanceRepository.create({
+        relationID: dtos.challengeRelationID,
+        balanceID: dto.challengeBalanceID,
+        price: typeof dto.price === 'number' ? dto.price : 0,
+        isActive: typeof dto.isActive === 'boolean' ? dto.isActive : true,
+        hasDiscount: typeof dto.hasDiscount === 'boolean' ? dto.hasDiscount : false,
+        ...(typeof dto.discount === 'number' ? { discount: dto.discount } : {}),
+      }),
+    );
+
     await this.relationBalanceRepository.save(relationBalances);
     return relationBalances;
   }

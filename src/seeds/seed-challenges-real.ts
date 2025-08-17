@@ -16,7 +16,7 @@ import { ChallengeStatus } from '../common/enums/challenge-status.enum';
 function hashString(input: string): number {
   let h = 5381;
   for (let i = 0; i < input.length; i++) {
-    h = ((h << 5) + h) + input.charCodeAt(i); // h * 33 + char
+    h = (h << 5) + h + input.charCodeAt(i); // h * 33 + char
     h |= 0; // force int32
   }
   return Math.abs(h);
@@ -35,7 +35,7 @@ async function bootstrap() {
 
   try {
     const ds = app.get(DataSource);
-  const challengeRepo = ds.getRepository(Challenge);
+    const challengeRepo = ds.getRepository(Challenge);
     const relationRepo = ds.getRepository(ChallengeRelation);
     const relationBalanceRepo = ds.getRepository(RelationBalance);
     const balanceRepo = ds.getRepository(ChallengeBalance);
@@ -46,10 +46,12 @@ async function bootstrap() {
       return;
     }
 
-  // Ensure we have relations from the challenge-templates seeder
-  const relations = await relationRepo.find();
+    // Ensure we have relations from the challenge-templates seeder
+    const relations = await relationRepo.find();
     if (relations.length === 0) {
-      console.log('⚠️ No hay challenge templates. Ejecuta primero: npm run seed:challenge-templates');
+      console.log(
+        '⚠️ No hay challenge templates. Ejecuta primero: npm run seed:challenge-templates',
+      );
       return;
     }
 
@@ -57,47 +59,19 @@ async function bootstrap() {
     let created = 0;
     let relationsWithoutRB = 0;
     for (const rel of relations) {
-      const relBalances = await relationBalanceRepo.find({ where: { relationID: rel.relationID } });
+      const relBalances = await relationBalanceRepo.find({
+        where: { relationID: rel.relationID },
+      });
       if (relBalances.length === 0) {
         relationsWithoutRB++;
-        // Fallback: if relation has a direct balanceID, create one challenge from it
-        if (rel.balanceID) {
-          const bal = await balanceRepo.findOne({ where: { balanceID: rel.balanceID } });
-          const dynamicBalance = bal?.balance ?? null;
 
-          const key = `${rel.relationID}:${rel.balanceID}`;
-          const idx = hashString(key) % users.length;
-          const assignedUser = users[idx];
-
-          const exists = await challengeRepo.findOne({
-            where: {
-              userID: assignedUser.userID,
-              relationID: rel.relationID,
-              dynamicBalance: dynamicBalance as any,
-            },
-          });
-          if (!exists) {
-            const entity = challengeRepo.create({
-              userID: assignedUser.userID,
-              relationID: rel.relationID,
-              startDate: null,
-              endDate: null,
-              numPhase: 1,
-              dynamicBalance: dynamicBalance ?? undefined,
-              status: ChallengeStatus.INNITIAL,
-              isActive: true,
-              parentID: null,
-              brokerAccountID: null,
-            });
-            await challengeRepo.save(entity);
-            created++;
-          }
-        }
         continue;
       }
 
       for (const rb of relBalances) {
-        const bal = await balanceRepo.findOne({ where: { balanceID: rb.balanceID } });
+        const bal = await balanceRepo.findOne({
+          where: { balanceID: rb.balanceID },
+        });
         const dynamicBalance = bal?.balance ?? null;
 
         // Choose a pseudo-random but deterministic user for this (relation + balance)
@@ -132,9 +106,13 @@ async function bootstrap() {
       }
     }
 
-    console.log(`🎉 Seed de challenges (reales) completado: ${created} creados y asignados a usuarios al azar (determinístico).`);
+    console.log(
+      `🎉 Seed de challenges (reales) completado: ${created} creados y asignados a usuarios al azar (determinístico).`,
+    );
     if (relationsWithoutRB > 0) {
-      console.log(`ℹ️ ${relationsWithoutRB} relaciones no tenían RelationBalance. Se usó el balanceID directo si estaba presente.`);
+      console.log(
+        `ℹ️ ${relationsWithoutRB} relaciones no tenían RelationBalance. Se usó el balanceID directo si estaba presente.`,
+      );
     }
   } catch (err) {
     console.error('❌ Error durante el seed de challenges (reales):', err);

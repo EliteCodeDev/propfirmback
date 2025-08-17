@@ -39,7 +39,7 @@ export class ChallengesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all challenges' })
+  @ApiOperation({ summary: 'Get all challe|nges' })
   findAll(@Query() query: ChallengeQueryDto) {
     return this.challengesService.findAll(query);
   }

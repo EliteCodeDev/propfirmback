@@ -9,6 +9,7 @@ import {
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { wooOrderProduct } from '../types';
 @Entity('CustomerOrder')
 export class CustomerOrder {
   @PrimaryGeneratedColumn('uuid')
@@ -18,10 +19,10 @@ export class CustomerOrder {
   userID: string;
 
   @CreateDateColumn()
-  dateCreated: Date;
+  createDateTime: Date;
 
   @Column({ length: 30 })
-  statusOrder: OrderStatus;
+  orderStatus: OrderStatus;
 
   @Column({ type: 'bigint', nullable: true })
   wooID: number;
@@ -30,13 +31,10 @@ export class CustomerOrder {
   total: number;
 
   @Column({ type: 'text', nullable: true })
-  products: string;
-
-  @Column({ length: 100, nullable: true })
-  orderKey: string;
+  product: string;
 
   @Column({ type: 'uuid', nullable: true })
-  documentChallenge: string;
+  challengeID: string;
 
   // Relations
   @ManyToOne(() => UserAccount, (user) => user.orders)
@@ -44,6 +42,6 @@ export class CustomerOrder {
   user: UserAccount;
 
   @ManyToOne(() => Challenge, (challenge) => challenge.orders)
-  @JoinColumn({ name: 'documentChallenge' })
+  @JoinColumn({ name: 'challengeID' })
   challenge: Challenge;
 }

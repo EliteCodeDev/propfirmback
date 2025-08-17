@@ -159,11 +159,6 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  // 👇 Eliminado porque la entidad ya no tiene resetPasswordToken
-  // async updateResetToken(id: string, resetToken: string): Promise<void> {
-  //   await this.userRepository.update(id, { resetPasswordToken: resetToken });
-  // }
-
   async remove(id: string): Promise<void> {
     const user = await this.findById(id);
     await this.userRepository.remove(user);

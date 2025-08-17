@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ConfigType } from '@nestjs/config';
 import { smtApiConfig } from 'src/config';
 import { LoginAccount } from 'src/common/utils';
+import { platform } from 'os';
 interface AuthResponse {
   token: string;
   expiresIn?: number;
@@ -16,6 +17,31 @@ interface UserResponse {
   login: string;
   balance?: number;
   [k: string]: any;
+}
+interface createAccountData {
+  name: string;
+  lastName: string;
+  email: string;
+
+  balance: string;
+  leverage: string;
+  phone?: string;
+  platform?: string;
+  ip?: string;
+  url?: string;
+}
+interface createAccountResponse {
+  success: boolean;
+  userDataAccount?: {
+    nombre: string;
+    servidor: string;
+    tipoCuenta: string;
+    deposito: string;
+    login: string;
+    password: string;
+    investorPassword: string;
+  };
+  message: string;
 }
 
 @Injectable()
@@ -72,6 +98,26 @@ export class SmtApiClient {
     }
   }
 
+  async createAccount(data: createAccountData): Promise<createAccountResponse> {
+    const accountPayload = {
+      nombre: data.name,
+      apellido: data.lastName || '',
+      email: data.email,
+      telefono: data.phone || '',
+      deposito: data.balance,
+      apalancamiento: data.leverage,
+      ip: data.ip || '',
+      url: data.url || '',
+    };
+    if (data.platform === 'mt4')
+      return this.request('post', '/mt4/auth/register', {
+        data: accountPayload,
+      });
+    else if (data.platform === 'mt5')
+      return this.request('post', '/mt5/auth/register', {
+        data: accountPayload,
+      });
+  }
   // ==== MT4 Auth ====
   async mt4Login(credentials: {
     login: string;

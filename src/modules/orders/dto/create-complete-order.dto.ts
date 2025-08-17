@@ -1,14 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNumber, IsUUID } from 'class-validator';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
-export class CreateOrderDto {
+import { wooOrderProduct, wooUserData } from '../types';
+export class CreateCompleteOrderDto {
   @ApiProperty()
-  @IsString()
-  userID: string;
+  user: wooUserData;
 
   @ApiProperty()
   @IsString()
-  statusOrder: OrderStatus;
+  status: OrderStatus;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -22,21 +22,12 @@ export class CreateOrderDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
-  products?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  orderKey?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsUUID()
-  challengeID?: string;
+  product: wooOrderProduct;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   createDateTime?: Date;
+
+  coupon?
 }

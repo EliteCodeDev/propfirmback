@@ -33,12 +33,15 @@ export class RelationBalance {
   @Column({ type: 'float', nullable: true, default: 0 })
   discount: number;
 
+  @Column({ type: 'number', nullable: true })
+  wooID: number;
+
   // Relations
   @ManyToOne(() => ChallengeBalance, (balance) => balance.relationBalances)
   @JoinColumn({ name: 'balanceID' })
   balance: ChallengeBalance;
 
-  @ManyToOne(() => ChallengeRelation, (relation) => relation.relationBalances)
+  @ManyToOne(() => ChallengeRelation, (relation) => relation.balances)
   @JoinColumn({ name: 'relationID' })
   relation: ChallengeRelation;
 }
