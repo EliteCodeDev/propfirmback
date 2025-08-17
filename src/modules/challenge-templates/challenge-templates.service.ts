@@ -203,26 +203,14 @@ export class ChallengeTemplatesService {
 
   async findAllRelations(): Promise<ChallengeRelation[]> {
     return this.challengeRelationRepository.find({
-      relations: [
-        'category',
-        'plan',
-        'relationBalances',
-        'stages',
-        'challenges',
-      ],
+      relations: ['category', 'plan', 'balances', 'stages'],
     });
   }
 
   async findOneRelation(id: string): Promise<ChallengeRelation> {
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID: id },
-      relations: [
-        'category',
-        'plan',
-        'relationBalances',
-        'stages',
-        'challenges',
-      ],
+      relations: ['category', 'plan', 'balances', 'stages'],
     });
 
     if (!relation) {
@@ -420,19 +408,15 @@ export class ChallengeTemplatesService {
   async createRelationBalances(
     dtos: CreateRelationBalancesDto,
   ): Promise<RelationBalance[]> {
-    // Map incoming DTOs (which use challengeRelationID and challengeBalanceID)
-    // to the RelationBalance entity fields (relationID and balanceID)
-    const relationBalances: RelationBalance[] = dtos.relationBalances.map((dto) =>
-      this.relationBalanceRepository.create({
-        relationID: dtos.challengeRelationID,
-        balanceID: dto.challengeBalanceID,
-        price: typeof dto.price === 'number' ? dto.price : 0,
-        isActive: typeof dto.isActive === 'boolean' ? dto.isActive : true,
-        hasDiscount: typeof dto.hasDiscount === 'boolean' ? dto.hasDiscount : false,
-        ...(typeof dto.discount === 'number' ? { discount: dto.discount } : {}),
-      }),
-    );
-
+    let relationBalances: RelationBalance[] = [];
+    for (const dto of dtos.relationBalances) {
+      relationBalances.push(
+        this.relationBalanceRepository.create({
+          ...dto,
+          relationID: dtos.challengeRelationID,
+        }),
+      );
+    }
     await this.relationBalanceRepository.save(relationBalances);
     return relationBalances;
   }

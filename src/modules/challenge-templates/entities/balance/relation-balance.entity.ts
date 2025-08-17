@@ -33,7 +33,7 @@ export class RelationBalance {
   @Column({ type: 'float', nullable: true, default: 0 })
   discount: number;
 
-  @Column({ type: 'number', nullable: true })
+  @Column({ type: 'float', nullable: true })
   wooID: number;
 
   // Relations
