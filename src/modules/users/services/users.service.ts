@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Brackets } from 'typeorm';
 import { UserAccount } from '../entities';
+import { Address } from '../entities/address.entity';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/modules/rbac/entities/role.entity';
 import { CreateUserDto, UserQueryDto, UpdateUserDto } from '../dto';
@@ -14,6 +15,8 @@ export class UsersService {
   constructor(
     @InjectRepository(UserAccount)
     private userRepository: Repository<UserAccount>,
+  @InjectRepository(Address)
+  private addressRepository: Repository<Address>,
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
   ) {}
@@ -162,5 +165,55 @@ export class UsersService {
   async remove(id: string): Promise<void> {
     const user = await this.findById(id);
     await this.userRepository.remove(user);
+  }
+
+  async updateProfile(userId: string, dto: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    country?: string | null;
+    state?: string | null;
+    city?: string | null;
+    zipCode?: string | null;
+    addressLine1?: string | null;
+    addressLine2?: string | null;
+  }): Promise<UserAccount> {
+    const user = await this.userRepository.findOne({ where: { userID: userId }, relations: ['address', 'role'] });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Update simple user fields
+    if (typeof dto.firstName !== 'undefined') user.firstName = dto.firstName ?? null;
+    if (typeof dto.lastName !== 'undefined') user.lastName = dto.lastName ?? null;
+    if (typeof dto.phone !== 'undefined') user.phone = dto.phone ?? null as any;
+
+    // Upsert address
+    const hasAddressFields = ['country','state','city','zipCode','addressLine1','addressLine2']
+      .some((k) => typeof (dto as any)[k] !== 'undefined');
+
+    if (hasAddressFields) {
+      let address = user.address;
+      if (!address) {
+        address = this.addressRepository.create({
+          userID: user.userID,
+          country: null,
+          state: null,
+          city: null,
+          zipCode: null,
+          addressLine1: null,
+          addressLine2: null,
+        });
+      }
+      if (typeof dto.country !== 'undefined') address.country = dto.country ?? null;
+      if (typeof dto.state !== 'undefined') address.state = dto.state ?? null;
+      if (typeof dto.city !== 'undefined') address.city = dto.city ?? null;
+      if (typeof dto.zipCode !== 'undefined') address.zipCode = dto.zipCode ?? null;
+      if (typeof dto.addressLine1 !== 'undefined') address.addressLine1 = dto.addressLine1 ?? null;
+      if (typeof dto.addressLine2 !== 'undefined') address.addressLine2 = dto.addressLine2 ?? null;
+
+      user.address = await this.addressRepository.save(address);
+    }
+
+    const saved = await this.userRepository.save(user);
+    return this.findById(saved.userID);
   }
 }

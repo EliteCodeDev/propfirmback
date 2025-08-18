@@ -18,7 +18,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { UpdateUserDto, UserQueryDto, CreateUserDto } from '../dto';
+import { UpdateUserDto, UserQueryDto, CreateUserDto, UpdateUserProfileDto } from '../dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -56,7 +56,20 @@ export class UsersController {
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Profile successfully retrieved' })
   getProfile(@Request() req) {
-    return this.usersService.findById(req.user.userID);
+    return this.usersService.findById(req.user.userID).then((user) => {
+      const addr = user.address || ({} as any);
+      // Flatten address fields for convenience in the profile endpoint
+      const { address, ...rest } = user as any;
+      return {
+        ...rest,
+        country: addr.country ?? null,
+        state: addr.state ?? null,
+        city: addr.city ?? null,
+        zipCode: addr.zipCode ?? null,
+        addressLine1: addr.addressLine1 ?? null,
+        addressLine2: addr.addressLine2 ?? null,
+      };
+    });
   }
 
   @Get(':id')
@@ -71,8 +84,19 @@ export class UsersController {
   @Patch('profile')
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'Profile successfully updated' })
-  updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(req.user.userID, updateUserDto);
+  async updateProfile(@Request() req, @Body() body: UpdateUserProfileDto) {
+    const updated = await this.usersService.updateProfile(req.user.userID, body);
+    const addr = updated.address || ({} as any);
+    const { address, ...rest } = updated as any;
+    return {
+      ...rest,
+      country: addr.country ?? null,
+      state: addr.state ?? null,
+      city: addr.city ?? null,
+      zipCode: addr.zipCode ?? null,
+      addressLine1: addr.addressLine1 ?? null,
+      addressLine2: addr.addressLine2 ?? null,
+    };
   }
 
   @Patch(':id')
