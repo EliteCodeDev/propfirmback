@@ -30,4 +30,13 @@ export class CreateStageRuleDto {
   @IsString()
   @MaxLength(255)
   ruleDescription?: string;
+
+  @ApiProperty({
+    description: 'Slug for the stage rule',
+    example: 'daily-drawdown-rule',
+    required: true,
+  })
+  @IsString()
+  @MaxLength(255)
+  ruleSlug?: string;
 }

@@ -28,6 +28,7 @@ import {
   CreateStageParameterDto,
   CreateRelationStageDto,
   CreateRelationBalanceDto,
+  CreateRelationStagesDto,
   UpdateChallengeCategoryDto,
   UpdateChallengePlanDto,
   UpdateChallengeBalanceDto,
@@ -301,6 +302,16 @@ export class ChallengeTemplatesController {
     return this.challengeTemplatesService.findAllParameters();
   }
 
+  @Get('parameters/by-relation-stage/:relationStageId')
+  @ApiOperation({ summary: 'Get stage parameters by relation stage ID' })
+  findParametersByRelationStage(
+    @Param('relationStageId') relationStageId: string,
+  ) {
+    return this.challengeTemplatesService.findParametersByRelationStage(
+      relationStageId,
+    );
+  }
+
   @Get('parameters/:ruleId/:relationStageId')
   @ApiOperation({ summary: 'Get stage parameter by composite ID' })
   findOneParameter(
@@ -348,10 +359,28 @@ export class ChallengeTemplatesController {
     );
   }
 
+  @Post('relation-stages/create')
+  @ApiOperation({ summary: 'Create complete relation stages with rules' })
+  createCompleteRelationStages(
+    @Body() createRelationStagesDto: CreateRelationStagesDto,
+  ) {
+    return this.challengeTemplatesService.createRelationStages(
+      createRelationStagesDto,
+    );
+  }
+
   @Get('relation-stages')
   @ApiOperation({ summary: 'Get all relation stages' })
   findAllRelationStages() {
     return this.challengeTemplatesService.findAllRelationStages();
+  }
+
+  @Get('relation-stages/by-relation/:relationId')
+  @ApiOperation({ summary: 'Get relation stages by relation ID' })
+  findRelationStagesByRelation(@Param('relationId') relationId: string) {
+    return this.challengeTemplatesService.findRelationStagesByRelation(
+      relationId,
+    );
   }
 
   @Get('relation-stages/:id')

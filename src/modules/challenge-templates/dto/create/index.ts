@@ -5,5 +5,6 @@ export * from './create-challenge-relation.dto';
 export * from './create-challenge-stage.dto';
 export * from './create-relation-balance.dto';
 export * from './create-relation-stage.dto';
+export * from './create-relation-stages.dto';
 export * from './create-stage-parameter.dto';
 export * from './create-stage-rule.dto';

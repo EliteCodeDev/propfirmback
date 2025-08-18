@@ -35,6 +35,7 @@ import {
   UpdateRelationStageDto,
   UpdateRelationBalanceDto,
   CreateRelationBalancesDto,
+  CreateRelationStagesDto,
 } from './dto';
 
 @Injectable()
@@ -395,6 +396,50 @@ export class ChallengeTemplatesService {
   async removeRelationStage(id: string): Promise<void> {
     const relationStage = await this.findOneRelationStage(id);
     await this.relationStageRepository.remove(relationStage);
+  }
+
+  async createRelationStages(
+    dto: CreateRelationStagesDto,
+  ): Promise<RelationStage[]> {
+    const relationStages: RelationStage[] = [];
+    
+    for (const stageDto of dto.stages) {
+      // Crear RelationStage
+      const relationStage = this.relationStageRepository.create({
+        stageID: stageDto.stageID,
+        relationID: dto.challengeRelationID,
+      });
+      const savedRelationStage = await this.relationStageRepository.save(relationStage);
+      
+      // Crear StageParameters para cada regla
+      for (const ruleDto of stageDto.rules) {
+        const parameter = this.stageParameterRepository.create({
+          ruleID: ruleDto.ruleID,
+          relationStageID: savedRelationStage.relationStageID,
+          ruleValue: ruleDto.ruleValue,
+          isActive: true,
+        });
+        await this.stageParameterRepository.save(parameter);
+      }
+      
+      relationStages.push(savedRelationStage);
+    }
+    
+    return relationStages;
+  }
+
+  async findRelationStagesByRelation(relationID: string): Promise<RelationStage[]> {
+    return this.relationStageRepository.find({
+      where: { relationID },
+      relations: ['stage', 'relation', 'parameters'],
+    });
+  }
+
+  async findParametersByRelationStage(relationStageID: string): Promise<StageParameter[]> {
+    return this.stageParameterRepository.find({
+      where: { relationStageID },
+      relations: ['rule', 'relationStage'],
+    });
   }
 
   // Relation Balances
