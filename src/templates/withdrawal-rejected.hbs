@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Withdrawal Rejected – FundingHero</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin:0; 
+      padding:20px; 
+      background:#f5f5f5; 
+      color:#333; 
+    }
+    .email-container { 
+      max-width:400px; 
+      margin:0 auto; 
+      background:#fff; 
+      padding:20px; 
+      border-radius:8px; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .banner { 
+      width:100%; 
+      height:auto; 
+      border-radius:8px 8px 0 0; 
+      margin-bottom:20px; 
+    }
+    .title { 
+      color:#333; 
+      font-size:24px; 
+      font-weight:bold; 
+      margin-bottom:30px; 
+    }
+    .user-greeting { 
+      color:#333; 
+      font-size:18px; 
+      font-weight:bold; 
+      margin-bottom:20px; 
+    }
+    .main-message { 
+      color:#333; 
+      font-size:16px; 
+      font-weight:bold; 
+      margin-bottom:20px; 
+    }
+    .description { 
+      color:#666; 
+      font-size:14px; 
+      line-height:1.4; 
+      margin-bottom:15px; 
+    }
+    .withdrawal-box { 
+      background:#fff; 
+      padding:15px; 
+      border-radius:6px; 
+      border:2px solid #E6B800; 
+      margin:20px 0; 
+    }
+    .highlight { 
+      color:#E6B800; 
+      font-weight:bold; 
+    }
+    .status-info { 
+      color:#333; 
+      font-size:14px; 
+      margin-bottom:8px; 
+    }
+    .amount-highlight { 
+      color:#B8860B; 
+      font-weight:bold; 
+      font-size:18px; 
+    }
+    .reason-highlight { 
+      color:#dc2626; 
+      font-weight:bold; 
+      background:#fef2f2; 
+      padding:8px; 
+      border-radius:4px; 
+      margin-top:8px; 
+    }
+    .footer-text { 
+      color:#666; 
+      font-size:12px; 
+      margin-top:20px; 
+    }
+    .copyright { 
+      color:#999; 
+      font-size:11px; 
+      margin-top:15px; 
+      text-align:center; 
+    }
+    .company-name { 
+      color:#E6B800; 
+      font-weight:bold; 
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+    
+    <div class="title">Withdrawal Rejected</div>
+    
+    <div class="user-greeting">Hello Trader</div>
+    
+    <div class="main-message">Your withdrawal request has been rejected</div>
+    
+    <div class="description">
+      We regret to inform you that your withdrawal request could not be processed at this time.
+    </div>
+    
+    <div class="withdrawal-box">
+      <div class="status-info"><strong>Status:</strong> <span class="highlight">{{status}}</span></div>
+      <div class="status-info"><strong>Amount:</strong> <span class="amount-highlight">${{amount}}</span></div>
+      <div class="status-info"><strong>Wallet:</strong> <span class="highlight">{{wallet}}</span></div>
+      <div class="status-info"><strong>Email:</strong> <span class="highlight">{{correo}}</span></div>
+      <div class="status-info"><strong>Reason:</strong></div>
+      <div class="reason-highlight">{{observation}}</div>
+    </div>
+    
+    <div class="description">
+      Please review the reason above and take the necessary actions. You may submit a new withdrawal request once the requirements are met.
+    </div>
+    
+    <div class="description">
+      <span class="highlight">Thank you for your understanding.</span>
+    </div>
+    
+    <div class="footer-text">
+      Best regards,<br><br>
+      <span class="company-name">FundingHero</span> Team
+    </div>
+    
+    <div class="copyright">
+      © 2025 <span class="company-name">FundingHero</span>. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

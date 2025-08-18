@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { UserAccount } from '../../users/entities/user-account.entity';
 import { Challenge } from '../../challenges/entities/challenge.entity';
-
+import { CertificateType } from 'src/common/enums/certificate-type.enum';
 @Entity('Certificate')
 export class Certificate {
   @PrimaryGeneratedColumn('uuid')
@@ -24,6 +24,9 @@ export class Certificate {
 
   @Column({ type: 'uuid' })
   challengeID: string;
+
+  @Column({ length: 50 })
+  type: CertificateType;
 
   @Column({ type: 'timestamp', nullable: true })
   certificateDate: Date;

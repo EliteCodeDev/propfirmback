@@ -21,7 +21,7 @@ export class RelationBalance {
   @Column({ type: 'uuid' })
   relationID: string;
 
-  @Column({ type: 'float', nullable: true })
+  @Column({ type: 'float', nullable: true, default: 0 })
   price: number;
 
   @Column({ type: 'boolean', default: true })
@@ -30,15 +30,18 @@ export class RelationBalance {
   @Column({ type: 'boolean', default: false })
   hasDiscount: boolean;
 
-  @Column({ type: 'float', nullable: true })
+  @Column({ type: 'float', nullable: true, default: 0 })
   discount: number;
+
+  @Column({ type: 'float', nullable: true })
+  wooID: number;
 
   // Relations
   @ManyToOne(() => ChallengeBalance, (balance) => balance.relationBalances)
   @JoinColumn({ name: 'balanceID' })
   balance: ChallengeBalance;
 
-  @ManyToOne(() => ChallengeRelation, (relation) => relation.relationBalances)
+  @ManyToOne(() => ChallengeRelation, (relation) => relation.balances)
   @JoinColumn({ name: 'relationID' })
   relation: ChallengeRelation;
 }

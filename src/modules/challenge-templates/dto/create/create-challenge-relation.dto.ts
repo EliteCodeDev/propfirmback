@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID, IsNotEmpty } from 'class-validator';
+import { IsUUID, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateChallengeRelationDto {
   @ApiProperty({ description: 'Plan ID' })
@@ -8,5 +8,6 @@ export class CreateChallengeRelationDto {
   planID: string;
   @ApiProperty({ description: 'Category ID' })
   @IsUUID()
-  categoryID: string;
+  @IsOptional()
+  categoryID?: string;
 }

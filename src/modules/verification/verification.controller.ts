@@ -9,12 +9,16 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { VerificationService } from './verification.service';
 import { CreateVerificationDto } from './dto/create-verification.dto';
@@ -22,6 +26,7 @@ import { UpdateVerificationDto } from './dto/update-verification.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Verification')
 @ApiBearerAuth()
@@ -32,10 +37,17 @@ export class VerificationController {
 
   @Post()
   @ApiOperation({ summary: 'Submit verification request' })
-  create(@Request() req, @Body() createVerificationDto: CreateVerificationDto) {
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('files', 5))
+  create(
+    @Request() req, 
+    @Body() createVerificationDto: CreateVerificationDto,
+    @UploadedFiles() files?: any[]
+  ) {
     return this.verificationService.create(
       req.user.userID,
       createVerificationDto,
+      files,
     );
   }
 

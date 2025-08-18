@@ -66,13 +66,9 @@ export class ActivateSmtApiJob implements OnModuleInit {
         activeAccounts.length,
     );
 
-    // activeAccounts.forEach(async (account) => {
-    //   const temp = new Account(account.id, account.login);
-    //   this.buffer.insertBuffer(account.id, temp);
-    // });
+    //meter cuentas en el buffer
 
-    const temp = new Account("123Jose", "jose");
-    this.buffer.insertBuffer("123Jose", temp);
+    // activar cuentas
 
     return await this.smtApiClient.loginAll(activeAccounts);
   }

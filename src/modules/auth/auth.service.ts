@@ -22,6 +22,7 @@ import { BcryptUtil } from 'src/common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
 import { PasswordResetService } from '../password-reset/password-reset.service';
 import { Role } from '../rbac/entities/role.entity';
+import { date } from 'joi';
 
 @Injectable()
 export class AuthService {
@@ -66,7 +67,7 @@ export class AuthService {
     // Si es el primer usuario y la flag está activa, lo promovemos a super_admin independientemente del seeding
     if (firstUserSuperadmin && usersCount === 0) {
       const superAdminRole = await this.roleRepo.findOne({
-        where: { name: 'super_admin' },
+        where: { name: 'admin' },
       });
       roleIdToAssign = superAdminRole;
     } else {
@@ -151,6 +152,15 @@ export class AuthService {
       ...this.generateTokens(user),
     };
   }
+  async adminLogin(dto: LoginDto) {
+    const user = await this.login(dto);
+    if (!user || user.user.role.name !== 'admin')
+      throw new UnauthorizedException('Invalid credentials');
+    this.logger.log(
+      `${new Date().toISOString()} Admin login successful for user: ${user.user.username}`,
+    );
+    return user;
+  }
 
   /** Para Passport LocalStrategy */
   async validateUser(email: string, password: string): Promise<any> {
@@ -211,7 +221,11 @@ export class AuthService {
   /* — Helpers privados — */
 
   private generateTokens(user: UserAccount) {
-    const payload = { email: user.email, sub: user.userID };
+    const payload = {
+      sub: user.userID,
+      email: user.email,
+      role: user.role?.name,
+    };
 
     // Access token
     const accessToken = this.jwtService.sign(payload, {
@@ -279,5 +293,40 @@ export class AuthService {
     await this.passwordResetService.remove(passwordReset.id);
 
     return { message: 'Password has been reset successfully' };
+  }
+
+  /** Reenviar correo de confirmación */
+  async resendConfirmationEmail(email: string) {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isConfirmed) {
+      throw new ConflictException('Email is already confirmed');
+    }
+
+    // Generar nuevo token de confirmación
+    const confirmationToken = (await BcryptUtil.hash(user.email)).replace(
+      /\//g,
+      '',
+    );
+    await this.userRepo.update(user.userID, { confirmationToken });
+
+    const confirmationLink = `${this.configService.get<string>(
+      'app.clientUrl',
+    )}/auth/confirm?token=${confirmationToken}`;
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Verify your email address',
+      template: 'verify-email',
+      context: {
+        name: user.firstName,
+        confirmationLink,
+      },
+    });
+
+    return { message: 'Confirmation email sent successfully' };
   }
 }

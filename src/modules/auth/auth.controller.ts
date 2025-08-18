@@ -21,6 +21,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CompletePasswordResetDto } from './dto/complete-password-reset.dto';
+import { ResendConfirmationDto } from './dto/resend-confirmation.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Query } from '@nestjs/common/decorators';
@@ -42,6 +43,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('/admin/login')
+  @HttpCode(HttpStatus.OK)
+  async adminLogin(@Body() dto: LoginDto) {
+    return this.authService.adminLogin(dto);
   }
 
   @Public()
@@ -69,6 +76,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async completePasswordReset(@Body() dto: CompletePasswordResetDto) {
     return this.authService.completePasswordReset(dto);
+  }
+
+  @Public()
+  @Post('resend-confirmation')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend email confirmation' })
+  @ApiResponse({ status: 200, description: 'Confirmation email sent successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 409, description: 'Email is already confirmed' })
+  async resendConfirmation(@Body() dto: ResendConfirmationDto) {
+    return this.authService.resendConfirmationEmail(dto.email);
   }
 
   @UseGuards(JwtAuthGuard)

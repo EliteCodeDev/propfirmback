@@ -15,24 +15,28 @@ import {
   StageParameter,
 } from './entities';
 // DTOs
-import { CreateChallengeCategoryDto } from './dto/create/create-challenge-category.dto';
-import { UpdateChallengeCategoryDto } from './dto/update/update-challenge-category.dto';
-import { CreateChallengePlanDto } from './dto/create/create-challenge-plan.dto';
-import { UpdateChallengePlanDto } from './dto/update/update-challenge-plan.dto';
-import { CreateChallengeBalanceDto } from './dto/create/create-challenge-balance.dto';
-import { UpdateChallengeBalanceDto } from './dto/update/update-challenge-balance.dto';
-import { CreateChallengeRelationDto } from './dto/create/create-challenge-relation.dto';
-import { UpdateChallengeRelationDto } from './dto/update/update-challenge-relation.dto';
-import { CreateChallengeStageDto } from './dto/create/create-challenge-stage.dto';
-import { UpdateChallengeStageDto } from './dto/update/update-challenge-stage.dto';
-import { CreateStageRuleDto } from './dto/create/create-stage-rule.dto';
-import { UpdateStageRuleDto } from './dto/update/update-stage-rule.dto';
-import { CreateStageParameterDto } from './dto/create/create-stage-parameter.dto';
-import { UpdateStageParameterDto } from './dto/update/update-stage-parameter.dto';
-import { CreateRelationStageDto } from './dto/create/create-relation-stage.dto';
-import { UpdateRelationStageDto } from './dto/update/update-relation-stage.dto';
-import { CreateRelationBalanceDto } from './dto/create/create-relation-balance.dto';
-import { UpdateRelationBalanceDto } from './dto/update/update-relation-balance.dto';
+import {
+  CreateChallengeCategoryDto,
+  CreateChallengePlanDto,
+  CreateChallengeBalanceDto,
+  CreateChallengeRelationDto,
+  CreateChallengeStageDto,
+  CreateStageRuleDto,
+  CreateStageParameterDto,
+  CreateRelationStageDto,
+  CreateRelationBalanceDto,
+  UpdateChallengeCategoryDto,
+  UpdateChallengePlanDto,
+  UpdateChallengeBalanceDto,
+  UpdateChallengeRelationDto,
+  UpdateChallengeStageDto,
+  UpdateStageRuleDto,
+  UpdateStageParameterDto,
+  UpdateRelationStageDto,
+  UpdateRelationBalanceDto,
+  CreateRelationBalancesDto,
+  CreateRelationStagesDto,
+} from './dto';
 
 @Injectable()
 export class ChallengeTemplatesService {
@@ -122,7 +126,18 @@ export class ChallengeTemplatesService {
 
     return plan;
   }
+  async findOnePlanByWooID(wooID: number): Promise<ChallengePlan> {
+    const plan = await this.challengePlanRepository.findOne({
+      where: { wooID },
+      relations: ['relations'],
+    });
 
+    if (!plan) {
+      throw new NotFoundException('Challenge plan not found');
+    }
+
+    return plan;
+  }
   async updatePlan(
     id: string,
     dto: UpdateChallengePlanDto,
@@ -142,7 +157,7 @@ export class ChallengeTemplatesService {
     dto: CreateChallengeBalanceDto,
   ): Promise<ChallengeBalance> {
     const balance = this.challengeBalanceRepository.create(dto);
-    
+
     return this.challengeBalanceRepository.save(balance);
   }
 
@@ -189,14 +204,14 @@ export class ChallengeTemplatesService {
 
   async findAllRelations(): Promise<ChallengeRelation[]> {
     return this.challengeRelationRepository.find({
-      relations: ['category', 'plan', 'relationBalances', 'stages', 'challenges'],
+      relations: ['category', 'plan', 'balances', 'stages'],
     });
   }
 
   async findOneRelation(id: string): Promise<ChallengeRelation> {
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID: id },
-      relations: ['category', 'plan', 'relationBalances', 'stages', 'challenges'],
+      relations: ['category', 'plan', 'balances', 'stages'],
     });
 
     if (!relation) {
@@ -383,12 +398,72 @@ export class ChallengeTemplatesService {
     await this.relationStageRepository.remove(relationStage);
   }
 
+  async createRelationStages(
+    dto: CreateRelationStagesDto,
+  ): Promise<RelationStage[]> {
+    const relationStages: RelationStage[] = [];
+    
+    for (const stageDto of dto.stages) {
+      // Crear RelationStage
+      const relationStage = this.relationStageRepository.create({
+        stageID: stageDto.stageID,
+        relationID: dto.challengeRelationID,
+      });
+      const savedRelationStage = await this.relationStageRepository.save(relationStage);
+      
+      // Crear StageParameters para cada regla
+      for (const ruleDto of stageDto.rules) {
+        const parameter = this.stageParameterRepository.create({
+          ruleID: ruleDto.ruleID,
+          relationStageID: savedRelationStage.relationStageID,
+          ruleValue: ruleDto.ruleValue,
+          isActive: true,
+        });
+        await this.stageParameterRepository.save(parameter);
+      }
+      
+      relationStages.push(savedRelationStage);
+    }
+    
+    return relationStages;
+  }
+
+  async findRelationStagesByRelation(relationID: string): Promise<RelationStage[]> {
+    return this.relationStageRepository.find({
+      where: { relationID },
+      relations: ['stage', 'relation', 'parameters'],
+    });
+  }
+
+  async findParametersByRelationStage(relationStageID: string): Promise<StageParameter[]> {
+    return this.stageParameterRepository.find({
+      where: { relationStageID },
+      relations: ['rule', 'relationStage'],
+    });
+  }
+
   // Relation Balances
   async createRelationBalance(
     dto: CreateRelationBalanceDto,
   ): Promise<RelationBalance> {
     const relationBalance = this.relationBalanceRepository.create(dto);
     return this.relationBalanceRepository.save(relationBalance);
+  }
+
+  async createRelationBalances(
+    dtos: CreateRelationBalancesDto,
+  ): Promise<RelationBalance[]> {
+    let relationBalances: RelationBalance[] = [];
+    for (const dto of dtos.relationBalances) {
+      relationBalances.push(
+        this.relationBalanceRepository.create({
+          ...dto,
+          relationID: dtos.challengeRelationID,
+        }),
+      );
+    }
+    await this.relationBalanceRepository.save(relationBalances);
+    return relationBalances;
   }
 
   async findAllRelationBalances(): Promise<RelationBalance[]> {

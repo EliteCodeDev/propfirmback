@@ -1,14 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNumber, IsUUID } from 'class-validator';
-
+import { OrderStatus } from 'src/common/enums/order-status.enum';
 export class CreateOrderDto {
   @ApiProperty()
   @IsString()
-  orderID: string;
+  userID: string;
 
   @ApiProperty()
   @IsString()
-  statusOrder: string;
+  statusOrder: OrderStatus;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -33,5 +33,10 @@ export class CreateOrderDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsUUID()
-  documentChallenge?: string;
+  challengeID?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  createDateTime?: Date;
 }

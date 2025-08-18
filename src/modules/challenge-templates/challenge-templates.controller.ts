@@ -17,24 +17,29 @@ import {
 import { ChallengeTemplatesService } from './challenge-templates.service';
 
 // DTOs
-import { CreateChallengeCategoryDto } from './dto/create/create-challenge-category.dto';
-import { UpdateChallengeCategoryDto } from './dto/update/update-challenge-category.dto';
-import { CreateChallengePlanDto } from './dto/create/create-challenge-plan.dto';
-import { UpdateChallengePlanDto } from './dto/update/update-challenge-plan.dto';
-import { CreateChallengeBalanceDto } from './dto/create/create-challenge-balance.dto';
-import { UpdateChallengeBalanceDto } from './dto/update/update-challenge-balance.dto';
-import { CreateChallengeRelationDto } from './dto/create/create-challenge-relation.dto';
-import { UpdateChallengeRelationDto } from './dto/update/update-challenge-relation.dto';
-import { CreateChallengeStageDto } from './dto/create/create-challenge-stage.dto';
-import { UpdateChallengeStageDto } from './dto/update/update-challenge-stage.dto';
-import { CreateStageRuleDto } from './dto/create/create-stage-rule.dto';
-import { UpdateStageRuleDto } from './dto/update/update-stage-rule.dto';
-import { CreateStageParameterDto } from './dto/create/create-stage-parameter.dto';
-import { UpdateStageParameterDto } from './dto/update/update-stage-parameter.dto';
-import { CreateRelationStageDto } from './dto/create/create-relation-stage.dto';
-import { UpdateRelationStageDto } from './dto/update/update-relation-stage.dto';
-import { CreateRelationBalanceDto } from './dto/create/create-relation-balance.dto';
-import { UpdateRelationBalanceDto } from './dto/update/update-relation-balance.dto';
+
+import {
+  CreateChallengeCategoryDto,
+  CreateChallengePlanDto,
+  CreateChallengeBalanceDto,
+  CreateChallengeRelationDto,
+  CreateChallengeStageDto,
+  CreateStageRuleDto,
+  CreateStageParameterDto,
+  CreateRelationStageDto,
+  CreateRelationBalanceDto,
+  CreateRelationStagesDto,
+  UpdateChallengeCategoryDto,
+  UpdateChallengePlanDto,
+  UpdateChallengeBalanceDto,
+  UpdateChallengeRelationDto,
+  UpdateChallengeStageDto,
+  UpdateStageRuleDto,
+  UpdateStageParameterDto,
+  UpdateRelationStageDto,
+  UpdateRelationBalanceDto,
+  CreateRelationBalancesDto,
+} from './dto';
 
 // Guards & Decorators
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -297,6 +302,16 @@ export class ChallengeTemplatesController {
     return this.challengeTemplatesService.findAllParameters();
   }
 
+  @Get('parameters/by-relation-stage/:relationStageId')
+  @ApiOperation({ summary: 'Get stage parameters by relation stage ID' })
+  findParametersByRelationStage(
+    @Param('relationStageId') relationStageId: string,
+  ) {
+    return this.challengeTemplatesService.findParametersByRelationStage(
+      relationStageId,
+    );
+  }
+
   @Get('parameters/:ruleId/:relationStageId')
   @ApiOperation({ summary: 'Get stage parameter by composite ID' })
   findOneParameter(
@@ -344,10 +359,28 @@ export class ChallengeTemplatesController {
     );
   }
 
+  @Post('relation-stages/create')
+  @ApiOperation({ summary: 'Create complete relation stages with rules' })
+  createCompleteRelationStages(
+    @Body() createRelationStagesDto: CreateRelationStagesDto,
+  ) {
+    return this.challengeTemplatesService.createRelationStages(
+      createRelationStagesDto,
+    );
+  }
+
   @Get('relation-stages')
   @ApiOperation({ summary: 'Get all relation stages' })
   findAllRelationStages() {
     return this.challengeTemplatesService.findAllRelationStages();
+  }
+
+  @Get('relation-stages/by-relation/:relationId')
+  @ApiOperation({ summary: 'Get relation stages by relation ID' })
+  findRelationStagesByRelation(@Param('relationId') relationId: string) {
+    return this.challengeTemplatesService.findRelationStagesByRelation(
+      relationId,
+    );
   }
 
   @Get('relation-stages/:id')
@@ -381,6 +414,18 @@ export class ChallengeTemplatesController {
     @Body() createRelationBalanceDto: CreateRelationBalanceDto,
   ) {
     return this.challengeTemplatesService.createRelationBalance(
+      createRelationBalanceDto,
+    );
+  }
+
+  //create relation to admin
+
+  @Post('relation-balances/create')
+  @ApiOperation({ summary: 'Create a new complete relation balance' })
+  createCompleteRelationBalance(
+    @Body() createRelationBalanceDto: CreateRelationBalancesDto,
+  ) {
+    return this.challengeTemplatesService.createRelationBalances(
       createRelationBalanceDto,
     );
   }

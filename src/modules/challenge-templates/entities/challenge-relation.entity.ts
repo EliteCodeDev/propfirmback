@@ -23,9 +23,6 @@ export class ChallengeRelation {
   @Column({ type: 'uuid' })
   planID: string;
 
-  @Column({ type: 'uuid', nullable: true })
-  balanceID: string;
-
   // Relations
   @ManyToOne(() => ChallengeCategory, (category) => category.relations)
   @JoinColumn({ name: 'categoryID' })
@@ -45,5 +42,5 @@ export class ChallengeRelation {
     () => RelationBalance,
     (relationBalance) => relationBalance.relation,
   )
-  relationBalances: RelationBalance[];
+  balances: RelationBalance[];
 }

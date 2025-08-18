@@ -3,18 +3,30 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Certificate } from './entities/certificate.entity';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
-
+import { ConfigService } from '@nestjs/config';
+import QRCode from 'qrcode';
 @Injectable()
 export class CertificatesService {
   constructor(
     @InjectRepository(Certificate)
     private certificateRepository: Repository<Certificate>,
+    private configService: ConfigService,
   ) {}
 
   async create(
     createCertificateDto: CreateCertificateDto,
   ): Promise<Certificate> {
-    const certificate = this.certificateRepository.create(createCertificateDto);
+    const frontendUrl = this.configService.get<string>('app.clientUrl');
+    const createCertificate = {
+      ...createCertificateDto,
+      qrLink: await QRCode.toDataURL(
+        `${frontendUrl}/certificates/${createCertificateDto.challengeID}`,
+      ),
+      certificateDate: createCertificateDto.certificateDate
+        ? new Date(createCertificateDto.certificateDate)
+        : new Date(),
+    };
+    const certificate = this.certificateRepository.create(createCertificate);
     return this.certificateRepository.save(certificate);
   }
 

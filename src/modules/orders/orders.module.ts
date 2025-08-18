@@ -3,9 +3,22 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { CustomerOrder } from './entities/customer-order.entity';
-
+import { MailerModule } from '../mailer/mailer.module';
+import { UsersModule } from '../users/users.module';
+import { ChallengesModule } from '../challenges/challenges.module';
+import { BrokerAccountsModule } from '../broker-accounts/broker-accounts.module';
+import { ChallengeTemplatesModule } from '../challenge-templates/challenge-templates.module';
+import { SmtApiModule } from '../smt-api/smt-api.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([CustomerOrder])],
+  imports: [
+    TypeOrmModule.forFeature([CustomerOrder]),
+    MailerModule,
+    UsersModule,
+    ChallengesModule,
+    BrokerAccountsModule,
+    ChallengeTemplatesModule,
+    SmtApiModule,
+  ],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],

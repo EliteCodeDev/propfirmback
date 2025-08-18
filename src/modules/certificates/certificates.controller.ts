@@ -20,6 +20,7 @@ import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Certificates')
 @ApiBearerAuth()
@@ -50,6 +51,7 @@ export class CertificatesController {
     return this.certificatesService.findByUserId(req.user.userID, query);
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get certificate by ID' })
   findOne(@Param('id') id: string) {
