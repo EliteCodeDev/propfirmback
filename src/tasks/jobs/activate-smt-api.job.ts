@@ -4,7 +4,8 @@ import { SmtApiClient } from 'src/modules/smt-api/client/smt-api.client';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoginAccount } from 'src/common/utils';
+import { Account, LoginAccount } from 'src/common/utils';
+import { BufferService } from 'src/lib/buffer/buffer.service';
 //inicio de la ejecución
 @Injectable()
 export class ActivateSmtApiJob implements OnModuleInit {
@@ -13,11 +14,14 @@ export class ActivateSmtApiJob implements OnModuleInit {
     private readonly smtApiClient: SmtApiClient,
     @InjectRepository(Challenge)
     private challengeRepository: Repository<Challenge>,
+
+    private readonly buffer: BufferService
   ) {}
 
   // Ejecuta al iniciar el backend
   onModuleInit() {
     this.logger.debug('ActivateSmtApiJob: ejecución on startup');
+    console.log('ActivateSmtApiJob: ejecución on startup');
     this.activateSmtApi();
   }
 
@@ -61,7 +65,15 @@ export class ActivateSmtApiJob implements OnModuleInit {
       'ActivateSmtApiJob: Número de cuentas a activar: ' +
         activeAccounts.length,
     );
-    // activar cuentas
+
+    // activeAccounts.forEach(async (account) => {
+    //   const temp = new Account(account.id, account.login);
+    //   this.buffer.insertBuffer(account.id, temp);
+    // });
+
+    const temp = new Account("123Jose", "jose");
+    this.buffer.insertBuffer("123Jose", temp);
+
     return await this.smtApiClient.loginAll(activeAccounts);
   }
 }

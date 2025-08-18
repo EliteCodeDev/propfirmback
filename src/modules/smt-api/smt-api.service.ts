@@ -50,9 +50,9 @@ export class SmtApiService {
 
   async connectionStatusService(data: ConnectionStatusDto) {
     
-    const { success_process,error_process } = data;
+    const { success_process } = data;
 
-    
+    console.log("Cuentas success_process", data.success_process);
 
     return {
       message: 'Connection status received',
@@ -62,14 +62,16 @@ export class SmtApiService {
 
   async saveDataAccountService(id: string, data: AccountDataDto) {
     
-    const { close, open } = data.data;
+    // const { close, open } = data.data;
     
-    const account = this.buffer.getBuffer(id);
+    // const account = this.buffer.getBuffer(id);
 
-    account.setOpenPositions(open.positions);
-    account.setOpenResume(open.resume);
-    account.setClosedPositions(close.positions);
-    account.setClosedResume(close.resume);
+    // account.setOpenPositions(open.positions);
+    // account.setOpenResume(open.resume);
+    // account.setClosedPositions(close.positions);
+    // account.setClosedResume(close.resume);
+
+    console.log("Data account: ", data)
 
     return {
       message: 'Account data received',

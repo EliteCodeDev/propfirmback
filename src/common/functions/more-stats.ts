@@ -49,13 +49,13 @@ export function averageMetrics(
 export function getMoreStats(account: Account) {
   const { balance, openPositions, closedPositions } = account;
   const metrics = this.averageMetrics(
-    openPositions.open,
-    closedPositions.closed,
+    openPositions.positions,
+    closedPositions.positions,
   );
   const maxMinBalance = this.maxMinBalance(
     balance.currentBalance,
     account.metaStats.equity,
     account.metaStats.maxMinBalance,
   );
-  const numTrades = this.numTrades(openPositions.open, closedPositions.closed);
+  const numTrades = this.numTrades(openPositions.positions, closedPositions.positions);
 }

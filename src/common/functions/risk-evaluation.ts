@@ -6,6 +6,7 @@ import {
   consecutiveInactiveDays,
 } from './index';
 import { riskEvaluationResult } from '../types/risk-results';
+import { ClosedPosition } from '../utils/positions';
 
 export function riskEvaluation(
   account: Account,
@@ -30,12 +31,12 @@ export function riskEvaluation(
   );
 
   const tradingDays = calculateTradingDays(
-    openPositions.open,
-    closedPositions.closed,
+    openPositions.positions,
+    closedPositions.positions as ClosedPosition[],
   );
   const inactiveDays = consecutiveInactiveDays(
-    openPositions.open,
-    closedPositions.closed,
+    openPositions.positions,
+    closedPositions.positions as ClosedPosition[],
     account.createDateTime,
     params.inactiveDays,
   );

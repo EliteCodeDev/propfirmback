@@ -14,47 +14,47 @@ export class RulesEvaluationJob {
   @Cron(CronExpression.EVERY_10_SECONDS)
   async evaluate() {
     // Verificar si hay cuentas en el buffer
-    try {
-      const bufferSize = await this.buffer.size();
-      if (bufferSize === 0) {
-        this.logger.debug('Buffer vacío, saltando evaluación de reglas');
-        return;
-      }
+    // try {
+    //   const bufferSize = await this.buffer.getSize();
+    //   if (bufferSize === 0) {
+    //     this.logger.debug('Buffer vacío, saltando evaluación de reglas');
+    //     return;
+    //   }
 
-      this.logger.debug(
-        `Iniciando evaluación de reglas para ${bufferSize} cuentas`,
-      );
+    //   this.logger.debug(
+    //     `Iniciando evaluación de reglas para ${bufferSize} cuentas`,
+    //   );
 
-      // Procesar todas las cuentas en paralelo usando el nuevo método optimizado
-      const results = await this.buffer.processAllParallel(
-        async (id: string, account: Account) => {
-          // Aplicar funciones de evaluación de riesgo
-          const validation = await this.evaluateAccountRules(
-            account,
-            {} as RiskParams,
-          );
+    //   // Procesar todas las cuentas en paralelo usando el nuevo método optimizado
+    //   const results = await this.buffer.processAllParallel(
+    //     async (id: string, account: Account) => {
+    //       // Aplicar funciones de evaluación de riesgo
+    //       const validation = await this.evaluateAccountRules(
+    //         account,
+    //         {} as RiskParams,
+    //       );
 
-          return {
-            id,
-            validation,
-          };
-        },
-        {
-          skipEmpty: true,
-          logErrors: true,
-        },
-      );
+    //       return {
+    //         id,
+    //         validation,
+    //       };
+    //     },
+    //     {
+    //       skipEmpty: true,
+    //       logErrors: true,
+    //     },
+    //   );
 
-      // Calcular estadísticas del procesamiento
-      const successful = results.filter((r) => r !== null).length;
+    //   // Calcular estadísticas del procesamiento
+    //   const successful = results.filter((r) => r !== null).length;
 
-      this.logger.debug(
-        `RulesEvaluationJob completado: procesadas=${successful}/${bufferSize}, 
-      validaciones=${results.filter((r) => r !== null && r.validation).length}`,
-      );
-    } catch (error) {
-      this.logger.error(`Error en RulesEvaluationJob: `, error);
-    }
+    //   this.logger.debug(
+    //     `RulesEvaluationJob completado: procesadas=${successful}/${bufferSize}, 
+    //   validaciones=${results.filter((r) => r !== null && r.validation).length}`,
+    //   );
+    // } catch (error) {
+    //   this.logger.error(`Error en RulesEvaluationJob: `, error);
+    // }
   }
 
   /**

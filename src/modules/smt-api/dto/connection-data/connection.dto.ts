@@ -11,19 +11,21 @@ export class ConnectionStatusDto {
     example: [{ account: 'user123', status: 200, error: null }]
   })
   @IsArray()
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => DataProcessDto)
-  success_process: DataProcessDto[];
+  success_process: DataProcessDto[] | [];
 
   @ApiProperty({
     description: 'Processes with errors',
     type: [DataProcessDto],
     example: [{ account: 'user456', status: 500, error: 'Connection failed' }]
   })
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => DataProcessDto)
-  error_process: DataProcessDto[];
+  error_process: DataProcessDto[] | [];
 
   @ApiProperty({ description: 'Response status', example: 200 })
   @IsNumber()
