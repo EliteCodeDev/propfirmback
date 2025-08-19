@@ -1,10 +1,92 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsUUID, ValidateNested, IsObject } from 'class-validator';
+import { Type } from 'class-transformer';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 import { wooOrderProduct, wooUserData } from '../types';
+
+class BillingDto {
+  @ApiProperty()
+  @IsString()
+  first_name: string;
+
+  @ApiProperty()
+  @IsString()
+  last_name: string;
+
+  @ApiProperty()
+  @IsString()
+  address_1: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  address_2?: string;
+
+  @ApiProperty()
+  @IsString()
+  city: string;
+
+  @ApiProperty()
+  @IsString()
+  state: string;
+
+  @ApiProperty()
+  @IsString()
+  postcode: string;
+
+  @ApiProperty()
+  @IsString()
+  country: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+}
+
+class UserDataDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  wooId?: number;
+
+  @ApiProperty()
+  @IsString()
+  email: string;
+
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiProperty()
+  @ValidateNested()
+  @Type(() => BillingDto)
+  billing: BillingDto;
+}
+
+class ProductDto {
+  @ApiProperty()
+  @IsNumber()
+  productID: number;
+
+  @ApiProperty()
+  @IsNumber()
+  variationID: number;
+
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiProperty()
+  @IsNumber()
+  price: number;
+}
+
 export class CreateCompleteOrderDto {
   @ApiProperty()
-  user: wooUserData;
+  @ValidateNested()
+  @Type(() => UserDataDto)
+  user: UserDataDto;
 
   @ApiProperty()
   @IsString()
@@ -22,12 +104,16 @@ export class CreateCompleteOrderDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  product: wooOrderProduct;
+  @ValidateNested()
+  @Type(() => ProductDto)
+  product?: ProductDto;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   createDateTime?: Date;
 
-  coupon?
+  @ApiProperty({ required: false })
+  @IsOptional()
+  coupon?: any;
 }

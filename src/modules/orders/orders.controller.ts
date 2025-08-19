@@ -45,6 +45,7 @@ export class OrdersController {
   createCompleteOrder(@Body() createOrderDto: CreateCompleteOrderDto) {
     return this.ordersService.createCompleteOrder(createOrderDto);
   }
+
   @Get('get-all')
   @UseGuards(RolesGuard)
   @Roles('admin')
