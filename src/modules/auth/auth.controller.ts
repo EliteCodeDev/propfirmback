@@ -67,6 +67,16 @@ export class AuthController {
   }
 
   @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async forgotPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.requestPasswordReset(dto);
+  }
+
+  @Public()
   @Get('confirm')
   async confirm(@Query('token') token: string) {
     return this.authService.confirmEmail(token);

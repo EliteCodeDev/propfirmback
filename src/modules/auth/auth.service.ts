@@ -99,7 +99,7 @@ export class AuthService {
 
     const confirmationLink = `${this.configService.get<string>(
       'app.clientUrl',
-    )}/auth/confirm?token=${confirmationToken}`;
+    )}/en/auth/login?token=${confirmationToken}`;
 
     await this.mailerService.sendMail({
       to: saved.email,
@@ -146,6 +146,10 @@ export class AuthService {
 
     if (user.isBlocked) {
       throw new UnauthorizedException('Account is blocked');
+    }
+
+    if (!user.isConfirmed) {
+      throw new UnauthorizedException('Please verify your email before logging in');
     }
 
     this.logger.log(`Login successful for email: ${email}`);
@@ -236,7 +240,7 @@ export class AuthService {
 
     const resetLink = `${this.configService.get<string>(
       'app.clientUrl',
-    )}/reset-password?token=${resetToken}`;
+    )}/en/auth/reset-password?token=${resetToken}`;
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -348,7 +352,7 @@ export class AuthService {
 
     const confirmationLink = `${this.configService.get<string>(
       'app.clientUrl',
-    )}/auth/confirm?token=${confirmationToken}`;
+    )}/en/auth/login?token=${confirmationToken}`;
 
     await this.mailerService.sendMail({
       to: user.email,
