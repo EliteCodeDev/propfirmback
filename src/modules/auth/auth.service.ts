@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   ConflictException,
   NotFoundException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -23,6 +24,7 @@ import { MailerService } from '../mailer/mailer.service';
 import { PasswordResetService } from '../password-reset/password-reset.service';
 import { Role } from '../rbac/entities/role.entity';
 import { date } from 'joi';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -170,6 +172,37 @@ export class AuthService {
       return rest;
     }
     return null;
+  }
+
+  /** Cambiar contraseña (usuario autenticado) */
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.userRepo.findOne({ where: { userID: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const matches = await BcryptUtil.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    );
+    if (!matches) {
+      throw new BadRequestException('Invalid current password');
+    }
+
+    // Optional: prevent using the same password
+    const sameAsBefore = await BcryptUtil.compare(
+      dto.newPassword,
+      user.passwordHash,
+    );
+    if (sameAsBefore) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
+    const newHash = await BcryptUtil.hash(dto.newPassword);
+    await this.userRepo.update(user.userID, { passwordHash: newHash });
+
+    this.logger.log(`Password changed for userID=${user.userID}`);
+    return { success: true, message: 'Password changed successfully' };
   }
 
   /** Refresh token */

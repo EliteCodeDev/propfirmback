@@ -25,6 +25,7 @@ import { ResendConfirmationDto } from './dto/resend-confirmation.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Query } from '@nestjs/common/decorators';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -94,5 +95,15 @@ export class AuthController {
   @ApiBearerAuth()
   async profile(@Request() req) {
     return req.user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change password for the authenticated user' })
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    const userId = req.user?.userID || req.user?.sub;
+    return this.authService.changePassword(userId, dto);
   }
 }
