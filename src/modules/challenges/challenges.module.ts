@@ -13,6 +13,6 @@ import { ChallengeTemplatesModule } from '../challenge-templates/challenge-templ
   ],
   controllers: [ChallengesController],
   providers: [ChallengesService],
-  exports: [ChallengesService],
+  exports: [ChallengesService, TypeOrmModule],
 })
 export class ChallengesModule {}

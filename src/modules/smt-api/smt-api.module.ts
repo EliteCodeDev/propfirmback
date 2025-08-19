@@ -8,6 +8,7 @@ import { SmtApiClient } from './client/smt-api.client';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Challenge } from '../challenges/entities/challenge.entity';
 import { ChallengeDetails } from '../challenges/entities/challenge-details.entity';
+import { AccountDataTransformPipe } from './pipes/account-data-transform.pipe';
 @Module({
   imports: [
     ConfigModule.forFeature(smtApiConfig),
@@ -15,7 +16,7 @@ import { ChallengeDetails } from '../challenges/entities/challenge-details.entit
     TypeOrmModule.forFeature([Challenge, ChallengeDetails]),
   ],
   controllers: [SmtApiController],
-  providers: [SmtApiService, SmtApiClient],
+  providers: [SmtApiService, SmtApiClient, AccountDataTransformPipe],
   exports: [SmtApiService, SmtApiClient],
 })
 export class SmtApiModule {}

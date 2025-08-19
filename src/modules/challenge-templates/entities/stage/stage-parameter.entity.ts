@@ -10,7 +10,7 @@ export class StageParameter {
   @PrimaryColumn('uuid')
   relationStageID: string;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   ruleValue: string;
 
   @Column({ type: 'boolean', default: true })

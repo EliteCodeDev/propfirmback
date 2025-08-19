@@ -15,6 +15,10 @@ export class CreateBrokerAccountDto {
   @IsString()
   server?: string;
 
+  @ApiProperty({ example: '192.168.1.1' })
+  @IsString()
+  serverIp: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

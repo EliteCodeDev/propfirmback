@@ -9,8 +9,7 @@ import { riskEvaluationResult } from '../types/risk-results';
 
 export type AccountStatus = 'active' | 'completed' | 'failed' | 'pending';
 
-
-class PositionsClassType {
+export class PositionsClassType {
   positions: OpenPosition[] | ClosedPosition[];
   resume: ResumePositionClose | ResumenPositionOpen;
   lenght: number;
@@ -41,16 +40,16 @@ class PositionsClassType {
 }
 
 export class Account {
-  userID: string;
+  accountID: string;
   login: string;
 
   balance?: Balance;
 
   equity?: number;
 
-  openPositions?: PositionsClassType 
+  openPositions?: PositionsClassType;
 
-  closedPositions?: PositionsClassType
+  closedPositions?: PositionsClassType;
 
   lastUpdate?: Date;
 
@@ -60,8 +59,10 @@ export class Account {
 
   riskValidation?: RiskValidation;
 
-  constructor(userID: string, login: string) {
-    this.userID = userID;
+  rulesEvaluation?: riskEvaluationResult;
+
+  constructor(accountID: string, login: string) {
+    this.accountID = accountID;
     this.login = login;
   }
 
@@ -120,10 +121,15 @@ export class MetaStats {
   averageMetrics: AverageMetrics;
   numTrades: number;
 }
+export class positionsDetails {
+  openPositions: OpenPosition[];
+  closedPositions: ClosedPosition[];
+}
 
 export class RiskValidation {
   profitTarget: number;
-  dailyTotalDrawdown: number;
+  dailyDrawdown: number;
+  maxDrawdown: number;
   tradingDays: number;
   inactiveDays: number;
 }

@@ -20,9 +20,12 @@ import { ChallengesService } from './challenges.service';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { ChallengeQueryDto } from './dto/challenge-query.dto';
+import { CreateChallengeDetailsDto } from './dto/create-challenge-details.dto';
+import { UpdateChallengeDetailsDto } from './dto/update-challenge-details.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Challenges')
 @ApiBearerAuth()
@@ -32,10 +35,11 @@ export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
+  // @UseGuards(RolesGuard)
+  @Public()
   @ApiOperation({ summary: 'Create a new challenge' })
   create(@Request() req, @Body() createChallengeDto: CreateChallengeDto) {
-    return this.challengesService.create(req.user.userID, createChallengeDto);
+    return this.challengesService.create(createChallengeDto);
   }
 
   @Get()
@@ -96,5 +100,65 @@ export class ChallengesController {
   })
   getAvailablePlans() {
     return this.challengesService.getAvailablePlans();
+  }
+
+  // Challenge Details endpoints
+  @Post('details')
+  @ApiOperation({ summary: 'Create challenge details' })
+  @ApiResponse({ status: 201, description: 'Challenge details created successfully' })
+  @ApiResponse({ status: 404, description: 'Challenge not found' })
+  @ApiResponse({ status: 403, description: 'Challenge details already exist' })
+  createChallengeDetails(@Body() createChallengeDetailsDto: CreateChallengeDetailsDto) {
+    return this.challengesService.createChallengeDetails(createChallengeDetailsDto);
+  }
+
+  @Get('details')
+  @ApiOperation({ summary: 'Get all challenge details' })
+  @ApiResponse({ status: 200, description: 'List of all challenge details' })
+  findAllChallengeDetails() {
+    return this.challengesService.findAllChallengeDetails();
+  }
+
+  @Get(':id/details')
+  @ApiOperation({ summary: 'Get challenge details by challenge ID' })
+  @ApiResponse({ status: 200, description: 'Challenge details found' })
+  @ApiResponse({ status: 404, description: 'Challenge details not found' })
+  findChallengeDetails(@Param('id') challengeID: string) {
+    return this.challengesService.findChallengeDetails(challengeID);
+  }
+
+  @Patch(':id/details')
+  @ApiOperation({ summary: 'Update challenge details' })
+  @ApiResponse({ status: 200, description: 'Challenge details updated successfully' })
+  @ApiResponse({ status: 404, description: 'Challenge details not found' })
+  updateChallengeDetails(
+    @Param('id') challengeID: string,
+    @Body() updateChallengeDetailsDto: UpdateChallengeDetailsDto,
+  ) {
+    return this.challengesService.updateChallengeDetails(challengeID, updateChallengeDetailsDto);
+  }
+
+  @Post(':id/details/upsert')
+  @ApiOperation({ 
+    summary: 'Create or update challenge details (upsert)',
+    description: 'Creates new challenge details if they don\'t exist, or updates existing ones'
+  })
+  @ApiResponse({ status: 200, description: 'Challenge details created or updated successfully' })
+  @ApiResponse({ status: 404, description: 'Challenge not found' })
+  upsertChallengeDetails(
+    @Param('id') challengeID: string,
+    @Body() challengeDetailsData: Omit<CreateChallengeDetailsDto, 'challengeID'>,
+  ) {
+    return this.challengesService.upsertChallengeDetails(challengeID, challengeDetailsData);
+  }
+
+  @Delete(':id/details')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Delete challenge details' })
+  @ApiResponse({ status: 200, description: 'Challenge details deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Challenge details not found' })
+  removeChallengeDetails(@Param('id') challengeID: string) {
+    return this.challengesService.removeChallengeDetails(challengeID);
   }
 }

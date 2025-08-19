@@ -61,7 +61,7 @@ export class SmtApiClient {
     const headerName = this.cfg.authHeader || 'Authorization';
     return {
       'Content-Type': 'application/json',
-      ...(this.cfg.apiKey ? { [headerName]: `Bearer ${this.cfg.apiKey}` } : {}),
+      ...(this.cfg.apiKey ? { [headerName]: `${this.cfg.apiKey}` } : {}),
       ...extra,
     };
   }
@@ -76,7 +76,7 @@ export class SmtApiClient {
       silent?: boolean;
     } = {},
   ): Promise<T> {
-    const url = this.buildUrl(path);
+    const url = this.buildUrl('api' + path);
     try {
       const res = await firstValueFrom(
         this.http.request<T>({
@@ -150,7 +150,7 @@ export class SmtApiClient {
   }
 
   async loginAll(accounts: LoginAccount[]) {
-    return this.request('post', '/auth/login-all', {
+    return this.request('post', '/login-all', {
       data: accounts,
     });
   }

@@ -48,14 +48,22 @@ export function averageMetrics(
 
 export function getMoreStats(account: Account) {
   const { balance, openPositions, closedPositions } = account;
-  const metrics = this.averageMetrics(
-    openPositions.positions,
-    closedPositions.positions,
+  
+  // Extraer las posiciones correctamente tipadas
+  const openPos = (openPositions?.positions as OpenPosition[]) || [];
+  const closedPos = (closedPositions?.positions as ClosedPosition[]) || [];
+  
+  const metrics = averageMetrics(openPos, closedPos);
+  const maxMinBalanceResult = maxMinBalance(
+    balance?.currentBalance || 0,
+    account.metaStats?.equity || 0,
+    account.metaStats?.maxMinBalance || new MaxMinBalance(),
   );
-  const maxMinBalance = this.maxMinBalance(
-    balance.currentBalance,
-    account.metaStats.equity,
-    account.metaStats.maxMinBalance,
-  );
-  const numTrades = this.numTrades(openPositions.positions, closedPositions.positions);
+  const totalTrades = numTrades(openPos, closedPos);
+  
+  return {
+    metrics,
+    maxMinBalance: maxMinBalanceResult,
+    totalTrades,
+  };
 }

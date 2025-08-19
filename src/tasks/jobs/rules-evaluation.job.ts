@@ -1,85 +1,136 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { BufferService } from 'src/lib/buffer/buffer.service';
-import { Account } from 'src/common/utils/account';
+import { Account, RiskParams, RiskValidation } from 'src/common/utils';
 import * as riskFunctions from 'src/common/functions';
-import { RiskParams } from 'src/common/utils';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
 
 @Injectable()
 export class RulesEvaluationJob {
   private readonly logger = new Logger(RulesEvaluationJob.name);
-  constructor(private readonly buffer: BufferService) {}
+  constructor(private readonly bufferService: BufferService) {}
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async evaluate() {
-    // Verificar si hay cuentas en el buffer
-    // try {
-    //   const bufferSize = await this.buffer.getSize();
-    //   if (bufferSize === 0) {
-    //     this.logger.debug('Buffer vacío, saltando evaluación de reglas');
-    //     return;
-    //   }
+    try {
+      const stats = this.bufferService.getStats();
+      if (stats.bufferSize === 0) {
+        this.logger.debug('Buffer vacío, saltando evaluación de reglas');
+        return;
+      }
 
-    //   this.logger.debug(
-    //     `Iniciando evaluación de reglas para ${bufferSize} cuentas`,
-    //   );
+      this.logger.debug(
+        `Iniciando evaluación de reglas para ${stats.bufferSize} cuentas`,
+      );
 
-    //   // Procesar todas las cuentas en paralelo usando el nuevo método optimizado
-    //   const results = await this.buffer.processAllParallel(
-    //     async (id: string, account: Account) => {
-    //       // Aplicar funciones de evaluación de riesgo
-    //       const validation = await this.evaluateAccountRules(
-    //         account,
-    //         {} as RiskParams,
-    //       );
+      // Obtener todas las entradas del buffer
+      const entries = await this.bufferService.listEntries();
+      let processedCount = 0;
+      let validationCount = 0;
 
-    //       return {
-    //         id,
-    //         validation,
-    //       };
-    //     },
-    //     {
-    //       skipEmpty: true,
-    //       logErrors: true,
-    //     },
-    //   );
+      // Procesar cada cuenta individualmente usando upsertAccount
+      for (const [login, account] of entries) {
+        try {
+          // Evaluar reglas de riesgo
+          const riskEvaluation = await this.evaluateAccountRules(
+            account,
+            this.getDefaultRiskParams(), // Usar parámetros por defecto o desde configuración
+          );
 
-    //   // Calcular estadísticas del procesamiento
-    //   const successful = results.filter((r) => r !== null).length;
+          // Actualizar la cuenta con los resultados de validación
+          await this.bufferService.upsertAccount(login, (prev) => {
+            // Crear una nueva instancia de Account manteniendo todos los métodos
+            const updated = Object.assign(
+              Object.create(Object.getPrototypeOf(prev)),
+              prev,
+            );
+            // Actualizar rulesEvaluation con el resultado completo de la evaluación
+            updated.rulesEvaluation = riskEvaluation;
+            // También actualizar riskValidation con valores numéricos para compatibilidad
+            updated.riskValidation = this.mapToRiskValidation(riskEvaluation);
+            updated.lastUpdate = new Date();
+            return updated;
+          });
 
-    //   this.logger.debug(
-    //     `RulesEvaluationJob completado: procesadas=${successful}/${bufferSize}, 
-    //   validaciones=${results.filter((r) => r !== null && r.validation).length}`,
-    //   );
-    // } catch (error) {
-    //   this.logger.error(`Error en RulesEvaluationJob: `, error);
-    // }
+          processedCount++;
+          if (riskEvaluation.status) {
+            validationCount++;
+          }
+        } catch (error) {
+          this.logger.error(`Error procesando cuenta ${login}:`, error);
+        }
+      }
+
+      this.logger.debug(
+        `RulesEvaluationJob completado: procesadas=${processedCount}/${stats.bufferSize}, validaciones_exitosas=${validationCount}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error en RulesEvaluationJob:`, error);
+    }
   }
 
   /**
    * Evalúa las reglas de riesgo para una cuenta específica
    * @param account Cuenta a evaluar
+   * @param riskParams Parámetros de riesgo
    * @returns Resultado de la evaluación
    */
   private async evaluateAccountRules(
     account: Account,
-    RiskParams: RiskParams,
+    riskParams: RiskParams,
   ): Promise<riskEvaluationResult> {
     try {
-      // Aquí se pueden aplicar las funciones de riesgo específicas
-      // Por ahora, implementación básica que se puede expandir
-      // const breaches: string[] = [];
-
-      const riskEvaluation = riskFunctions.riskEvaluation(account, RiskParams);
-
-      // TODO: Implementar evaluaciones específicas usando riskFunctions
-      // const riskEvaluation = await riskFunctions.evaluateRisk(account);
-
+      const riskEvaluation = riskFunctions.riskEvaluation(account, riskParams);
       return riskEvaluation;
     } catch (error) {
-      this.logger.error(`Error evaluando reglas para cuenta:`, error);
-      return {} as riskEvaluationResult;
+      this.logger.error(
+        `Error evaluando reglas para cuenta ${account.login}:`,
+        error,
+      );
+      return {
+        status: false,
+        profitTarget: { status: false, profit: 0, profitTarget: 0 },
+        dailyDrawdown: { status: false, drawdown: 0 },
+        maxDrawdown: { status: false, drawdown: 0 },
+        tradingDays: { status: false, numDays: 0, positionsPerDay: {} },
+        inactiveDays: {
+          startDate: null,
+          endDate: null,
+          inactiveDays: 0,
+          status: false,
+        },
+      } as riskEvaluationResult;
     }
+  }
+
+  /**
+   * Obtiene los parámetros de riesgo por defecto
+   * TODO: Estos deberían venir de configuración o base de datos
+   */
+  private getDefaultRiskParams(): RiskParams {
+    return {
+      profitTarget: 10000, // $10,000 profit target
+      dailyDrawdown: 5, // 5% daily drawdown
+      maxDrawdown: 10, // 10% max drawdown
+      lossPerTrade: 1, // 1% loss per trade
+      tradingDays: 5, // minimum 5 trading days
+      inactiveDays: 5, // maximum 5 consecutive inactive days
+    };
+  }
+
+  /**
+   * Mapea el resultado de evaluación de riesgo a RiskValidation
+   * @param riskEvaluation Resultado de la evaluación
+   * @returns RiskValidation para guardar en la cuenta
+   */
+  private mapToRiskValidation(
+    riskEvaluation: riskEvaluationResult,
+  ): RiskValidation {
+    const validation = new RiskValidation();
+    validation.profitTarget = riskEvaluation.profitTarget.profit;
+    validation.dailyDrawdown = riskEvaluation.dailyDrawdown.drawdown;
+    validation.tradingDays = riskEvaluation.tradingDays.numDays;
+    validation.inactiveDays = riskEvaluation.inactiveDays.inactiveDays;
+    return validation;
   }
 }

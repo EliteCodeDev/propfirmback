@@ -15,6 +15,7 @@ import {
   jwtConfigValues,
   mailerConfig,
   smtApiConfig,
+  apiKeysConfig,
 } from './config';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
@@ -36,6 +37,7 @@ import {
   RbacModule,
   SmtApiModule,
   StorageModule,
+  N8nModule,
 } from 'src/modules';
 // Seed on boot support
 import { SeedOnBootModule } from './seeds/seed-on-boot.module';
@@ -57,6 +59,7 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     ConfigModule.forFeature(jwtConfigValues),
     ConfigModule.forFeature(mailerConfig),
     ConfigModule.forFeature(smtApiConfig),
+    ConfigModule.forFeature(apiKeysConfig),
     // base de datos
     TypeOrmModule.forRootAsync(databaseConfig),
     // JWT
@@ -83,9 +86,10 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     VerificationModule,
     WithdrawalsModule,
     RbacModule,
-  SmtApiModule,
-  SeedOnBootModule,
+    SmtApiModule,
+    SeedOnBootModule,
     TasksModule,
+    N8nModule
   ],
   controllers: [
     //aea

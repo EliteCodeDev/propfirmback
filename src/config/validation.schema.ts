@@ -59,6 +59,11 @@ export const validationSchema = Joi.object({
   API_KEY_FUNDED: Joi.string().required(),
   API_URL_SCRAP: Joi.string().required().default('https://localhost:40002'),
 
+  // API Keys para diferentes servicios
+  N8N_API_KEY: Joi.string().optional(),
+  WEBHOOK_API_KEY: Joi.string().optional(),
+  EXTERNAL_API_KEY: Joi.string().optional(),
+
   // QR Code
   QR_CODE_WIDTH: Joi.number().default(300),
   QR_CODE_HEIGHT: Joi.number().default(300),

@@ -6,10 +6,15 @@ import {
   IsNumber,
   IsEnum,
   IsBoolean,
+  IsDate,
 } from 'class-validator';
 import { ChallengeStatus } from 'src/common/enums/challenge-status.enum';
 
 export class CreateChallengeDto {
+  @ApiProperty({ required: true })
+  @IsUUID()
+  userID: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsUUID()
@@ -17,12 +22,12 @@ export class CreateChallengeDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsDateString()
+  @IsDate()
   startDate?: Date;
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsDateString()
+  @IsDate()
   endDate?: Date;
 
   @ApiProperty({ required: false })

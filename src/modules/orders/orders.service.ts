@@ -376,6 +376,7 @@ export class OrdersService {
           platform: accountCredentials.userDataAccount.tipoCuenta,
           isUsed: true,
           investorPass: accountCredentials.userDataAccount.investorPassword,
+          serverIp: ip,
           innitialBalance: relationBalance.balance.balance,
         });
       } catch (err) {
@@ -389,8 +390,9 @@ export class OrdersService {
 
       // challenge creation
       try {
-        const challenge = await this.challengesService.create(user.userID, {
+        const challenge = await this.challengesService.create({
           brokerAccountID: brokerAccount.brokerAccountID,
+          userID: user.userID,
           relationID: relation.relationID,
           startDate: new Date(),
           numPhase: relation.stages.sort((a, b) => a.numPhase - b.numPhase)[0]

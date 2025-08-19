@@ -34,10 +34,16 @@ export function riskEvaluation(
     openPositions.positions,
     closedPositions.positions as ClosedPosition[],
   );
+  
+  // Asegurar que createDateTime sea un objeto Date válido
+  const createDateTime = account.createDateTime instanceof Date 
+    ? account.createDateTime 
+    : new Date(account.createDateTime || new Date());
+    
   const inactiveDays = consecutiveInactiveDays(
     openPositions.positions,
     closedPositions.positions as ClosedPosition[],
-    account.createDateTime,
+    createDateTime,
     params.inactiveDays,
   );
   return {

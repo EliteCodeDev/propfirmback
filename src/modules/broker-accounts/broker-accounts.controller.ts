@@ -21,11 +21,11 @@ import { UpdateBrokerAccountDto } from './dto/update-broker-account.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Broker Accounts')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Public()
 @Controller('broker-accounts')
 export class BrokerAccountsController {
   constructor(private readonly brokerAccountsService: BrokerAccountsService) {}

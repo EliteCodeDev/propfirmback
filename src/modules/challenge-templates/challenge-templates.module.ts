@@ -31,6 +31,6 @@ import {
   ],
   controllers: [ChallengeTemplatesController],
   providers: [ChallengeTemplatesService],
-  exports: [ChallengeTemplatesService],
+  exports: [ChallengeTemplatesService, TypeOrmModule],
 })
 export class ChallengeTemplatesModule {}

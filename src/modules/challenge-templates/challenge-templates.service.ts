@@ -442,6 +442,45 @@ export class ChallengeTemplatesService {
     });
   }
 
+  /**
+   * Obtiene toda la cadena de relaciones completa a partir de un relationID
+   * Incluye RelationStages, stages, RelationParameters y StageRules
+   */
+  async findCompleteRelationChain(relationID: string): Promise<ChallengeRelation> {
+    // Buscar la relación principal con todas sus relaciones
+    const relation = await this.challengeRelationRepository.findOne({
+      where: { relationID },
+      relations: ['category', 'plan', 'balances', 'stages'],
+    });
+
+    if (!relation) {
+      throw new NotFoundException('Challenge relation not found');
+    }
+
+    // Ordenar los stages por numPhase y cargar sus parámetros
+    if (relation.stages && relation.stages.length > 0) {
+      // Ordenar stages por numPhase
+      relation.stages.sort((a, b) => a.numPhase - b.numPhase);
+
+      // Para cada RelationStage, cargar sus parámetros con las reglas
+      for (const relationStage of relation.stages) {
+        relationStage.parameters = await this.stageParameterRepository.find({
+          where: { relationStageID: relationStage.relationStageID },
+          relations: ['rule'],
+        });
+
+        // También cargar la información del stage asociado
+        if (relationStage.stageID) {
+          relationStage.stage = await this.challengeStageRepository.findOne({
+            where: { stageID: relationStage.stageID },
+          });
+        }
+      }
+    }
+
+    return relation;
+  }
+
   // Relation Balances
   async createRelationBalance(
     dto: CreateRelationBalanceDto,

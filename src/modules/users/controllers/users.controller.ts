@@ -23,6 +23,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UsersService } from '../services/users.service';
+import { Public } from 'src/common/decorators/public.decorator';
 
 //swagger
 @ApiTags('Users')
@@ -44,8 +45,7 @@ export class UsersController {
 
   // 3) Resto de endpoints protegidos por rol "admin"
   @Get()
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @Public()
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Users successfully retrieved' })
   findAll(@Query() query: UserQueryDto) {

@@ -12,3 +12,4 @@ export * from './auth/auth.module';
 export * from './mailer/mailer.module';
 export * from './users/users.module';
 export * from './storage/storage.module';
+export * from './n8n/n8n.module';
