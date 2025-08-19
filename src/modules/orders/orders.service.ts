@@ -99,6 +99,8 @@ export class OrdersService {
             createOrderDto.product.productID,
           );
         relation = relations?.[0];
+        relation =
+          this.challengeTemplatesService.findCompleteRelationChain(relation);
         if (!relation) {
           return {
             status: 'error',

@@ -96,6 +96,14 @@ export class BalanceForRelationDto {
   @IsOptional()
   @IsNumber()
   discount?: number;
+
+  @ApiProperty({
+    description: 'WooCommerce product ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  wooID?: number;
 }
 export class CreateRelationBalancesDto {
   @ApiProperty({
