@@ -38,7 +38,7 @@ export class OrdersController {
   create(@Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(createOrderDto);
   }
-  @Post('create')
+  @Post('create-complete')
   @UseGuards(GenericApiKeyGuard)
   @ApiKeyService('n8n')
   @ApiOperation({ summary: 'Create a complete order' })
