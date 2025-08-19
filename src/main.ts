@@ -22,7 +22,8 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://127.0.0.1:3000',
       'http://localhost:4002',
-      'http://127.0.0.1:4002'
+      'http://127.0.0.1:4002',
+      'http://propfirm_n8n:5678/'
     ],
     credentials: true,
   });
