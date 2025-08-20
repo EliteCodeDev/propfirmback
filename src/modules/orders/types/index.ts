@@ -1,6 +1,9 @@
 import { UserAccount } from 'src/modules/users/entities';
 import { CreateCompleteOrderDto } from '../dto/create-complete-order.dto';
-import { ChallengeRelation } from 'src/modules/challenge-templates/entities';
+import {
+  ChallengeBalance,
+  ChallengeRelation,
+} from 'src/modules/challenge-templates/entities';
 export type ServiceStatus = 'success' | 'error';
 
 export interface ServiceResult<T> {
@@ -55,9 +58,10 @@ export interface wooCoupon {
 export interface createSmtApiChallengeData {
   user: UserAccount;
   createOrderDto: CreateCompleteOrderDto;
-  relationBalance: any;
+  balance: ChallengeBalance;
   leverage: string;
-  ip: string;
+  ip?: string;
+  url?: string;
   parentID?: string;
   platform: string;
   relation: ChallengeRelation;

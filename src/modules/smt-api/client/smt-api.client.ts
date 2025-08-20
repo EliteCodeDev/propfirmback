@@ -103,12 +103,15 @@ export class SmtApiClient {
       nombre: data.name,
       apellido: data.lastName || '',
       email: data.email,
-      telefono: data.phone || '',
       deposito: data.balance,
       apalancamiento: data.leverage,
-      ip: data.ip || '',
-      url: data.url || '',
+      telefono: data.phone,
+      url: data.url,
     };
+    console.log(
+      'Creating SMT API account with payload GAAAAAAA:',
+      accountPayload,
+    );
     if (data.platform === 'mt4')
       return this.request('post', '/mt4/auth/register', {
         data: accountPayload,

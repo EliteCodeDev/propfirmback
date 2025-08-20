@@ -21,8 +21,11 @@ import { wooUserData } from './types';
 import { generateRandomPassword } from 'src/common/utils/randomPassword';
 import { ChallengeStatus, OrderStatus } from 'src/common/enums';
 import { Challenge } from '../challenges/entities/challenge.entity';
+import { Logger } from '@nestjs/common';
+import { ChallengeRelation } from '../challenge-templates/entities';
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
   constructor(
     @InjectRepository(CustomerOrder)
     private orderRepository: Repository<CustomerOrder>,
@@ -54,6 +57,7 @@ export class OrdersService {
         .catch((err) => {
           throw { failedAt: 'user_lookup', original: err };
         });
+      this.logger.log('User lookup result:', user);
 
       if (!user) {
         // create new user
@@ -68,8 +72,10 @@ export class OrdersService {
         }
         const { password, user: createdUser } = userRes.data;
         user = createdUser;
+        this.logger.log('New user created:', user);
         // send email with credentials
         try {
+          this.logger.log('Sending email with credentials to:', user.email);
           await this.mailerService.sendMail({
             to: user.email,
             subject: 'Your account has been created',
@@ -92,15 +98,19 @@ export class OrdersService {
       }
 
       // get relation and balance
-      let relation;
+      let relation: ChallengeRelation;
       try {
         const { relations } =
           await this.challengeTemplatesService.findOnePlanByWooID(
             createOrderDto.product.productID,
           );
+        this.logger.log('Plan relations fetched:', relations);
         relation = relations?.[0];
         relation =
-          this.challengeTemplatesService.findCompleteRelationChain(relation);
+          await this.challengeTemplatesService.findCompleteRelationChain(
+            relation.relationID,
+          );
+        this.logger.log('Complete relation chain:', JSON.stringify(relation));
         if (!relation) {
           return {
             status: 'error',
@@ -120,7 +130,15 @@ export class OrdersService {
       const relationBalance = relation.balances?.find(
         (bal) => bal.wooID === createOrderDto.product.variationID,
       );
-      if (!relationBalance) {
+      this.logger.log(
+        'Matched relation balance:',
+        JSON.stringify(relationBalance),
+      );
+      const challengeBalance =
+        await this.challengeTemplatesService.findOneBalance(
+          relationBalance.balanceID,
+        );
+      if (!relationBalance || !challengeBalance) {
         return {
           status: 'error',
           message:
@@ -129,16 +147,19 @@ export class OrdersService {
         };
       }
 
-      const ip = '';
-      const leverage = '1:100';
+      const url = 'https://access.metatrader5.com/terminal';
+      const leverage = '100';
       const platform = 'mt5';
-
+      this.logger.log('Creating SMT API challenge with data:', {
+        user,
+        createOrderDto,
+      });
       const challengeRes = await this.createSmtApiChallenge({
         user,
         createOrderDto,
-        relationBalance,
+        balance: challengeBalance,
         leverage,
-        ip,
+        url,
         platform,
         relation,
       });
@@ -337,9 +358,9 @@ export class OrdersService {
     const {
       user,
       createOrderDto,
-      relationBalance,
+      balance,
       leverage,
-      ip,
+      url,
       parentID,
       platform,
       relation,
@@ -348,16 +369,27 @@ export class OrdersService {
     try {
       // smt-api account creation
       let accountCredentials: any;
+      const name = user.firstName || user.username;
+      this.logger.log('Creating SMT API account with data:', {
+        name,
+        lastName: user.lastName || name,
+        email: createOrderDto.user.email,
+        balance: balance.balance.toString(),
+        leverage,
+        phone: user.phone || '',
+        platform,
+        url,
+      });
       try {
         accountCredentials = await this.smtApiService.createAccount({
-          name: user.firstName,
-          lastName: user.lastName,
+          name: name,
+          lastName: user.lastName || name,
           email: createOrderDto.user.email,
-          balance: relationBalance.balance.balance.toString(),
+          balance: balance.balance.toString(),
           leverage,
           phone: user.phone || '',
           platform,
-          ip,
+          url,
         });
       } catch (err) {
         return {
@@ -378,8 +410,8 @@ export class OrdersService {
           platform: accountCredentials.userDataAccount.tipoCuenta,
           isUsed: true,
           investorPass: accountCredentials.userDataAccount.investorPassword,
-          serverIp: ip,
-          innitialBalance: relationBalance.balance.balance,
+          serverIp: url,
+          innitialBalance: balance.balance,
         });
       } catch (err) {
         return {

@@ -459,4 +459,10 @@ export class ChallengeTemplatesController {
   removeRelationBalance(@Param('id') id: string) {
     return this.challengeTemplatesService.removeRelationBalance(id);
   }
+
+  @Delete('relation-balances/by-relation/:relationId')
+  @ApiOperation({ summary: 'Delete all relation balances for a specific relation' })
+  removeAllRelationBalancesByRelation(@Param('relationId') relationId: string) {
+    return this.challengeTemplatesService.removeAllRelationBalancesByRelation(relationId);
+  }
 }

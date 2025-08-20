@@ -492,11 +492,16 @@ export class ChallengeTemplatesService {
   async createRelationBalances(
     dtos: CreateRelationBalancesDto,
   ): Promise<RelationBalance[]> {
+    // Primero eliminar todos los relation balances existentes para esta relación
+    await this.removeAllRelationBalancesByRelation(dtos.challengeRelationID);
+    
+    // Luego crear los nuevos relation balances
     let relationBalances: RelationBalance[] = [];
     for (const dto of dtos.relationBalances) {
       relationBalances.push(
         this.relationBalanceRepository.create({
           ...dto,
+          balanceID: dto.challengeBalanceID,
           relationID: dtos.challengeRelationID,
         }),
       );
@@ -536,5 +541,9 @@ export class ChallengeTemplatesService {
   async removeRelationBalance(id: string): Promise<void> {
     const relationBalance = await this.findOneRelationBalance(id);
     await this.relationBalanceRepository.remove(relationBalance);
+  }
+
+  async removeAllRelationBalancesByRelation(relationId: string): Promise<void> {
+    await this.relationBalanceRepository.delete({ relationID: relationId });
   }
 }
