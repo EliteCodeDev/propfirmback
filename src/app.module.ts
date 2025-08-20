@@ -17,6 +17,7 @@ import {
   mailerConfig,
   smtApiConfig,
   apiKeysConfig,
+  minioConfig,
 } from './config';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
@@ -38,6 +39,7 @@ import {
   RbacModule,
   SmtApiModule,
   StorageModule,
+  MinioModule,
   N8nModule,
 } from 'src/modules';
 // Seed on boot support
@@ -61,6 +63,7 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     ConfigModule.forFeature(mailerConfig),
     ConfigModule.forFeature(smtApiConfig),
     ConfigModule.forFeature(apiKeysConfig),
+    ConfigModule.forFeature(minioConfig),
     // base de datos
     TypeOrmModule.forRootAsync(databaseConfig),
     // JWT
@@ -75,6 +78,7 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     // Application modules
     ContextsModule,
     StorageModule,
+    MinioModule,
     AuthModule,
     MailerModule,
     UsersModule,

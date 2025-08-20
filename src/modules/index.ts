@@ -11,5 +11,6 @@ export * from './smt-api/smt-api.module';
 export * from './auth/auth.module';
 export * from './mailer/mailer.module';
 export * from './users/users.module';
-export * from './storage/storage.module';
+export * from './storage/local-storage/storage.module';
+export * from './storage/minio/minio.module';
 export * from './n8n/n8n.module';

@@ -7,7 +7,7 @@ import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
 import { VerificationStatus } from 'src/common/enums/verification-status.enum';
 import { MediaType } from 'src/common/enums/media-type.enum';
-import { StorageService } from 'src/modules/storage/storage.service';
+import { StorageService } from 'src/modules/storage/local-storage/storage.service';
 
 @Injectable()
 export class VerificationService {

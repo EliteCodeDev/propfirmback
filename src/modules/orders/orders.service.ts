@@ -23,6 +23,10 @@ import { ChallengeStatus, OrderStatus } from 'src/common/enums';
 import { Challenge } from '../challenges/entities/challenge.entity';
 import { Logger } from '@nestjs/common';
 import { ChallengeRelation } from '../challenge-templates/entities';
+import {
+  getBasicRiskParams,
+  getParameterValueBySlug,
+} from 'src/common/utils/account-mapper';
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -163,8 +167,9 @@ export class OrdersService {
         platform,
         relation,
       });
+      this.logger.log('SMT API challenge created:', challengeRes.data);
 
-      if (challengeRes.status === 'error' || !challengeRes.data) {
+      if (!challengeRes.data) {
         return {
           status: 'error',
           message: challengeRes.message || 'No se pudo crear el challenge',
@@ -352,6 +357,80 @@ export class OrdersService {
     }
   }
 
+  async createBrokerAndChallenge(
+    accountCredentials: any,
+    user: any,
+    relation: ChallengeRelation,
+    balance: any,
+    url: string,
+  ): Promise<ServiceResult<Challenge>> {
+    try {
+      // broker account creation
+      let brokerAccount;
+      try {
+        brokerAccount = await this.brokerAccountsService.create({
+          login: accountCredentials.userDataAccount.login,
+          password: accountCredentials.userDataAccount.password,
+          server: accountCredentials.userDataAccount.servidor,
+          platform: accountCredentials.userDataAccount.tipoCuenta,
+          isUsed: true,
+          investorPass:
+            accountCredentials.userDataAccount?.investorPassword || '',
+          serverIp: url,
+          innitialBalance: balance.balance,
+        });
+      } catch (err) {
+        return {
+          status: 'error',
+          message: 'Fallo al crear la cuenta de bróker',
+          failedAt: 'broker_account_create',
+          details: err?.message ?? err,
+        };
+      }
+
+      // challenge creation
+      try {
+        const challenge = await this.challengesService.create({
+          brokerAccountID: brokerAccount.brokerAccountID,
+          userID: user.userID,
+          relationID: relation.relationID,
+          startDate: new Date(),
+          numPhase: relation.stages.sort((a, b) => a.numPhase - b.numPhase)[0]
+            .numPhase,
+          isActive: true,
+          status: ChallengeStatus.INNITIAL,
+        });
+        challenge.relation = relation;
+        const riskParams = getBasicRiskParams(challenge);
+
+        const challengeDetails =
+          await this.challengesService.createChallengeDetails({
+            challengeID: challenge.challengeID,
+            rulesParams: riskParams,
+          });
+
+        return {
+          status: 'success',
+          message: 'Challenge creado correctamente',
+          data: challenge,
+        };
+      } catch (err) {
+        return {
+          status: 'error',
+          message: 'Fallo al crear el challenge',
+          failedAt: 'challenge_create',
+          details: err?.message ?? err,
+        };
+      }
+    } catch (err) {
+      return {
+        status: 'error',
+        message: 'Error inesperado al crear el challenge',
+        details: err?.message ?? err,
+      };
+    }
+  }
+
   async createSmtApiChallenge(
     createSmtApiChallengeData: createSmtApiChallengeData,
   ): Promise<ServiceResult<Challenge>> {
@@ -400,53 +479,14 @@ export class OrdersService {
         };
       }
 
-      // broker account creation
-      let brokerAccount;
-      try {
-        brokerAccount = await this.brokerAccountsService.create({
-          login: accountCredentials.userDataAccount.login,
-          password: accountCredentials.userDataAccount.password,
-          server: accountCredentials.userDataAccount.servidor,
-          platform: accountCredentials.userDataAccount.tipoCuenta,
-          isUsed: true,
-          investorPass: accountCredentials.userDataAccount.investorPassword,
-          serverIp: url,
-          innitialBalance: balance.balance,
-        });
-      } catch (err) {
-        return {
-          status: 'error',
-          message: 'Fallo al crear la cuenta de bróker',
-          failedAt: 'broker_account_create',
-          details: err?.message ?? err,
-        };
-      }
-
-      // challenge creation
-      try {
-        const challenge = await this.challengesService.create({
-          brokerAccountID: brokerAccount.brokerAccountID,
-          userID: user.userID,
-          relationID: relation.relationID,
-          startDate: new Date(),
-          numPhase: relation.stages.sort((a, b) => a.numPhase - b.numPhase)[0]
-            .numPhase,
-          isActive: true,
-          status: ChallengeStatus.INNITIAL,
-        });
-        return {
-          status: 'success',
-          message: 'Challenge creado correctamente',
-          data: challenge,
-        };
-      } catch (err) {
-        return {
-          status: 'error',
-          message: 'Fallo al crear el challenge',
-          failedAt: 'challenge_create',
-          details: err?.message ?? err,
-        };
-      }
+      // Create broker account and challenge using the separated function
+      return await this.createBrokerAndChallenge(
+        accountCredentials,
+        user,
+        relation,
+        balance,
+        url,
+      );
     } catch (err) {
       return {
         status: 'error',

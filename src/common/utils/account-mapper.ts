@@ -8,6 +8,7 @@ import {
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-details.entity';
 import { BrokerAccount } from 'src/modules/broker-accounts/entities/broker-account.entity';
+import { RiskParams } from 'src/common/utils';
 
 /**
  * Función utilitaria para obtener valores de parámetros por slug desde un challenge
@@ -39,7 +40,26 @@ export function getParameterValueBySlug(
 
   return Number(parameter?.ruleValue || 0);
 }
-
+export function getRiskParamsFromChallenge(
+  challenge: Challenge,
+  slugs: string[],
+) {
+  const riskParams = {};
+  slugs.forEach((slug) => {
+    riskParams[slug] = getParameterValueBySlug(challenge, slug);
+  });
+  return riskParams;
+}
+export function getBasicRiskParams(challenge: Challenge): RiskParams {
+  return {
+    profitTarget: getParameterValueBySlug(challenge, 'profit-target'),
+    dailyDrawdown: getParameterValueBySlug(challenge, 'daily-drawdown'),
+    maxDrawdown: getParameterValueBySlug(challenge, 'max-drawdown'),
+    tradingDays: getParameterValueBySlug(challenge, 'trading-days'),
+    lossPerTrade: getParameterValueBySlug(challenge, 'loss-per-trade'),
+    inactiveDays: getParameterValueBySlug(challenge, 'inactive-days'),
+  };
+}
 /**
  * Mapea los datos de Challenge, ChallengeDetails y BrokerAccount a la estructura Account del buffer
  * @param challenge Entidad Challenge con relaciones cargadas
@@ -264,4 +284,50 @@ export function createBasicAccountFromChallenge(challenge: Challenge): Account {
   account.riskValidation.inactiveDays = 0;
 
   return account;
+}
+
+/**
+ * Mapea challenges a accounts con datos básicos únicamente
+ * Excluye: posiciones, ruleEvaluation, riskValidation, rulesEvaluation
+ * @param challenges Array de challenges
+ * @returns Array de accounts con datos básicos
+ */
+export function mapChallengesToBasicAccounts(challenges: Challenge[]): Partial<Account>[] {
+  return challenges
+    .filter((challenge) => challenge.brokerAccount)
+    .map((challenge) => {
+      try {
+        const basicAccount = {
+          accountID: challenge.brokerAccount.brokerAccountID,
+          login: challenge.brokerAccount.login,
+          createDateTime: challenge.startDate ? new Date(challenge.startDate) : new Date(),
+          lastUpdate: new Date(),
+          balance: {
+            initialBalance: challenge.brokerAccount.innitialBalance || 0,
+            currentBalance: challenge.dynamicBalance || challenge.brokerAccount.innitialBalance || 0,
+            dailyBalance: challenge.dynamicBalance || challenge.brokerAccount.innitialBalance || 0,
+          },
+          equity: challenge.details?.metaStats?.equity || challenge.dynamicBalance || challenge.brokerAccount.innitialBalance || 0,
+          metaStats: challenge.details?.metaStats ? {
+            equity: challenge.details.metaStats.equity || 0,
+            maxMinBalance: challenge.details.metaStats.maxMinBalance || { maxBalance: 0, minBalance: 0 },
+            averageMetrics: challenge.details.metaStats.averageMetrics || {
+              averageProfit: 0,
+              losingTrades: 0,
+              winningTrades: 0,
+              totalTrades: 0,
+              lossRate: 0,
+              averageLoss: 0,
+              winRate: 0,
+            },
+            numTrades: challenge.details.metaStats.numTrades || 0,
+          } : undefined,
+        };
+        return basicAccount;
+      } catch (error) {
+        console.error(`Error mapeando challenge ${challenge.challengeID}:`, error);
+        return null;
+      }
+    })
+    .filter((account) => account !== null);
 }

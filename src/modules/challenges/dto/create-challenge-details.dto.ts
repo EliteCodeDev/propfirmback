@@ -1,5 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUUID, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsDateString,
+  ValidateNested,
+  IsObject,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { MetaStats, positionsDetails } from 'src/common/utils/account';
+import { RiskParams } from 'src/common/utils/risk';
+import { riskEvaluationResult } from 'src/common/types/risk-results';
 
 export class CreateChallengeDetailsDto {
   @ApiProperty({
@@ -10,40 +21,43 @@ export class CreateChallengeDetailsDto {
   challengeID: string;
 
   @ApiProperty({
-    description: 'Meta statistics data in JSON format',
-    example: '{"balance": 10000, "equity": 9500}',
+    description: 'Meta statistics data',
+    type: () => MetaStats,
     required: false,
   })
   @IsOptional()
-  @IsString()
-  metaStats?: string;
+  @ValidateNested()
+  @Type(() => MetaStats)
+  metaStats?: MetaStats;
 
   @ApiProperty({
-    description: 'Positions data in JSON format',
-    example: '{"openPositions": [], "closedPositions": []}',
+    description: 'Positions data',
+    type: () => positionsDetails,
     required: false,
   })
   @IsOptional()
-  @IsString()
-  positions?: string;
+  @ValidateNested()
+  @Type(() => positionsDetails)
+  positions?: positionsDetails;
 
   @ApiProperty({
-    description: 'Rules validation data in JSON format',
-    example: '{"dailyDrawdown": {"status": "passed", "value": 0.05}}',
+    description: 'Rules validation data',
+    type: () => Object,
     required: false,
   })
   @IsOptional()
-  @IsString()
-  rulesValidation?: string;
+  @IsObject()
+  rulesValidation?: riskEvaluationResult;
 
   @ApiProperty({
-    description: 'Rules parameters data in JSON format',
-    example: '{"maxRisk": 0.1, "minProfit": 0.05}',
+    description: 'Rules parameters data',
+    type: () => RiskParams,
     required: false,
   })
   @IsOptional()
-  @IsString()
-  rulesParams?: string;
+  @ValidateNested()
+  @Type(() => RiskParams)
+  rulesParams?: RiskParams;
 
   @ApiProperty({
     description: 'Last update timestamp',

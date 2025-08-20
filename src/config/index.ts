@@ -5,3 +5,4 @@ export { jwtConfig, jwtConfigValues } from './jwt.config';
 export { appConfig } from './app.config';
 export { default as smtApiConfig } from './smt-api.config';
 export { default as apiKeysConfig } from './api-keys.config';
+export { minioConfig } from './minio.config';

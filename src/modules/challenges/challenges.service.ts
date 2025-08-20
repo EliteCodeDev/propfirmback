@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository } from 'typeorm';
 import { MetaStats, positionsDetails } from 'src/common/utils';
+import { RiskParams } from 'src/common/utils/risk';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
 import { Challenge } from './entities/challenge.entity';
 import { ChallengeDetails } from './entities/challenge-details.entity';
@@ -141,17 +142,10 @@ export class ChallengesService {
 
     const payloadCreate: DeepPartial<ChallengeDetails> = {
       challengeID: createChallengeDetailsDto.challengeID,
-      metaStats: createChallengeDetailsDto.metaStats
-        ? (JSON.parse(createChallengeDetailsDto.metaStats) as MetaStats)
-        : null,
-      positions: createChallengeDetailsDto.positions
-        ? (JSON.parse(createChallengeDetailsDto.positions) as positionsDetails)
-        : null,
-      rulesValidation: createChallengeDetailsDto.rulesValidation
-        ? (JSON.parse(
-            createChallengeDetailsDto.rulesValidation,
-          ) as riskEvaluationResult)
-        : null,
+      metaStats: createChallengeDetailsDto.metaStats || null,
+      positions: createChallengeDetailsDto.positions || null,
+      rulesValidation: createChallengeDetailsDto.rulesValidation || null,
+      rulesParams: createChallengeDetailsDto.rulesParams || null,
       lastUpdate: createChallengeDetailsDto.lastUpdate ?? new Date(),
     };
     const challengeDetails =
@@ -194,9 +188,7 @@ export class ChallengesService {
         'metaStats',
       )
     ) {
-      updates.metaStats = updateChallengeDetailsDto.metaStats
-        ? (JSON.parse(updateChallengeDetailsDto.metaStats) as MetaStats)
-        : null;
+      updates.metaStats = updateChallengeDetailsDto.metaStats || null;
     }
     if (
       Object.prototype.hasOwnProperty.call(
@@ -204,9 +196,7 @@ export class ChallengesService {
         'positions',
       )
     ) {
-      updates.positions = updateChallengeDetailsDto.positions
-        ? (JSON.parse(updateChallengeDetailsDto.positions) as positionsDetails)
-        : null;
+      updates.positions = updateChallengeDetailsDto.positions || null;
     }
     if (
       Object.prototype.hasOwnProperty.call(
@@ -214,11 +204,15 @@ export class ChallengesService {
         'rulesValidation',
       )
     ) {
-      updates.rulesValidation = updateChallengeDetailsDto.rulesValidation
-        ? (JSON.parse(
-            updateChallengeDetailsDto.rulesValidation,
-          ) as riskEvaluationResult)
-        : null;
+      updates.rulesValidation = updateChallengeDetailsDto.rulesValidation || null;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(
+        updateChallengeDetailsDto,
+        'rulesParams',
+      )
+    ) {
+      updates.rulesParams = updateChallengeDetailsDto.rulesParams || null;
     }
 
     Object.assign(challengeDetails, updates);
@@ -248,16 +242,12 @@ export class ChallengesService {
       if (
         Object.prototype.hasOwnProperty.call(challengeDetailsData, 'metaStats')
       ) {
-        updates.metaStats = challengeDetailsData.metaStats
-          ? (JSON.parse(challengeDetailsData.metaStats) as MetaStats)
-          : null;
+        updates.metaStats = challengeDetailsData.metaStats || null;
       }
       if (
         Object.prototype.hasOwnProperty.call(challengeDetailsData, 'positions')
       ) {
-        updates.positions = challengeDetailsData.positions
-          ? (JSON.parse(challengeDetailsData.positions) as positionsDetails)
-          : null;
+        updates.positions = challengeDetailsData.positions || null;
       }
       if (
         Object.prototype.hasOwnProperty.call(
@@ -265,11 +255,15 @@ export class ChallengesService {
           'rulesValidation',
         )
       ) {
-        updates.rulesValidation = challengeDetailsData.rulesValidation
-          ? (JSON.parse(
-              challengeDetailsData.rulesValidation,
-            ) as riskEvaluationResult)
-          : null;
+        updates.rulesValidation = challengeDetailsData.rulesValidation || null;
+      }
+      if (
+        Object.prototype.hasOwnProperty.call(
+          challengeDetailsData,
+          'rulesParams',
+        )
+      ) {
+        updates.rulesParams = challengeDetailsData.rulesParams || null;
       }
       Object.assign(existingDetails, updates);
       return this.challengeDetailsRepository.save(existingDetails);
@@ -277,17 +271,10 @@ export class ChallengesService {
       // Create new details
       const payloadNew: DeepPartial<ChallengeDetails> = {
         challengeID,
-        metaStats: challengeDetailsData.metaStats
-          ? (JSON.parse(challengeDetailsData.metaStats) as MetaStats)
-          : null,
-        positions: challengeDetailsData.positions
-          ? (JSON.parse(challengeDetailsData.positions) as positionsDetails)
-          : null,
-        rulesValidation: challengeDetailsData.rulesValidation
-          ? (JSON.parse(
-              challengeDetailsData.rulesValidation,
-            ) as riskEvaluationResult)
-          : null,
+        metaStats: challengeDetailsData.metaStats || null,
+        positions: challengeDetailsData.positions || null,
+        rulesValidation: challengeDetailsData.rulesValidation || null,
+        rulesParams: challengeDetailsData.rulesParams || null,
         lastUpdate: new Date(),
       };
       const challengeDetails =
