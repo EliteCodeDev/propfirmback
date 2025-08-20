@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { TurnstileService } from './common/security/turnstile.service';
 
 import {
   validationSchema,
@@ -103,7 +104,8 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     { provide: APP_FILTER, useClass: TypeOrmExceptionFilter },
     // interceptores globales
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
-    { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+  { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+  TurnstileService,
   ],
 })
 export class AppModule {}

@@ -26,6 +26,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Query } from '@nestjs/common/decorators';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { TurnstileGuard } from 'src/common/security/turnstile.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -35,6 +36,7 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(TurnstileGuard)
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
@@ -62,6 +64,7 @@ export class AuthController {
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(TurnstileGuard)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.requestPasswordReset(dto);
   }
@@ -72,6 +75,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Request password reset' })
   @ApiResponse({ status: 200, description: 'Password reset email sent successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @UseGuards(TurnstileGuard)
   async forgotPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.requestPasswordReset(dto);
   }
@@ -85,6 +89,7 @@ export class AuthController {
   @Public()
   @Post('reset-password/complete')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(TurnstileGuard)
   async completePasswordReset(@Body() dto: CompletePasswordResetDto) {
     return this.authService.completePasswordReset(dto);
   }
@@ -96,6 +101,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Confirmation email sent successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 409, description: 'Email is already confirmed' })
+  @UseGuards(TurnstileGuard)
   async resendConfirmation(@Body() dto: ResendConfirmationDto) {
     return this.authService.resendConfirmationEmail(dto.email);
   }
