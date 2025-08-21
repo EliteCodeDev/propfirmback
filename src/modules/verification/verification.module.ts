@@ -4,12 +4,12 @@ import { VerificationController } from './verification.controller';
 import { VerificationService } from './verification.service';
 import { Verification } from './entities/verification.entity';
 import { Media } from './entities/media.entity';
-import { StorageService } from 'src/modules/storage/local-storage/storage.service';
+import { MinioModule } from 'src/modules/storage/minio/minio.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Verification, Media])],
+  imports: [TypeOrmModule.forFeature([Verification, Media]), MinioModule],
   controllers: [VerificationController],
-  providers: [VerificationService, StorageService],
+  providers: [VerificationService],
   exports: [VerificationService],
 })
 export class VerificationModule {}

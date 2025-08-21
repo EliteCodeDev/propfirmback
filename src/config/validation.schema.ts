@@ -70,4 +70,11 @@ export const validationSchema = Joi.object({
 
   // FRONTEND
   FRONTEND_URL: Joi.string().default('http://localhost:3000'),
+
+  // Minio
+  MINIO_ENDPOINT: Joi.string().required(),
+  MINIO_PORT: Joi.number().required(),
+  MINIO_ACCESS_KEY: Joi.string().required(),
+  MINIO_SECRET_KEY: Joi.string().required(),
+  MINIO_BUCKET_NAME: Joi.string().required(),
 });
