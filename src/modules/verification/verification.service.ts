@@ -8,6 +8,8 @@ import { UpdateVerificationDto } from './dto/update-verification.dto';
 import { VerificationStatus } from 'src/common/enums/verification-status.enum';
 import { MediaType } from 'src/common/enums/media-type.enum';
 import { MinioService } from 'src/modules/storage/minio/minio.service';
+import { MailerService } from 'src/modules/mailer/mailer.service';
+import { UserAccount } from '../users/entities';
 
 @Injectable()
 export class VerificationService {
@@ -17,8 +19,40 @@ export class VerificationService {
     @InjectRepository(Media)
     private mediaRepository: Repository<Media>,
     private minioService: MinioService,
+    private mailerService: MailerService,
+    @InjectRepository(UserAccount)
+    private userAccountRepository: Repository<UserAccount>,
   ) {}
 
+  async createVerification(
+    userID: string,
+    createVerificationDto: CreateVerificationDto,
+    files?: any[],
+  ): Promise<Verification> {
+    //create verification
+
+    const verification = await this.create(
+      userID,
+      createVerificationDto,
+      files,
+    );
+    const user = await this.userAccountRepository.findOne({
+      where: { userID: userID },
+    });
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Verification in Process',
+      template: 'verification-in-process',
+      context: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        verificationID: verification.verificationID,
+        currentYear: new Date().getFullYear(),
+      },
+    });
+    return verification;
+    //send email to user
+  }
   async create(
     userID: string,
     createVerificationDto: CreateVerificationDto,
@@ -39,7 +73,7 @@ export class VerificationService {
         const file = files[i];
         const fileType = this.getFileTypeFromIndex(i); // front, back, selfie
         const folderPath = `verifications/${userID}/${savedVerification.verificationID}`;
-        
+
         const uploadResult = await this.minioService.uploadFile(
           file,
           folderPath,
