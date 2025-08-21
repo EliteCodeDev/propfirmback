@@ -22,6 +22,8 @@ export const validationSchema = Joi.object({
   DATABASE_SSL: Joi.boolean().default(false),
   DB_DROP_SCHEMA: Joi.boolean().default(false),
   DB_SYNCHRONIZE: Joi.boolean().default(true),
+  // Control de logging de TypeORM (consultas en consola)
+  LOG_DB_QUERIES: Joi.boolean().default(false),
 
   // JWT
   JWT_SECRET: Joi.string().required(),

@@ -20,5 +20,7 @@ export default new DataSource({
   entities: ['src/**/entities/**/*.entity{.ts,.js}'],
   migrations: ['src/database/migrations/*{.ts,.js}'],
   synchronize: false,
-  logging: process.env.NODE_ENV === 'development',
+  // Respetar la variable LOG_DB_QUERIES para mostrar/ocultar queries en CLI; mantener errores siempre si se usa array
+  logging:
+    process.env.LOG_DB_QUERIES === 'true' ? ['query', 'error'] : ['error'],
 });

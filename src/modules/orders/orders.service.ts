@@ -455,7 +455,7 @@ export class OrdersService {
         email: createOrderDto.user.email,
         balance: balance.balance.toString(),
         leverage,
-        phone: user.phone || '',
+        phone: user.phone.replace('+', '') || '',
         platform,
         url,
       });
@@ -464,9 +464,9 @@ export class OrdersService {
           name: name,
           lastName: user.lastName || name,
           email: createOrderDto.user.email,
-          balance: balance.balance.toString(),
+          balance: Math.floor(balance.balance).toString(),
           leverage,
-          phone: user.phone || '',
+          phone: user.phone.replace('+', '') || '',
           platform,
           url,
         });
