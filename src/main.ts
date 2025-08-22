@@ -22,10 +22,36 @@ async function bootstrap() {
     configService.get<string>('app.corsOrigin') ||
     '';
 
-  const configuredOrigins = corsOriginEnv
+  const configuredOriginsRaw = corsOriginEnv
     .split(',')
     .map((o) => o.trim())
     .filter((o) => o.length > 0);
+
+  type OriginRule = {
+    raw: string;
+    exact?: string; // valor normalizado
+    regex?: RegExp; // si es comodín
+  };
+
+  const originRules: OriginRule[] = configuredOriginsRaw.map((entry) => {
+    // Soporta comodines simples tipo: https://*.midominio.com
+    if (entry.includes('*')) {
+      // Escapa regex salvo el '*'
+      const escaped = entry
+        .replace(/\./g, '\\.')
+        .replace(/\*/g, '.*')
+        .replace(/\/$/, '');
+      try {
+        return {
+          raw: entry,
+          regex: new RegExp('^' + escaped + '$', 'i'),
+        };
+      } catch {
+        return { raw: entry, exact: entry.replace(/\/$/, '') };
+      }
+    }
+    return { raw: entry, exact: entry.replace(/\/$/, '') };
+  });
 
   const defaultLocalOrigins = [
     'http://localhost:3000',
@@ -37,21 +63,36 @@ async function bootstrap() {
     'http://propfirm_n8n:5678',
   ];
 
-  const allowedOrigins = Array.from(
+  const allowedExact = Array.from(
     new Set(
-      [...configuredOrigins, ...defaultLocalOrigins].map((o) =>
-        o.replace(/\/$/, ''),
-      ),
+      [
+        ...originRules
+          .filter((r) => r.exact)
+          .map((r) => r.exact as string),
+        ...defaultLocalOrigins.map((o) => o.replace(/\/$/, '')),
+      ],
     ),
+  );
+
+  // Debug inicial
+  console.log('[CORS] Exact origins:', allowedExact);
+  console.log(
+    '[CORS] Wildcard origins:',
+    originRules.filter((r) => r.regex).map((r) => r.raw),
   );
 
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true); // Server-to-server / curl sin Origin
       const normalized = origin.replace(/\/$/, '');
-      if (allowedOrigins.includes(normalized)) {
-        return callback(null, true);
-      }
+      // Exacto
+      if (allowedExact.includes(normalized)) return callback(null, true);
+      // Wildcards
+      const matchedWildcard = originRules.some(
+        (r) => r.regex && r.regex.test(normalized),
+      );
+      if (matchedWildcard) return callback(null, true);
+      console.warn('[CORS] Bloqueado origin no permitido:', normalized);
       return callback(new Error(`CORS: Origin no permitido: ${origin}`), false);
     },
     credentials: true,
