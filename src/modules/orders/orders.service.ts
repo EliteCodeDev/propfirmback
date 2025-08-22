@@ -375,7 +375,7 @@ export class OrdersService {
           platform: accountCredentials.userDataAccount.tipoCuenta,
           isUsed: true,
           investorPass:
-            accountCredentials.userDataAccount?.investorPassword || '',
+            accountCredentials.userDataAccount?.passwordInversor || '',
           serverIp: url,
           innitialBalance: balance.balance,
         });

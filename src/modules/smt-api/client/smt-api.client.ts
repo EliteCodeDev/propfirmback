@@ -39,9 +39,9 @@ interface createAccountResponse {
     deposito: string;
     login: string;
     password: string;
-    investorPassword: string;
+    passwordInversor: string;
   };
-  message: string;
+  message?: string;
 }
 
 @Injectable()
