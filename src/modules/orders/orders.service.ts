@@ -206,18 +206,18 @@ export class OrdersService {
       // Send confirmation email
       try {
         await this.mailerService.sendMail({
-          to: savedOrder.user.email,
+          to: user.email,
           subject: 'Challenge is ready to use!',
           template: 'challenge-credentials',
           context: {
-            email: savedOrder.user.email,
-            challenge_type: savedOrder.challenge.relation.plan.name,
-            Account_size: savedOrder.challenge.brokerAccount.innitialBalance,
+            email: user.email,
+            challenge_type: relation.plan.name,
+            Account_size: challengeBalance.balance,
             login_details: {
-              login: savedOrder.challenge.brokerAccount.login,
-              password: savedOrder.challenge.brokerAccount.password,
-              server: savedOrder.challenge.brokerAccount.server,
-              platform: savedOrder.challenge.brokerAccount.platform,
+              login: challenge.brokerAccount.login,
+              password: challenge.brokerAccount.password,
+              server: challenge.brokerAccount.server,
+              platform: challenge.brokerAccount.platform,
             },
             landingUrl: this.configService.get<string>('app.clientUrl'),
           },
@@ -400,6 +400,7 @@ export class OrdersService {
           isActive: true,
           status: ChallengeStatus.INNITIAL,
         });
+        // challenge.relation.balances
         challenge.relation = relation;
         const riskParams = getBasicRiskParams(challenge);
 
@@ -408,6 +409,8 @@ export class OrdersService {
             challengeID: challenge.challengeID,
             rulesParams: riskParams,
           });
+        challenge.details = challengeDetails;
+        challenge.brokerAccount = brokerAccount;
 
         return {
           status: 'success',
