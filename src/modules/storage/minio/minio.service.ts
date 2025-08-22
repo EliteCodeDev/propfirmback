@@ -131,6 +131,7 @@ export class MinioService implements OnModuleInit {
     const portSuffix = (port && port !== 80 && port !== 443) ? `:${port}` : '';
     
     return `${protocol}://${endPoint}${portSuffix}/${this.bucketName}/${fileName}`;
+    
   }
 
   /**

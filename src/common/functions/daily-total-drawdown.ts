@@ -9,7 +9,7 @@ export function calculateDailyTotalDrawdown(
   // Implement logic to calculate daily total drawdown
   const result = ((equity - balance) / balance) * 100;
   return {
-    status: result > paramDailyDrawdown,
+    status: result <= paramDailyDrawdown,
     drawdown: result,
   };
 }

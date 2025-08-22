@@ -153,8 +153,7 @@ export class OrdersService {
 
       const url = 'https://access.metatrader5.com/terminal';
       const leverage = '100';
-      const platform = 'mt5';
-      this.logger.log('Creating SMT API challenge with data:', {
+      const platform = 'mt5';this.logger.log('Creating SMT API challenge with data:', {
         user,
         createOrderDto,
       });
@@ -458,7 +457,7 @@ export class OrdersService {
         email: createOrderDto.user.email,
         balance: balance.balance.toString(),
         leverage,
-        phone: user.phone.replace('+', '') || '',
+        phone: user.phone.replace('+', '') || '123456789',
         platform,
         url,
       });
@@ -469,7 +468,7 @@ export class OrdersService {
           email: createOrderDto.user.email,
           balance: Math.floor(balance.balance).toString(),
           leverage,
-          phone: user.phone.replace('+', '') || '',
+          phone: user.phone.replace('+', '') || createOrderDto.,
           platform,
           url,
         });

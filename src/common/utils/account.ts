@@ -6,6 +6,7 @@ import {
 } from './positions';
 import { MaxMinBalance, AverageMetrics } from './risk';
 import { riskEvaluationResult } from '../types/risk-results';
+import { ChallengeStatus } from 'src/common/enums';
 
 export type AccountStatus = 'active' | 'completed' | 'failed' | 'pending';
 
@@ -60,6 +61,7 @@ export class Account {
   riskValidation?: RiskValidation;
 
   rulesEvaluation?: riskEvaluationResult;
+  status: ChallengeStatus;
 
   constructor(accountID: string, login: string) {
     this.accountID = accountID;

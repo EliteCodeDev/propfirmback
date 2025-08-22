@@ -4,7 +4,7 @@ import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Account, RiskParams, RiskValidation } from 'src/common/utils';
 import * as riskFunctions from 'src/common/functions';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
-
+import { ChallengeStatus } from 'src/common/enums';
 @Injectable()
 export class RulesEvaluationJob {
   private readonly logger = new Logger(RulesEvaluationJob.name);
@@ -36,6 +36,14 @@ export class RulesEvaluationJob {
             account,
             this.getDefaultRiskParams(), // Usar parámetros por defecto o desde configuración
           );
+
+          // lógica de cambio de estado
+
+          const challengeStatus = await this.evaluateRiskStatus(
+            riskEvaluation,
+            account.status,
+          );
+          account.status = challengeStatus;
 
           // Actualizar la cuenta con los resultados de validación
           await this.bufferService.upsertAccount(login, (prev) => {
@@ -81,6 +89,11 @@ export class RulesEvaluationJob {
   ): Promise<riskEvaluationResult> {
     try {
       const riskEvaluation = riskFunctions.riskEvaluation(account, riskParams);
+
+      this.logger.debug(
+        `Resultado de evaluación para cuenta ${account.login}:`,
+        riskEvaluation,
+      );
       return riskEvaluation;
     } catch (error) {
       this.logger.error(
@@ -101,6 +114,38 @@ export class RulesEvaluationJob {
         },
       } as riskEvaluationResult;
     }
+  }
+
+  private async evaluateRiskStatus(
+    riskEvaluation: riskEvaluationResult,
+    accountStatus: ChallengeStatus,
+  ): Promise<ChallengeStatus> {
+    const status = riskEvaluation.status;
+    let challengeStatus = accountStatus;
+    if (status && challengeStatus !== ChallengeStatus.DISAPPROVABLE) {
+      // Lógica para cuenta aprobada
+      challengeStatus = ChallengeStatus.APPROVABLE;
+
+      this.logger.debug(
+        'Cuenta en estado de aprobación según evaluación de riesgo',
+      );
+      // Aquí puedes llamar a TasksService.approvedChallenge() si es necesario
+    } else {
+      const isDissaprovable = !(
+        riskEvaluation.dailyDrawdown.status ||
+        riskEvaluation.maxDrawdown.status ||
+        riskEvaluation.inactiveDays.status
+      );
+      // Lógica para cuenta desaprobada
+      if (isDissaprovable) {
+        challengeStatus = ChallengeStatus.DISAPPROVABLE;
+        this.logger.debug(
+          'Cuenta en estado de desaprobación según evaluación de riesgo',
+        );
+      }
+      // Aquí puedes llamar a TasksService.setDesaprobableChallenge() si es necesario
+    }
+    return challengeStatus;
   }
 
   /**

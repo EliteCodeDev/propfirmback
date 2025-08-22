@@ -8,12 +8,13 @@ import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeRelation } from 'src/modules/challenge-templates/entities/challenge-relation.entity';
 import { StageParameter } from 'src/modules/challenge-templates/entities/stage/stage-parameter.entity';
 import { ChallengeTemplatesModule } from 'src/modules/challenge-templates/challenge-templates.module';
-
+import { MailerModule } from 'src/modules';
 @Module({
   imports: [
     SmtApiModule,
     ContextsModule,
     ChallengeTemplatesModule,
+    MailerModule,
     TypeOrmModule.forFeature([Challenge, ChallengeRelation, StageParameter]),
   ],
   providers: [TasksService, ActivateSmtApiJob],

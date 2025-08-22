@@ -77,7 +77,7 @@ export function mapChallengeToAccount(challenge: Challenge): Account {
     challenge.brokerAccount.brokerAccountID,
     challenge.brokerAccount.login,
   );
-
+  account.status = challenge.status;
   // Configurar fechas - asegurar que sean objetos Date válidos
   account.createDateTime = challenge.startDate
     ? new Date(challenge.startDate)
@@ -292,7 +292,9 @@ export function createBasicAccountFromChallenge(challenge: Challenge): Account {
  * @param challenges Array de challenges
  * @returns Array de accounts con datos básicos
  */
-export function mapChallengesToBasicAccounts(challenges: Challenge[]): Partial<Account>[] {
+export function mapChallengesToBasicAccounts(
+  challenges: Challenge[],
+): Partial<Account>[] {
   return challenges
     .filter((challenge) => challenge.brokerAccount)
     .map((challenge) => {
@@ -300,32 +302,52 @@ export function mapChallengesToBasicAccounts(challenges: Challenge[]): Partial<A
         const basicAccount = {
           accountID: challenge.brokerAccount.brokerAccountID,
           login: challenge.brokerAccount.login,
-          createDateTime: challenge.startDate ? new Date(challenge.startDate) : new Date(),
+          createDateTime: challenge.startDate
+            ? new Date(challenge.startDate)
+            : new Date(),
           lastUpdate: new Date(),
           balance: {
             initialBalance: challenge.brokerAccount.innitialBalance || 0,
-            currentBalance: challenge.dynamicBalance || challenge.brokerAccount.innitialBalance || 0,
-            dailyBalance: challenge.dynamicBalance || challenge.brokerAccount.innitialBalance || 0,
+            currentBalance:
+              challenge.dynamicBalance ||
+              challenge.brokerAccount.innitialBalance ||
+              0,
+            dailyBalance:
+              challenge.dynamicBalance ||
+              challenge.brokerAccount.innitialBalance ||
+              0,
           },
-          equity: challenge.details?.metaStats?.equity || challenge.dynamicBalance || challenge.brokerAccount.innitialBalance || 0,
-          metaStats: challenge.details?.metaStats ? {
-            equity: challenge.details.metaStats.equity || 0,
-            maxMinBalance: challenge.details.metaStats.maxMinBalance || { maxBalance: 0, minBalance: 0 },
-            averageMetrics: challenge.details.metaStats.averageMetrics || {
-              averageProfit: 0,
-              losingTrades: 0,
-              winningTrades: 0,
-              totalTrades: 0,
-              lossRate: 0,
-              averageLoss: 0,
-              winRate: 0,
-            },
-            numTrades: challenge.details.metaStats.numTrades || 0,
-          } : undefined,
+          equity:
+            challenge.details?.metaStats?.equity ||
+            challenge.dynamicBalance ||
+            challenge.brokerAccount.innitialBalance ||
+            0,
+          metaStats: challenge.details?.metaStats
+            ? {
+                equity: challenge.details.metaStats.equity || 0,
+                maxMinBalance: challenge.details.metaStats.maxMinBalance || {
+                  maxBalance: 0,
+                  minBalance: 0,
+                },
+                averageMetrics: challenge.details.metaStats.averageMetrics || {
+                  averageProfit: 0,
+                  losingTrades: 0,
+                  winningTrades: 0,
+                  totalTrades: 0,
+                  lossRate: 0,
+                  averageLoss: 0,
+                  winRate: 0,
+                },
+                numTrades: challenge.details.metaStats.numTrades || 0,
+              }
+            : undefined,
         };
         return basicAccount;
       } catch (error) {
-        console.error(`Error mapeando challenge ${challenge.challengeID}:`, error);
+        console.error(
+          `Error mapeando challenge ${challenge.challengeID}:`,
+          error,
+        );
         return null;
       }
     })
