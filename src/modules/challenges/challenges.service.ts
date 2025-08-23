@@ -4,7 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DeepPartial, Repository, DataSource } from 'typeorm';
 import { MetaStats, positionsDetails } from 'src/common/utils';
 import { RiskParams } from 'src/common/utils/risk';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
@@ -16,7 +16,14 @@ import { ChallengeQueryDto } from './dto/challenge-query.dto';
 import { CreateChallengeDetailsDto } from './dto/create-challenge-details.dto';
 import { UpdateChallengeDetailsDto } from './dto/update-challenge-details.dto';
 import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
-import { ChallengeStatus } from 'src/common/enums';
+import { VerificationService } from '../verification/verification.service';
+import { CertificatesService } from '../certificates/certificates.service';
+import { BrokerAccountsService } from '../broker-accounts/broker-accounts.service';
+import { MailerService } from '../mailer/mailer.service';
+import { BufferService } from 'src/lib/buffer/buffer.service';
+import { UserAccount } from '../users/entities/user-account.entity';
+import { ConfigService } from '@nestjs/config';
+import { ChallengeStatus, VerificationStatus, CertificateType } from 'src/common/enums';
 @Injectable()
 export class ChallengesService {
   constructor(
@@ -24,7 +31,16 @@ export class ChallengesService {
     private challengeRepository: Repository<Challenge>,
     @InjectRepository(ChallengeDetails)
     private challengeDetailsRepository: Repository<ChallengeDetails>,
+    @InjectRepository(UserAccount)
+    private userAccountRepository: Repository<UserAccount>,
     private challengeTemplatesService: ChallengeTemplatesService,
+    private verificationService: VerificationService,
+    private certificatesService: CertificatesService,
+    private brokerAccountsService: BrokerAccountsService,
+    private mailerService: MailerService,
+    private bufferService: BufferService,
+    private configService: ConfigService,
+    private dataSource: DataSource,
   ) {}
 
   async create(createChallengeDto: CreateChallengeDto): Promise<Challenge> {
@@ -107,26 +123,249 @@ export class ChallengesService {
   }
 
   async setApprovedChallenge(id: string): Promise<Challenge> {
-    const challenge = await this.findOne(id);
-    challenge.status = ChallengeStatus.APPROVED;
-    if (challenge.numPhase === 3) {
-      return;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Buscar el challenge con todas las relaciones necesarias
+      const challenge = await queryRunner.manager.findOne(Challenge, {
+        where: { challengeID: id },
+        relations: ['user', 'relation', 'parent', 'brokerAccount', 'details'],
+      });
+
+      if (!challenge) {
+        throw new NotFoundException(`Challenge with ID ${id} not found`);
+      }
+
+      // Obtener la cadena completa de relaciones y stages
+      const relation = await this.challengeTemplatesService.findCompleteRelationChain(challenge.relationID);
+      const stages = relation.stages.sort((a, b) => a.numPhase - b.numPhase);
+      const totalPhases = stages.length;
+      const isFinalPhase = challenge.numPhase === totalPhases;
+      const isBeforeFinalPhase = challenge.numPhase === totalPhases - 1;
+
+      // Actualizar el estado del challenge
+      challenge.status = ChallengeStatus.APPROVED;
+      challenge.endDate = new Date();
+      challenge.isActive = false;
+
+      // Si es la fase final, solo guardar y retornar
+      if (isFinalPhase) {
+        const savedChallenge = await queryRunner.manager.save(Challenge, challenge);
+        await queryRunner.commitTransaction();
+        return savedChallenge;
+      }
+
+      // Remover cuenta del buffer si existe
+      if (challenge.brokerAccount) {
+        try {
+          await this.bufferService.upsertAccount(challenge.brokerAccount.login, null);
+        } catch (error) {
+          console.warn('Error removing account from buffer:', error.message);
+        }
+      }
+
+      // Si es la fase antes de la final, verificar estado de verificación del usuario
+      if (isBeforeFinalPhase) {
+        const user = await queryRunner.manager.findOne(UserAccount, {
+          where: { userID: challenge.userID },
+        });
+
+        if (!user.isVerified) {
+          // Crear verificación si no existe
+          const existingVerification = await this.verificationService.findByUserId(user.userID, {});
+          if (!existingVerification || existingVerification.data.length === 0) {
+            await this.verificationService.create(
+              user.userID,
+              {
+                documentType: 'passport' as any,
+                numDocument: '',
+              }
+            );
+          }
+
+          // Enviar email de verificación requerida
+          await this.mailerService.sendMail({
+            to: user.email,
+            subject: 'Verification Required for Next Phase',
+            template: 'verification-required',
+            context: {
+              email: user.email,
+              challengeType: relation.plan.name,
+              landingUrl: this.configService.get<string>('app.clientUrl'),
+            },
+          });
+
+          // Crear cuenta interna con isUsed = false
+          const newBrokerAccount = await this.brokerAccountsService.create({
+            login: `internal_${Date.now()}`,
+            password: 'pending_verification',
+            server: 'internal',
+            platform: 'internal',
+            serverIp: '127.0.0.1',
+            isUsed: false,
+          });
+
+          // Crear nuevo challenge para la siguiente fase
+          const newChallenge = await queryRunner.manager.save(Challenge, {
+            userID: challenge.userID,
+            relationID: challenge.relationID,
+            numPhase: challenge.numPhase + 1,
+            dynamicBalance: challenge.dynamicBalance,
+            status: ChallengeStatus.INNITIAL,
+            isActive: false,
+            parentID: challenge.challengeID,
+            brokerAccountID: newBrokerAccount.brokerAccountID,
+            startDate: new Date(),
+          });
+
+          // Crear certificado para el challenge actual
+          await this.certificatesService.create({
+            userID: challenge.userID,
+            challengeID: challenge.challengeID,
+            type: CertificateType.phase1,
+          });
+
+          const savedChallenge = await queryRunner.manager.save(Challenge, challenge);
+          await queryRunner.commitTransaction();
+          return savedChallenge;
+        }
+      }
+
+      // Para todas las demás fases o cuando el usuario está verificado
+      // Crear nueva cuenta de broker
+      const newBrokerAccount = await this.brokerAccountsService.create({
+        login: `challenge_${Date.now()}`,
+        password: this.generateRandomPassword(),
+        server: 'live_server',
+        platform: 'MT5',
+        serverIp: '192.168.1.100',
+        isUsed: true,
+      });
+
+      // Crear nuevo challenge para la siguiente fase
+      const newChallenge = await queryRunner.manager.save(Challenge, {
+        userID: challenge.userID,
+        relationID: challenge.relationID,
+        numPhase: challenge.numPhase + 1,
+        dynamicBalance: challenge.dynamicBalance,
+        status: ChallengeStatus.INNITIAL,
+        isActive: true,
+        parentID: challenge.challengeID,
+        brokerAccountID: newBrokerAccount.brokerAccountID,
+        startDate: new Date(),
+      });
+
+      // Enviar email con credenciales de la nueva cuenta
+      const user = challenge.user;
+      const challengeBalance = relation.balances.find(b => Number(b.balance) === Number(challenge.dynamicBalance));
+      
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'New Phase Challenge Credentials',
+        template: 'challenge-credentials',
+        context: {
+          email: user.email,
+          challenge_type: relation.plan.name,
+          Account_size: challengeBalance?.balance || challenge.dynamicBalance,
+          login_details: {
+            login: newBrokerAccount.login,
+            password: newBrokerAccount.password,
+            server: newBrokerAccount.server,
+            platform: newBrokerAccount.platform,
+          },
+          landingUrl: this.configService.get<string>('app.clientUrl'),
+        },
+      });
+
+      // Crear certificado para el challenge actual
+      await this.certificatesService.create({
+        userID: challenge.userID,
+        challengeID: challenge.challengeID,
+        type: CertificateType.phase2,
+      });
+
+      const savedChallenge = await queryRunner.manager.save(Challenge, challenge);
+      await queryRunner.commitTransaction();
+      return savedChallenge;
+
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-    //end date
-    challenge.endDate = new Date();
-    challenge.isActive = false;
+  }
 
-    //if account is in buffer, remove
-    
+  async setDisapprovedChallenge(id: string, observation?: string): Promise<Challenge> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    //give new account
+    try {
+      // Buscar el challenge con todas las relaciones necesarias
+      const challenge = await queryRunner.manager.findOne(Challenge, {
+        where: { challengeID: id },
+        relations: ['user', 'relation', 'brokerAccount'],
+      });
 
-    //
+      if (!challenge) {
+        throw new NotFoundException(`Challenge with ID ${id} not found`);
+      }
 
-    //create certificate
+      // Actualizar el estado del challenge
+      challenge.status = ChallengeStatus.DISAPPROVED;
+      challenge.endDate = new Date();
+      challenge.isActive = false;
 
+      // Remover cuenta del buffer si existe
+      if (challenge.brokerAccount) {
+        try {
+          await this.bufferService.upsertAccount(challenge.brokerAccount.login, null);
+        } catch (error) {
+          console.warn('Error removing account from buffer:', error.message);
+        }
+      }
 
-    return this.challengeRepository.save(challenge);
+      // Obtener información del challenge para el email
+      const relation = await this.challengeTemplatesService.findCompleteRelationChain(challenge.relationID);
+      const challengeBalance = relation.balances.find(b => Number(b.balance) === Number(challenge.dynamicBalance));
+      
+      // Enviar email de notificación de desaprobación
+      await this.mailerService.sendMail({
+        to: challenge.user.email,
+        subject: 'Challenge Not Approved - Review Required',
+        template: 'challenge-disapproved',
+        context: {
+          email: challenge.user.email,
+          challengeType: relation.plan.name,
+          accountSize: challengeBalance?.balance || challenge.dynamicBalance,
+          reviewDate: new Date().toLocaleDateString(),
+          observation: observation || null,
+          landingUrl: this.configService.get<string>('app.clientUrl'),
+        },
+      });
+
+      const savedChallenge = await queryRunner.manager.save(Challenge, challenge);
+      await queryRunner.commitTransaction();
+      return savedChallenge;
+
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private generateRandomPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 12; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   }
 
   // Template-related methods

@@ -23,6 +23,7 @@ import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { ChallengeQueryDto } from './dto/challenge-query.dto';
 import { CreateChallengeDetailsDto } from './dto/create-challenge-details.dto';
 import { UpdateChallengeDetailsDto } from './dto/update-challenge-details.dto';
+import { DisapproveChallengeDto } from './dto/disapprove-challenge.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -212,5 +213,38 @@ export class ChallengesController {
   @ApiResponse({ status: 404, description: 'Challenge details not found' })
   removeChallengeDetails(@Param('id') challengeID: string) {
     return this.challengesService.removeChallengeDetails(challengeID);
+  }
+
+  // Challenge approval endpoints
+  @Post(':id/approve')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Approve challenge' })
+  @ApiResponse({
+    status: 200,
+    description: 'Challenge approved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Challenge not found' })
+  approveChallenge(@Param('id') id: string) {
+    return this.challengesService.setApprovedChallenge(id);
+  }
+
+  @Post(':id/disapprove')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Disapprove challenge' })
+  @ApiResponse({
+    status: 200,
+    description: 'Challenge disapproved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Challenge not found' })
+  disapproveChallenge(
+    @Param('id') id: string,
+    @Body() disapproveChallengeDto: DisapproveChallengeDto,
+  ) {
+    return this.challengesService.setDisapprovedChallenge(
+      id,
+      disapproveChallengeDto.observation,
+    );
   }
 }

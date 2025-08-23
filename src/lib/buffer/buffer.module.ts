@@ -8,4 +8,4 @@ import { BufferMutexService } from './buffer-mutex.service';
   providers: [ClassBuffer, BufferMutexService, BufferService],
   exports: [ClassBuffer, BufferMutexService, BufferService],
 })
-export class ContextsModule {}
+export class BufferModule {}

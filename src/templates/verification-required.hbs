@@ -1,0 +1,149 @@
+<html lang='es'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Verificación Requerida – FundingHero</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f5f5;
+        color: #333;
+      }
+      .email-container {
+        max-width: 400px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+      }
+      .banner {
+        width: 100%;
+        height: auto;
+        border-radius: 8px 8px 0 0;
+        margin-bottom: 20px;
+      }
+      .title {
+        color: #e6b800;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+      .user-greeting {
+        color: #333;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .main-message {
+        color: #333;
+        font-size: 16px;
+        font-weight: normal;
+        margin-bottom: 20px;
+        text-align: center;
+        line-height: 1.6;
+      }
+      .challenge-info {
+        background: #f8f9fa;
+        border-left: 4px solid #e6b800;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 0 6px 6px 0;
+      }
+      .highlight {
+        color: #b8860b;
+        font-weight: bold;
+      }
+      .action-button {
+        background: #e6b800;
+        color: #fff;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        display: block;
+        margin: 20px auto;
+        cursor: pointer;
+        text-decoration: none;
+        width: 80%;
+        box-sizing: border-box;
+      }
+      .action-button:hover {
+        background: #b8860b;
+      }
+      .footer-text {
+        color: #666;
+        font-size: 12px;
+        margin-top: 20px;
+        text-align: center;
+      }
+      .company-name {
+        color: #e6b800;
+        font-weight: bold;
+      }
+      .copyright {
+        color: #999;
+        font-size: 11px;
+        margin-top: 15px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='email-container'>
+      {{#if logoUrl}}
+        <img src='{{logoUrl}}' alt='FundingHero Banner' class='banner' />
+      {{/if}}
+
+      <div class='title'>🔐 Verificación Requerida</div>
+      <div class='user-greeting'>Hola {{email}}</div>
+
+      <div class='main-message'>
+        ¡Felicidades por completar tu challenge
+        <span class='highlight'>{{challengeType}}</span>!<br /><br />
+        Para proceder a la siguiente fase, necesitamos
+        <span class='highlight'>verificar tu identidad</span>.
+      </div>
+
+      <div class='challenge-info'>
+        <strong>📋 Documentos requeridos:</strong><br />
+        • Documento de identidad válido<br />
+        • Comprobante de domicilio<br />
+        • Selfie con documento en mano
+      </div>
+
+      <div class='main-message'>
+        Una vez completada la verificación, recibirás las credenciales para tu
+        nueva cuenta de trading.
+      </div>
+
+      {{#if landingUrl}}
+        <a href='{{landingUrl}}' class='action-button' target='_blank'>Completar
+          Verificación</a>
+      {{/if}}
+
+      <div class='main-message'>
+        El proceso de verificación toma entre
+        <span class='highlight'>1-2 días hábiles</span>.
+      </div>
+
+      <div class='footer-text'>
+        Saludos cordiales,<br /><br />
+        El equipo de
+        <span class='company-name'>FundingHero</span>
+      </div>
+
+      <div class='copyright'>
+        © 2025
+        <span class='company-name'>FundingHero</span>. Todos los derechos
+        reservados.
+      </div>
+    </div>
+  </body>
+</html>

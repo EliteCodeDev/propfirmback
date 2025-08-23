@@ -45,7 +45,7 @@ import {
 // Seed on boot support
 import { SeedOnBootModule } from './seeds/seed-on-boot.module';
 import { TasksModule } from './tasks/tasks.module';
-import { ContextsModule } from './lib/buffer/buffer.module';
+import { BufferModule } from './lib/buffer/buffer.module';
 
 @Module({
   imports: [
@@ -76,7 +76,7 @@ import { ContextsModule } from './lib/buffer/buffer.module';
     }),
     ScheduleModule.forRoot(),
     // Application modules
-    ContextsModule,
+    BufferModule,
     StorageModule,
     MinioModule,
     AuthModule,
