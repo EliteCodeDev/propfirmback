@@ -8,7 +8,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { MailerService } from '../mailer/mailer.service';
 import { ChallengesService } from '../challenges/challenges.service';
 import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
-import { SmtApiClient } from 'src/modules/smt-api/client/smt-api.client';
+import { SmtApiClient } from 'src/modules/data/smt-api/client/smt-api.client';
 import { BrokerAccountsService } from '../broker-accounts/broker-accounts.service';
 import { UsersService } from '../users/services/users.service';
 import {

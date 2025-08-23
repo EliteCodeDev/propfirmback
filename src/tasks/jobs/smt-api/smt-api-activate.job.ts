@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { SmtApiClient } from 'src/modules/smt-api/client/smt-api.client';
+import { SmtApiClient } from 'src/modules/data/smt-api/client/smt-api.client';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeRelation } from 'src/modules/challenge-templates/entities/challenge-relation.entity';
 import { StageParameter } from 'src/modules/challenge-templates/entities/stage/stage-parameter.entity';

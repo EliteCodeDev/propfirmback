@@ -300,18 +300,21 @@ export function mapChallengesToBasicAccounts(
     .map((challenge) => {
       try {
         const basicAccount = {
-          accountID: challenge.brokerAccount.brokerAccountID,
+          accountID: challenge.challengeID,
           login: challenge.brokerAccount.login,
           createDateTime: challenge.startDate
             ? new Date(challenge.startDate)
             : new Date(),
           lastUpdate: new Date(),
+          status: challenge.status,
           balance: {
-            initialBalance: challenge.brokerAccount.innitialBalance || 0,
-            currentBalance:
-              challenge.dynamicBalance ||
-              challenge.brokerAccount.innitialBalance ||
+            initialBalance:
+              // challenge.brokerAccount.innitialBalance ||
               0,
+            currentBalance:
+              // challenge.dynamicBalance ||
+              // challenge.brokerAccount.innitialBalance ||
+              10,
             dailyBalance:
               challenge.dynamicBalance ||
               challenge.brokerAccount.innitialBalance ||
@@ -320,7 +323,6 @@ export function mapChallengesToBasicAccounts(
           equity:
             challenge.details?.metaStats?.equity ||
             challenge.dynamicBalance ||
-            challenge.brokerAccount.innitialBalance ||
             0,
           metaStats: challenge.details?.metaStats
             ? {
@@ -341,6 +343,7 @@ export function mapChallengesToBasicAccounts(
                 numTrades: challenge.details.metaStats.numTrades || 0,
               }
             : undefined,
+          brokerAccount: challenge.brokerAccount,
         };
         return basicAccount;
       } catch (error) {

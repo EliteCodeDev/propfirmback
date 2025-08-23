@@ -8,7 +8,7 @@ import { UsersModule } from '../users/users.module';
 import { ChallengesModule } from '../challenges/challenges.module';
 import { BrokerAccountsModule } from '../broker-accounts/broker-accounts.module';
 import { ChallengeTemplatesModule } from '../challenge-templates/challenge-templates.module';
-import { SmtApiModule } from '../smt-api/smt-api.module';
+import { SmtApiModule } from 'src/modules/data/smt-api/smt-api.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([CustomerOrder]),

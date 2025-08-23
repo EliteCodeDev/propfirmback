@@ -9,12 +9,14 @@ import { ChallengeRelation } from 'src/modules/challenge-templates/entities/chal
 import { StageParameter } from 'src/modules/challenge-templates/entities/stage/stage-parameter.entity';
 import { ChallengeTemplatesModule } from 'src/modules/challenge-templates/challenge-templates.module';
 import { MailerModule } from 'src/modules';
+import { BrokeretApiJobsModule } from './jobs/brokeret-api/brokeret-api-jobs.module';
 @Module({
   imports: [
     SmtApiModule,
     BufferModule,
     ChallengeTemplatesModule,
     MailerModule,
+    // BrokeretApiJobsModule,
     TypeOrmModule.forFeature([Challenge, ChallengeRelation, StageParameter]),
   ],
   providers: [TasksService, ActivateSmtApiJob],

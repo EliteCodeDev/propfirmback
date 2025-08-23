@@ -1,0 +1,130 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Global Constants').item.json.constants.BROKERET_API_URL }}User/Create",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"group\": \"demo\\\\\\\\ZevenF\\\\\\\\S1-G2-SN-USD\",\n  \"firstName\": \"Zeven\",\n  \"middleName\": \"\",\n  \"lastName\": \"Global\",\n  \"leverage\": 100,\n  \"rights\": \"USER_RIGHT_ENABLED,USER_RIGHT_EXPERT,USER_RIGHT_PASSWORD\",\n  \"country\": \"\",\n  \"city\": \"\",\n  \"state\": \"\",\n  \"zipCode\": \"\",\n  \"address\": \"\",\n  \"phone\": \"\",\n  \"email\": \"support@zevenglobal.com\",\n  \"agent\": 0,\n  \"account\": \"\",\n  \"company\": \"\",\n  \"language\": 0,\n  \"phonePassword\": \"\",\n  \"status\": \"\",\n  \"masterPassword\": \"{{ $json.masterPassword }}\",\n  \"investorPassword\": \"{{ $json.investorPassword }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        208
+      ],
+      "id": "1290d83d-dfcd-45db-b266-0977ce4bb3b3",
+      "name": "Crear MT Account",
+      "notesInFlow": false,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uwGqWrNj5gdjvlLM",
+          "name": "Brokeret API"
+        }
+      },
+      "notes": "\n"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Global Constants').item.json.constants.BROKERET_API_URL }}User/tradingactivity",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"login\": {{ $json.result.login }},\n  \"tradingFlag\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        432
+      ],
+      "id": "aac47858-d26a-4516-8f4e-9a6ae826aa46",
+      "name": "Activa Trading",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uwGqWrNj5gdjvlLM",
+          "name": "Brokeret API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Global Constants').item.json.constants.BROKERET_API_URL }}useraccount/balanceOperation",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"login\":{{ $json.result.login }},\n  \"amount\":{{ $('Parsear el Producto').item.json.balance -$('Comprobar Balance').item.json.result.balance }} ,\n  \"type\":1,\n  \"TransactionComments\":\"initial balance\"\n}",
+        "options": {}
+      },
+      "id": "5e1c4abc-2d72-4775-8633-782d75961137",
+      "name": "Asignar Balance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        -16
+      ],
+      "retryOnFail": false,
+      "maxTries": 3,
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uwGqWrNj5gdjvlLM",
+          "name": "Brokeret API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Global Constants').item.json.constants.BROKERET_API_URL }}User/tradingactivity",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"login\": {{ $('Buscar Challenge').item.json.data.broker_account.login }},\n  \"tradingFlag\": 0\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        656
+      ],
+      "id": "a601f37b-64b8-4499-aa1b-fe0d09065af2",
+      "name": "Desactivar Trading",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uwGqWrNj5gdjvlLM",
+          "name": "Brokeret API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "253a2aa8-d7a5-4891-8cf9-34e94b084000",
+  "meta": {
+    "instanceId": "d0b8380c1a3e2712eb6c23ae22f9d552bfc10da049104d6d97b851843a40a962"
+  },
+  "id": "sM2QnO2PuBjpjTME",
+  "tags": []
+}

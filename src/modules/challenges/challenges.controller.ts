@@ -58,7 +58,25 @@ export class ChallengesController {
   @Get('me')
   @ApiOperation({ summary: 'Get current user challenges' })
   async findMyChallenges(@Request() req, @Query() query: ChallengeQueryDto) {
-    return await this.challengesService.findByUserId(req.user.userID, query);
+    return await this.challengesService.findByUserIdSimple(
+      req.user.userID,
+      query,
+    );
+  }
+  @Get('me-basic')
+  @ApiOperation({ summary: 'Get current basic user challenges' })
+  async findMyBasicChallenges(
+    @Request() req,
+    @Query() query: ChallengeQueryDto,
+  ) {
+    const challenges = await this.challengesService.findByUserId(
+      req.user.userID,
+      query,
+    );
+    return mapChallengesToBasicAccounts(challenges.data).map((challenge) => ({
+      ...challenge,
+      // user: req.user,
+    }));
   }
 
   @Get('me/:challengeID')

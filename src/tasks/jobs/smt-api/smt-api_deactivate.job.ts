@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { SmtApiClient } from 'src/modules/smt-api/client/smt-api.client';
+import { SmtApiClient } from 'src/modules/data/smt-api/client/smt-api.client';
 @Injectable()
 export class DeactivateSmtApiJob {
   private readonly logger = new Logger(DeactivateSmtApiJob.name);

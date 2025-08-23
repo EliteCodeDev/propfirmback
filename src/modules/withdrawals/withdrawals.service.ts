@@ -126,21 +126,8 @@ export class WithdrawalsService {
   ): Promise<Withdrawal> {
     const withdrawal = await this.findOne(id);
 
-    // Validar que si el estado es REJECTED, se proporcione rejectionDetail
-    if (
-      updateWithdrawalStatusDto.status === WithdrawalStatus.REJECTED &&
-      !updateWithdrawalStatusDto.rejectionDetail
-    ) {
-      throw new BadRequestException(
-        'Rejection detail is required when rejecting a withdrawal',
-      );
-    }
-
     // Actualizar campos básicos
     withdrawal.status = updateWithdrawalStatusDto.status;
-    if (updateWithdrawalStatusDto.rejectionDetail) {
-      withdrawal.rejectionDetail = updateWithdrawalStatusDto.rejectionDetail;
-    }
     if (updateWithdrawalStatusDto.observation) {
       withdrawal.observation = updateWithdrawalStatusDto.observation;
     }

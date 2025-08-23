@@ -23,12 +23,11 @@ export class Withdrawal {
   @Column({ type: 'decimal', precision: 18, scale: 2 })
   amount: number;
 
-  @Column({ length: 255, nullable: true })
+  @Column({ length: 500, nullable: true })
   observation: string;
 
   @Column({ length: 500, nullable: true })
-  rejectionDetail: string;
-
+  // Campo rejectionDetail eliminado por redundancia con observation
   @Column({
     type: 'enum',
     enum: WithdrawalStatus,

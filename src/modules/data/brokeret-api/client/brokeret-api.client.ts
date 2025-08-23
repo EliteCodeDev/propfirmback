@@ -3,7 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { AxiosRequestConfig } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigType } from '@nestjs/config';
-import { mtmApiConfig } from 'src/config';
+import { brokeretApiConfig } from 'src/config';
 
 export interface BrokeretUserResponse {
   success?: boolean;
@@ -15,24 +15,60 @@ export interface PositionsListBody {
   flag?: number; // seen as 1 in n8n
   Login: (string | number)[];
   FromDate?: string; // dd/MM/yyyy
-  ToDate?: string;   // dd/MM/yyyy
+  ToDate?: string; // dd/MM/yyyy
   fromTime?: string; // HH:mm:ss
-  toTime?: string;   // HH:mm:ss
+  toTime?: string; // HH:mm:ss
 }
 
 export interface OrdersListBody {
   login: string | number;
   FromDate: string; // dd/MM/yyyy
-  ToDate: string;   // dd/MM/yyyy
+  ToDate: string; // dd/MM/yyyy
+}
+
+export interface CreateUserBody {
+  group: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  leverage: number;
+  rights: string;
+  country?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  address?: string;
+  phone?: string;
+  email: string;
+  agent?: number;
+  account?: string;
+  company?: string;
+  language?: number;
+  phonePassword?: string;
+  status?: string;
+  masterPassword: string;
+  investorPassword: string;
+}
+
+export interface TradingActivityBody {
+  login: string | number;
+  tradingFlag: number; // 0 = disable, 1 = enable
+}
+
+export interface BalanceOperationBody {
+  login: string | number;
+  amount: number;
+  type: number; // 1 = deposit, 2 = withdrawal
+  TransactionComments?: string;
 }
 
 @Injectable()
-export class MtmApiClient {
-  private readonly logger = new Logger(MtmApiClient.name);
+export class BrokeretApiClient {
+  private readonly logger = new Logger(BrokeretApiClient.name);
   constructor(
     private readonly http: HttpService,
-    @Inject(mtmApiConfig.KEY)
-    private readonly cfg: ConfigType<typeof mtmApiConfig>,
+    @Inject(brokeretApiConfig.KEY)
+    private readonly cfg: ConfigType<typeof brokeretApiConfig>,
   ) {}
 
   private buildUrl(path: string): string {
@@ -132,6 +168,33 @@ export class MtmApiClient {
   // POST user/get
   getUser(login: string | number) {
     return this.request('post', 'user/get', { data: { login } });
+  }
+
+  // === Nuevos endpoints del flujo n8n ===
+
+  // POST User/Create
+  createUser(body: CreateUserBody) {
+    return this.request<BrokeretUserResponse>('post', 'User/Create', {
+      data: body,
+    });
+  }
+
+  // POST User/tradingactivity
+  setTradingActivity(body: TradingActivityBody) {
+    return this.request<BrokeretUserResponse>('post', 'User/tradingactivity', {
+      data: body,
+    });
+  }
+
+  // POST useraccount/balanceOperation
+  balanceOperation(body: BalanceOperationBody) {
+    return this.request<BrokeretUserResponse>(
+      'post',
+      'useraccount/balanceOperation',
+      {
+        data: body,
+      },
+    );
   }
 
   // Método genérico por si aparecen endpoints nuevos

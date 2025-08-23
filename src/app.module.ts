@@ -16,6 +16,7 @@ import {
   jwtConfigValues,
   mailerConfig,
   smtApiConfig,
+  brokeretApiConfig,
   apiKeysConfig,
   minioConfig,
 } from './config';
@@ -38,6 +39,7 @@ import {
   WithdrawalsModule,
   RbacModule,
   SmtApiModule,
+  // BrokeretApiModule,
   StorageModule,
   MinioModule,
   N8nModule,
@@ -62,6 +64,7 @@ import { BufferModule } from './lib/buffer/buffer.module';
     ConfigModule.forFeature(jwtConfigValues),
     ConfigModule.forFeature(mailerConfig),
     ConfigModule.forFeature(smtApiConfig),
+    ConfigModule.forFeature(brokeretApiConfig),
     ConfigModule.forFeature(apiKeysConfig),
     ConfigModule.forFeature(minioConfig),
     // base de datos
@@ -92,9 +95,10 @@ import { BufferModule } from './lib/buffer/buffer.module';
     WithdrawalsModule,
     RbacModule,
     SmtApiModule,
+    // BrokeretApiModule,
     SeedOnBootModule,
     TasksModule,
-    N8nModule
+    N8nModule,
   ],
   controllers: [
     //aea
@@ -108,8 +112,8 @@ import { BufferModule } from './lib/buffer/buffer.module';
     { provide: APP_FILTER, useClass: TypeOrmExceptionFilter },
     // interceptores globales
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
-  { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
-  TurnstileService,
+    { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+    TurnstileService,
   ],
 })
 export class AppModule {}

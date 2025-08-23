@@ -93,6 +93,35 @@ export class ChallengesService {
     return this.findAll({ ...query, userID });
   }
 
+  async findByUserIdSimple(userID: string, query: ChallengeQueryDto) {
+    const { page = 1, limit = 10, status } = query;
+    const skip = (page - 1) * limit;
+
+    const whereConditions: any = {
+      userID,
+    };
+
+    if (status) {
+      whereConditions.status = status;
+    }
+
+    const [challenges, total] = await this.challengeRepository.findAndCount({
+      where: whereConditions,
+      skip,
+      take: limit,
+      order: { startDate: 'DESC' },
+      relations: ['relation', 'brokerAccount'],
+    });
+
+    return {
+      data: challenges,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async findOne(id: string): Promise<Challenge> {
     const challenge = await this.challengeRepository.findOne({
       where: { challengeID: id },

@@ -12,4 +12,15 @@ export default registerAs('apiKeys', () => ({
     apiKey: process.env.N8N_API_KEY || 'N8N-API-KEY-DEFAULT',
   },
   // API Key para webhooks generales
+  webhook: {
+    apiKey: process.env.WEBHOOK_API_KEY || 'WEBHOOK-API-KEY-DEFAULT',
+  },
+  // API Key para servicios externos
+  external: {
+    apiKey: process.env.EXTERNAL_API_KEY || 'EXTERNAL-API-KEY-DEFAULT',
+  },
+  // API Key para Brokeret API
+  brokeret: {
+    apiKey: process.env.BROKERET_API_KEY || 'BROKERET-API-KEY-DEFAULT',
+  },
 }));

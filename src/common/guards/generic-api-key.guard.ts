@@ -54,6 +54,8 @@ export class GenericApiKeyGuard implements CanActivate {
               "WEBHOOK-API-KEY-DEFAULT",
       external: this.configService.get<string>('apiKeys.external.apiKey') || 
                "EXTERNAL-API-KEY-DEFAULT",
+      brokeret: this.configService.get<string>('apiKeys.brokeret.apiKey') || 
+               "BROKERET-API-KEY-DEFAULT",
       // Agregar más servicios según necesites
     };
 
