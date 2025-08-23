@@ -6,3 +6,4 @@ export { appConfig } from './app.config';
 export { default as smtApiConfig } from './smt-api.config';
 export { default as apiKeysConfig } from './api-keys.config';
 export { minioConfig } from './minio.config';
+export { default as mtmApiConfig } from './mtm-api.config';

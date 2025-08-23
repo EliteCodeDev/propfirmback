@@ -14,3 +14,4 @@ export * from './users/users.module';
 export * from './storage/local-storage/storage.module';
 export * from './storage/minio/minio.module';
 export * from './n8n/n8n.module';
+export * from './data/mtm-api/mtm-api.module';
