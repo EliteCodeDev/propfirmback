@@ -70,7 +70,7 @@ async function bootstrap() {
     const ds = app.get(DataSource);
     const config = app.get(ConfigService);
     // Ensure base roles exist (idempotent)
-    await ensureRole(ds, 'super_admin', 'Super administrator');
+    await ensureRole(ds, 'admin', 'Super administrator');
     const userRole = await ensureRole(ds, 'user', 'Standard user');
 
     await ensureUser(ds, config, {
