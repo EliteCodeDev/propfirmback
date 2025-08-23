@@ -16,7 +16,7 @@ import { ChallengeQueryDto } from './dto/challenge-query.dto';
 import { CreateChallengeDetailsDto } from './dto/create-challenge-details.dto';
 import { UpdateChallengeDetailsDto } from './dto/update-challenge-details.dto';
 import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
-
+import { ChallengeStatus } from 'src/common/enums';
 @Injectable()
 export class ChallengesService {
   constructor(
@@ -104,6 +104,29 @@ export class ChallengesService {
   async remove(id: string): Promise<void> {
     const challenge = await this.findOne(id);
     await this.challengeRepository.remove(challenge);
+  }
+
+  async setApprovedChallenge(id: string): Promise<Challenge> {
+    const challenge = await this.findOne(id);
+    challenge.status = ChallengeStatus.APPROVED;
+    if (challenge.numPhase === 3) {
+      return;
+    }
+    //end date
+    challenge.endDate = new Date();
+    challenge.isActive = false;
+
+    //if account is in buffer, remove
+    
+
+    //give new account
+
+    //
+
+    //create certificate
+
+
+    return this.challengeRepository.save(challenge);
   }
 
   // Template-related methods
@@ -204,7 +227,8 @@ export class ChallengesService {
         'rulesValidation',
       )
     ) {
-      updates.rulesValidation = updateChallengeDetailsDto.rulesValidation || null;
+      updates.rulesValidation =
+        updateChallengeDetailsDto.rulesValidation || null;
     }
     if (
       Object.prototype.hasOwnProperty.call(

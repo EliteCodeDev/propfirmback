@@ -57,32 +57,28 @@ export class ChallengesController {
   @Get('me')
   @ApiOperation({ summary: 'Get current user challenges' })
   async findMyChallenges(@Request() req, @Query() query: ChallengeQueryDto) {
-    const challenges = await this.challengesService.findByUserId(
-      req.user.userID,
-      query,
-    );
-    return mapChallengesToBasicAccounts(challenges.data).map((challenge) => ({
-      ...challenge,
-      user: req.user,
-    }));
+    return await this.challengesService.findByUserId(req.user.userID, query);
   }
 
   @Get('me/:challengeID')
   @ApiOperation({ summary: 'Get all challenge details' })
   @ApiResponse({ status: 200, description: 'List of all challenge details' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Challenge does not belong to user' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Challenge does not belong to user',
+  })
   async finMyChallengesDetails(
     @Request() req,
     @Query() query: ChallengeQueryDto,
     @Param('challengeID') challengeID: string,
   ) {
     const challenge = await this.challengesService.findOne(challengeID);
-    
+
     // Verificar que el challenge pertenece al usuario
     if (challenge.userID !== req.user.userID) {
       throw new ForbiddenException('You do not have access to this challenge');
     }
-    
+
     return mapChallengeToAccount(challenge);
   }
 
