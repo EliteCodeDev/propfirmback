@@ -26,6 +26,9 @@ export class Withdrawal {
   @Column({ length: 255, nullable: true })
   observation: string;
 
+  @Column({ length: 500, nullable: true })
+  rejectionDetail: string;
+
   @Column({
     type: 'enum',
     enum: WithdrawalStatus,

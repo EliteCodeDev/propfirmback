@@ -19,6 +19,7 @@ import {
 import { WithdrawalsService } from './withdrawals.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
+import { UpdateWithdrawalStatusDto } from './dto/update-withdrawal-status.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -65,6 +66,14 @@ export class WithdrawalsController {
     @Body() updateWithdrawalDto: UpdateWithdrawalDto,
   ) {
     return this.withdrawalsService.update(id, updateWithdrawalDto);
+  }
+
+  @Patch(':id/status')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update withdrawal status' })
+  updateStatus(@Param('id') id: string, @Body() updateWithdrawalStatusDto: UpdateWithdrawalStatusDto) {
+    return this.withdrawalsService.updateWithdrawalStatus(id, updateWithdrawalStatusDto);
   }
 
   @Delete(':id')

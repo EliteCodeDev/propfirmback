@@ -1,15 +1,34 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Withdrawal } from './entities/withdrawal.entity';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
+import { UpdateWithdrawalStatusDto } from './dto/update-withdrawal-status.dto';
 import { WithdrawalStatus } from 'src/common/enums/withdrawal-status.enum';
+import { ChallengesService } from '../challenges/challenges.service';
+import { CertificatesService } from '../certificates/certificates.service';
+import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
+import { BrokerAccountsService } from '../broker-accounts/broker-accounts.service';
+import { MailerService } from '../mailer/mailer.service';
+import { ConfigService } from '@nestjs/config';
+import { ChallengeStatus, CertificateType } from 'src/common/enums';
+import { generateRandomPassword } from 'src/common/utils/randomPassword';
 @Injectable()
 export class WithdrawalsService {
   constructor(
     @InjectRepository(Withdrawal)
     private withdrawalRepository: Repository<Withdrawal>,
+    private challengesService: ChallengesService,
+    private certificatesService: CertificatesService,
+    private challengeTemplatesService: ChallengeTemplatesService,
+    private brokerAccountsService: BrokerAccountsService,
+    private mailerService: MailerService,
+    private configService: ConfigService,
   ) {}
 
   async create(
@@ -99,6 +118,130 @@ export class WithdrawalsService {
     Object.assign(withdrawal, updateWithdrawalDto);
 
     return this.withdrawalRepository.save(withdrawal);
+  }
+
+  async updateWithdrawalStatus(
+    id: string,
+    updateWithdrawalStatusDto: UpdateWithdrawalStatusDto,
+  ): Promise<Withdrawal> {
+    const withdrawal = await this.findOne(id);
+
+    // Validar que si el estado es REJECTED, se proporcione rejectionDetail
+    if (
+      updateWithdrawalStatusDto.status === WithdrawalStatus.REJECTED &&
+      !updateWithdrawalStatusDto.rejectionDetail
+    ) {
+      throw new BadRequestException(
+        'Rejection detail is required when rejecting a withdrawal',
+      );
+    }
+
+    // Actualizar campos básicos
+    withdrawal.status = updateWithdrawalStatusDto.status;
+    if (updateWithdrawalStatusDto.rejectionDetail) {
+      withdrawal.rejectionDetail = updateWithdrawalStatusDto.rejectionDetail;
+    }
+    if (updateWithdrawalStatusDto.observation) {
+      withdrawal.observation = updateWithdrawalStatusDto.observation;
+    }
+
+    // Si el retiro es aprobado, crear un nuevo challenge y certificado
+    if (updateWithdrawalStatusDto.status === WithdrawalStatus.APPROVED) {
+      await this.handleWithdrawalApproval(withdrawal);
+    }
+
+    return this.withdrawalRepository.save(withdrawal);
+  }
+
+  private async handleWithdrawalApproval(
+    withdrawal: Withdrawal,
+  ): Promise<void> {
+    try {
+      // Obtener el usuario y challenge actual
+      const currentWithdrawal = await this.withdrawalRepository.findOne({
+        where: { withdrawalID: withdrawal.withdrawalID },
+        relations: [
+          'user',
+          'challenge',
+          'challenge.relation',
+          'challenge.relation.balances',
+        ],
+      });
+
+      if (!currentWithdrawal?.challenge?.relation) {
+        throw new BadRequestException(
+          'Challenge relation not found for withdrawal',
+        );
+      }
+
+      const user = currentWithdrawal.user;
+      const currentChallenge = currentWithdrawal.challenge;
+      const relation = currentChallenge.relation;
+
+      // Crear nueva cuenta de broker para el nuevo challenge
+      const newBrokerAccount = await this.brokerAccountsService.create({
+        login: `withdrawal_${Date.now()}`,
+        password: generateRandomPassword(),
+        server: 'live_server',
+        platform: 'MT5',
+        serverIp: '192.168.1.100',
+        isUsed: true,
+        investorPass: generateRandomPassword(),
+        innitialBalance: currentChallenge.dynamicBalance,
+      });
+
+      // Crear nuevo challenge
+      const newChallenge = await this.challengesService.create({
+        userID: user.userID,
+        relationID: relation.relationID,
+        brokerAccountID: newBrokerAccount.brokerAccountID,
+        startDate: new Date(),
+        numPhase: 1, // Nuevo challenge comienza en fase 1
+        isActive: true,
+        status: ChallengeStatus.INNITIAL,
+        parentID: currentChallenge.challengeID,
+      });
+
+      // Crear certificado para el challenge actual
+      await this.certificatesService.create({
+        userID: user.userID,
+        challengeID: currentChallenge.challengeID,
+        type: CertificateType.phase1,
+        amount: withdrawal.amount,
+      });
+
+      // Enviar email con credenciales del nuevo challenge
+      const challengeBalance = relation.balances?.find(
+        (b) => Number(b.balance) === Number(currentChallenge.dynamicBalance),
+      );
+
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Withdrawal Approved - New Challenge Credentials',
+        template: 'withdrawal-approved-credentials',
+        context: {
+          email: user.email,
+          withdrawal_amount: withdrawal.amount,
+          challenge_type: relation.plan?.name || 'Challenge',
+          Account_size:
+            challengeBalance?.balance || currentChallenge.dynamicBalance,
+          login_details: {
+            login: newBrokerAccount.login,
+            password: newBrokerAccount.password,
+            server: newBrokerAccount.server,
+            platform: newBrokerAccount.platform,
+          },
+          landingUrl: this.configService.get<string>('app.clientUrl'),
+        },
+      });
+
+      // Actualizar el withdrawal con el nuevo challengeID
+      withdrawal.challengeID = newChallenge.challengeID;
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to process withdrawal approval: ${error.message}`,
+      );
+    }
   }
 
   async remove(id: string): Promise<void> {
