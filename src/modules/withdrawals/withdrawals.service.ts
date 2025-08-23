@@ -45,44 +45,56 @@ export class WithdrawalsService {
   }
 
   async findAll(query: any) {
-    const { page = 1, limit = 10, status } = query;
-    const skip = (page - 1) * limit;
+    const { page = 1, limit = 10, status, email } = query;
+    const pageNum = Number(page) || 1;
+    const limitNum = Math.min(Number(limit) || 10, 100);
+    const skip = (pageNum - 1) * limitNum;
 
-    const whereConditions: any = {};
+    const qb = this.withdrawalRepository
+      .createQueryBuilder('w')
+      .leftJoinAndSelect('w.user', 'user')
+      .leftJoinAndSelect('w.challenge', 'challenge')
+      .orderBy('w.createdAt', 'DESC')
+      .skip(skip)
+      .take(limitNum);
+
     if (status) {
-      whereConditions.status = status;
+      const normalizedStatus = String(status).toLowerCase();
+      qb.andWhere('w.status = :status', { status: normalizedStatus });
     }
 
-    const [withdrawals, total] = await this.withdrawalRepository.findAndCount({
-      where: whereConditions,
-      skip,
-      take: limit,
-      order: { createdAt: 'DESC' },
-      relations: ['user', 'challenge'],
-    });
+    if (email) {
+      qb.andWhere('LOWER(user.email) LIKE LOWER(:email)', {
+        email: `%${String(email).trim()}%`,
+      });
+    }
+
+    const [withdrawals, total] = await qb.getManyAndCount();
 
     return {
       data: withdrawals,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
     };
   }
 
   async findByUserId(userID: string, query: any) {
     const { page = 1, limit = 10, status } = query;
-    const skip = (page - 1) * limit;
+    const pageNum = Number(page) || 1;
+    const limitNum = Math.min(Number(limit) || 10, 100);
+    const skip = (pageNum - 1) * limitNum;
 
     const whereConditions: any = { userID };
     if (status) {
-      whereConditions.status = status;
+      whereConditions.status = String(status).toLowerCase();
     }
 
     const [withdrawals, total] = await this.withdrawalRepository.findAndCount({
       where: whereConditions,
       skip,
-      take: limit,
+      take: limitNum,
       order: { createdAt: 'DESC' },
       relations: ['challenge'],
     });
@@ -90,9 +102,9 @@ export class WithdrawalsService {
     return {
       data: withdrawals,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
     };
   }
 
