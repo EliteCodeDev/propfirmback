@@ -70,8 +70,8 @@ async function bootstrap() {
     const ds = app.get(DataSource);
     const config = app.get(ConfigService);
     // Ensure base roles exist (idempotent)
-    await ensureRole(ds, 'admin', 'Super administrator');
-    const userRole = await ensureRole(ds, 'user', 'Standard user');
+    await ensureRole(ds, 'admin', 'administrator');
+    const userRole = await ensureRole(ds, 'admin', 'Standard user');
 
     await ensureUser(ds, config, {
       email: 'elitecode2025dev@gmail.com',
