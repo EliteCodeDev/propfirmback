@@ -27,7 +27,11 @@
     "seed:challenges:real": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-challenges-real.ts",
     "seed:broker-accounts:real": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-broker-accounts-real.ts",
     "seed:db-sync": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/db-sync.ts",
-    "seed:user:specific": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-specific-user.ts"
+    "seed:user:specific": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-specific-user.ts",
+    "seed:certificates": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-certificates.ts",
+    "seed:orders": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-orders.ts",
+    "seed:verifications": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-verifications.ts",
+    "seed:specific-challenge": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-specific-challenge.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
