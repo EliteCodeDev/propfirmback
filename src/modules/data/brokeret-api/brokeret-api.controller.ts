@@ -19,6 +19,7 @@ import {
 } from './client/brokeret-api.client';
 import { GenericApiKeyGuard } from 'src/common/guards/generic-api-key.guard';
 import { ApiKeyService } from 'src/common/decorators/api-key-service.decorator';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @ApiTags('Brokeret API')
 @Controller('brokeret-api')

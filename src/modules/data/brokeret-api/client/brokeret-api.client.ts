@@ -82,7 +82,7 @@ export class BrokeretApiClient {
   }
 
   private buildHeaders(extra?: Record<string, string>) {
-    const headerName = this.cfg.authHeader || 'Authorization';
+    const headerName = "X-API-Key";
     return {
       'Content-Type': 'application/json',
       ...(this.cfg.apiKey ? { [headerName]: `${this.cfg.apiKey}` } : {}),
