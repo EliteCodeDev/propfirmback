@@ -4,7 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository, DataSource } from 'typeorm';
+import { DeepPartial, Repository, DataSource, In } from 'typeorm';
 import { MetaStats, positionsDetails } from 'src/common/utils';
 import { RiskParams } from 'src/common/utils/risk';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
@@ -23,7 +23,11 @@ import { MailerService } from '../mailer/mailer.service';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { ConfigService } from '@nestjs/config';
-import { ChallengeStatus, VerificationStatus, CertificateType } from 'src/common/enums';
+import {
+  ChallengeStatus,
+  VerificationStatus,
+  CertificateType,
+} from 'src/common/enums';
 @Injectable()
 export class ChallengesService {
   constructor(
@@ -64,8 +68,9 @@ export class ChallengesService {
 
     const whereConditions: any = {};
 
-    if (status) {
-      whereConditions.status = status;
+    // Filtrar por status si se proporciona (array de strings)
+    if (status && Array.isArray(status) && status.length > 0) {
+      whereConditions.status = In(status);
     }
 
     if (userID) {
@@ -94,15 +99,21 @@ export class ChallengesService {
   }
 
   async findByUserIdSimple(userID: string, query: ChallengeQueryDto) {
-    const { page = 1, limit = 10, status } = query;
+    const { page = 1, limit = 10, status, isActive } = query;
     const skip = (page - 1) * limit;
 
     const whereConditions: any = {
       userID,
     };
 
-    if (status) {
-      whereConditions.status = status;
+    // Filtrar por status si se proporciona (array de strings)
+    if (status && Array.isArray(status) && status.length > 0) {
+      whereConditions.status = In(status);
+    }
+
+    // Filtrar por isActive si se proporciona (boolean)
+    if (typeof isActive === 'boolean') {
+      whereConditions.isActive = isActive;
     }
 
     const [challenges, total] = await this.challengeRepository.findAndCount({
@@ -168,7 +179,10 @@ export class ChallengesService {
       }
 
       // Obtener la cadena completa de relaciones y stages
-      const relation = await this.challengeTemplatesService.findCompleteRelationChain(challenge.relationID);
+      const relation =
+        await this.challengeTemplatesService.findCompleteRelationChain(
+          challenge.relationID,
+        );
       const stages = relation.stages.sort((a, b) => a.numPhase - b.numPhase);
       const totalPhases = stages.length;
       const isFinalPhase = challenge.numPhase === totalPhases;
@@ -181,7 +195,10 @@ export class ChallengesService {
 
       // Si es la fase final, solo guardar y retornar
       if (isFinalPhase) {
-        const savedChallenge = await queryRunner.manager.save(Challenge, challenge);
+        const savedChallenge = await queryRunner.manager.save(
+          Challenge,
+          challenge,
+        );
         await queryRunner.commitTransaction();
         return savedChallenge;
       }
@@ -189,7 +206,10 @@ export class ChallengesService {
       // Remover cuenta del buffer si existe
       if (challenge.brokerAccount) {
         try {
-          await this.bufferService.upsertAccount(challenge.brokerAccount.login, null);
+          await this.bufferService.upsertAccount(
+            challenge.brokerAccount.login,
+            null,
+          );
         } catch (error) {
           console.warn('Error removing account from buffer:', error.message);
         }
@@ -203,15 +223,13 @@ export class ChallengesService {
 
         if (!user.isVerified) {
           // Crear verificación si no existe
-          const existingVerification = await this.verificationService.findByUserId(user.userID, {});
+          const existingVerification =
+            await this.verificationService.findByUserId(user.userID, {});
           if (!existingVerification || existingVerification.data.length === 0) {
-            await this.verificationService.create(
-              user.userID,
-              {
-                documentType: 'passport' as any,
-                numDocument: '',
-              }
-            );
+            await this.verificationService.create(user.userID, {
+              documentType: 'passport' as any,
+              numDocument: '',
+            });
           }
 
           // Enviar email de verificación requerida
@@ -256,7 +274,10 @@ export class ChallengesService {
             type: CertificateType.phase1,
           });
 
-          const savedChallenge = await queryRunner.manager.save(Challenge, challenge);
+          const savedChallenge = await queryRunner.manager.save(
+            Challenge,
+            challenge,
+          );
           await queryRunner.commitTransaction();
           return savedChallenge;
         }
@@ -288,8 +309,10 @@ export class ChallengesService {
 
       // Enviar email con credenciales de la nueva cuenta
       const user = challenge.user;
-      const challengeBalance = relation.balances.find(b => Number(b.balance) === Number(challenge.dynamicBalance));
-      
+      const challengeBalance = relation.balances.find(
+        (b) => Number(b.balance) === Number(challenge.dynamicBalance),
+      );
+
       await this.mailerService.sendMail({
         to: user.email,
         subject: 'New Phase Challenge Credentials',
@@ -315,10 +338,12 @@ export class ChallengesService {
         type: CertificateType.phase2,
       });
 
-      const savedChallenge = await queryRunner.manager.save(Challenge, challenge);
+      const savedChallenge = await queryRunner.manager.save(
+        Challenge,
+        challenge,
+      );
       await queryRunner.commitTransaction();
       return savedChallenge;
-
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -327,7 +352,10 @@ export class ChallengesService {
     }
   }
 
-  async setDisapprovedChallenge(id: string, observation?: string): Promise<Challenge> {
+  async setDisapprovedChallenge(
+    id: string,
+    observation?: string,
+  ): Promise<Challenge> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -351,16 +379,24 @@ export class ChallengesService {
       // Remover cuenta del buffer si existe
       if (challenge.brokerAccount) {
         try {
-          await this.bufferService.upsertAccount(challenge.brokerAccount.login, null);
+          await this.bufferService.upsertAccount(
+            challenge.brokerAccount.login,
+            null,
+          );
         } catch (error) {
           console.warn('Error removing account from buffer:', error.message);
         }
       }
 
       // Obtener información del challenge para el email
-      const relation = await this.challengeTemplatesService.findCompleteRelationChain(challenge.relationID);
-      const challengeBalance = relation.balances.find(b => Number(b.balance) === Number(challenge.dynamicBalance));
-      
+      const relation =
+        await this.challengeTemplatesService.findCompleteRelationChain(
+          challenge.relationID,
+        );
+      const challengeBalance = relation.balances.find(
+        (b) => Number(b.balance) === Number(challenge.dynamicBalance),
+      );
+
       // Enviar email de notificación de desaprobación
       await this.mailerService.sendMail({
         to: challenge.user.email,
@@ -376,10 +412,12 @@ export class ChallengesService {
         },
       });
 
-      const savedChallenge = await queryRunner.manager.save(Challenge, challenge);
+      const savedChallenge = await queryRunner.manager.save(
+        Challenge,
+        challenge,
+      );
       await queryRunner.commitTransaction();
       return savedChallenge;
-
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -389,7 +427,8 @@ export class ChallengesService {
   }
 
   private generateRandomPassword(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < 12; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
