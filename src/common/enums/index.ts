@@ -9,3 +9,4 @@ export * from './stage-rule-type.enum';
 export * from './verification-document-type.enum';
 export * from './verification-status.enum';
 export * from './withdrawal-status.enum';
+export * from './business-requirement.enum';
