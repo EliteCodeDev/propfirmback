@@ -73,7 +73,11 @@ export class BrokeretApiClient {
 
   private buildUrl(path: string): string {
     const base = (this.cfg.url || '').replace(/\/+$/, '');
+    const version = this.cfg.version ? `v${this.cfg.version}` : null;
     const clean = path.replace(/^\/+/, '');
+    if (version) {
+      return `${base}/${version}/${clean}`;
+    }
     return `${base}/${clean}`;
   }
 
