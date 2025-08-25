@@ -11,15 +11,14 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { BrokeretApiService } from './brokeret-api.service';
 import {
   BrokeretApiClient,
-  CreateUserBody,
   TradingActivityBody,
-  BalanceOperationBody,
   PositionsListBody,
   OrdersListBody,
 } from './client/brokeret-api.client';
 import { GenericApiKeyGuard } from 'src/common/guards/generic-api-key.guard';
 import { ApiKeyService } from 'src/common/decorators/api-key-service.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
+import { BalanceAccountDto } from './dto/balance.dto';
 
 @ApiTags('Brokeret API')
 @Controller('brokeret-api')
@@ -37,18 +36,18 @@ export class BrokeretApiController {
   @ApiOperation({ summary: 'Crear un nuevo usuario en Brokeret' })
   @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
   @ApiBody({ type: Object, description: 'Datos del usuario a crear' })
-  async createUser(@Body() createUserData: CreateUserBody) {
+  async createUser(@Body() createUserData: CreateUserDto) {
     return this.brokeretApiClient.createUser(createUserData);
   }
 
-  @Post('user/get')
+  @Get('user/:login')
   @ApiOperation({ summary: 'Obtener información de un usuario' })
   @ApiResponse({ status: 200, description: 'Información del usuario obtenida' })
   @ApiBody({
     schema: { type: 'object', properties: { login: { type: 'string' } } },
   })
-  async getUser(@Body() body: { login: string | number }) {
-    return this.brokeretApiClient.getUser(body.login);
+  async getUser(@Param('login') login: number) {
+    return this.brokeretApiClient.getUser(login);
   }
 
   @Post('user/stats')
@@ -81,7 +80,7 @@ export class BrokeretApiController {
   @ApiOperation({ summary: 'Realizar operación de balance (depósito/retiro)' })
   @ApiResponse({ status: 200, description: 'Operación de balance realizada' })
   @ApiBody({ type: Object, description: 'Datos de la operación de balance' })
-  async balanceOperation(@Body() balanceData: BalanceOperationBody) {
+  async balanceOperation(@Body() balanceData: BalanceAccountDto) {
     return this.brokeretApiClient.balanceOperation(balanceData);
   }
 
