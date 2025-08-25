@@ -150,7 +150,9 @@ export class AuthService {
     }
 
     if (!user.isConfirmed) {
-      throw new UnauthorizedException('Please verify your email before logging in');
+      throw new UnauthorizedException(
+        'Please verify your email before logging in',
+      );
     }
 
     this.logger.log(`Login successful for email: ${email}`);
@@ -366,7 +368,7 @@ export class AuthService {
     });
 
     return {
-      message: 'Confirmation email sent successfully'
+      message: 'Confirmation email sent successfully',
     };
   }
 
@@ -419,7 +421,14 @@ export class AuthService {
           role: defaultRole,
           passwordHash: '', // No necesita password para OAuth
         });
-
+        this.mailerService.sendMail({
+          to: user.email,
+          subject: 'Welcome to Fundedhero',
+          template: 'welcome',
+          context: {
+            name: user.firstName,
+          },
+        });
         user = await this.userRepo.save(user);
       }
 
