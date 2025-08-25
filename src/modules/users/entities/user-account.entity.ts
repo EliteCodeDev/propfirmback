@@ -56,6 +56,16 @@ export class UserAccount {
   @Column({ length: 30, nullable: true })
   phone?: string;
 
+  // OAuth fields
+  @Column({ length: 255, nullable: true })
+  googleId?: string;
+
+  @Column({ length: 50, nullable: true })
+  provider?: string; // 'local', 'google', etc.
+
+  @Column({ length: 255, nullable: true })
+  avatar?: string; // URL del avatar desde el proveedor OAuth
+
   @CreateDateColumn()
   createdAt: Date;
 

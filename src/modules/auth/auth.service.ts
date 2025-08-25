@@ -18,6 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CompletePasswordResetDto } from './dto/complete-password-reset.dto';
+import { GoogleAuthDto, GoogleCallbackDto } from './dto/google-auth.dto';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { BcryptUtil } from 'src/common/utils/bcrypt';
 import { MailerService } from '../mailer/mailer.service';
@@ -364,6 +365,94 @@ export class AuthService {
       },
     });
 
-    return { message: 'Confirmation email sent successfully' };
+    return {
+      message: 'Confirmation email sent successfully'
+    };
+  }
+
+  async googleAuth(dto: GoogleAuthDto) {
+    const { googleId, email, firstName, lastName, avatar, accessToken } = dto;
+
+    try {
+      // Verificar el token de Google (aquí podrías agregar validación adicional)
+      // Por ahora asumimos que el token ya fue validado en el frontend
+
+      // Buscar usuario existente por googleId o email
+      let user = await this.userRepo.findOne({
+        where: [{ googleId }, { email }],
+        relations: ['role'],
+      });
+
+      if (user) {
+        // Usuario existente - actualizar información si es necesario
+        if (!user.googleId) {
+          user.googleId = googleId;
+          user.provider = 'google';
+          user.avatar = avatar;
+          await this.userRepo.save(user);
+        }
+      } else {
+        // Crear nuevo usuario
+        const defaultRole = await this.roleRepo.findOne({
+          where: { name: 'user' },
+        });
+
+        // Generar username único basado en email
+        const baseUsername = email.split('@')[0];
+        let username = baseUsername;
+        let counter = 1;
+        while (await this.userRepo.findOne({ where: { username } })) {
+          username = `${baseUsername}${counter}`;
+          counter++;
+        }
+
+        user = this.userRepo.create({
+          username,
+          email,
+          firstName,
+          lastName,
+          googleId,
+          provider: 'google',
+          avatar,
+          isConfirmed: true, // Los usuarios de Google ya tienen email verificado
+          isVerified: false,
+          role: defaultRole,
+          passwordHash: '', // No necesita password para OAuth
+        });
+
+        user = await this.userRepo.save(user);
+      }
+
+      // Generar tokens JWT
+      const tokens = this.generateTokens(user);
+
+      return {
+        message: 'Google authentication successful',
+        user: this.excludePassword(user),
+        ...tokens,
+        status: 200,
+      };
+    } catch (error) {
+      this.logger.error('Error in Google authentication:', error);
+      throw new BadRequestException('Google authentication failed');
+    }
+  }
+
+  async googleCallback(dto: GoogleCallbackDto) {
+    const { code, state } = dto;
+
+    try {
+      // Aquí podrías intercambiar el código por un token de acceso
+      // y obtener la información del usuario desde Google
+      // Por ahora, este endpoint puede ser usado para casos específicos
+      // donde necesites manejar el callback directamente
+
+      throw new BadRequestException(
+        'Google callback should be handled by the frontend. Use /auth/google endpoint instead.',
+      );
+    } catch (error) {
+      this.logger.error('Error in Google callback:', error);
+      throw new BadRequestException('Google callback failed');
+    }
   }
 }

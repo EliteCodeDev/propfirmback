@@ -22,6 +22,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CompletePasswordResetDto } from './dto/complete-password-reset.dto';
 import { ResendConfirmationDto } from './dto/resend-confirmation.dto';
+import { GoogleAuthDto, GoogleCallbackDto } from './dto/google-auth.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Query } from '@nestjs/common/decorators';
@@ -121,5 +122,25 @@ export class AuthController {
   async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
     const userId = req.user?.userID || req.user?.sub;
     return this.authService.changePassword(userId, dto);
+  }
+
+  @Public()
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Authenticate with Google' })
+  @ApiResponse({ status: 200, description: 'User authenticated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid Google token' })
+  async googleAuth(@Body() dto: GoogleAuthDto) {
+    return this.authService.googleAuth(dto);
+  }
+
+  @Public()
+  @Post('google/callback')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Handle Google OAuth callback' })
+  @ApiResponse({ status: 200, description: 'User authenticated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid authorization code' })
+  async googleCallback(@Body() dto: GoogleCallbackDto) {
+    return this.authService.googleCallback(dto);
   }
 }
