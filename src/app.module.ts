@@ -39,6 +39,7 @@ import {
   WithdrawalsModule,
   RbacModule,
   SmtApiModule,
+  BusinessRequirementModule,
   // BrokeretApiModule,
   StorageModule,
   MinioModule,
@@ -79,6 +80,7 @@ import { BufferModule } from './lib/buffer/buffer.module';
     }),
     ScheduleModule.forRoot(),
     // Application modules
+    BusinessRequirementModule,
     BufferModule,
     StorageModule,
     MinioModule,
