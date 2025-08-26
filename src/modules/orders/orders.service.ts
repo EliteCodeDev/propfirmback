@@ -36,6 +36,8 @@ import {
 } from 'src/common/utils/account-mapper';
 import { UserAccount } from '../users/entities';
 import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-account.dto';
+import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
+import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -49,6 +51,7 @@ export class OrdersService {
     private brokerAccountsService: BrokerAccountsService,
     private usersService: UsersService,
     private smtApiService: SmtApiClient,
+    private creationFazoClient: CreationFazoClient,
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<CustomerOrder> {
@@ -523,9 +526,59 @@ export class OrdersService {
     createOrderDto: CreateCompleteOrderDto,
     balance: number,
   ): Promise<CreateBrokerAccountDto> {
-    const newUser = {
+    try {
+      this.logger.log('Creating Brokeret API account with data:', {
+        user: user.email,
+        balance,
+      });
+
+      // Generar contraseñas aleatorias para la cuenta
+      const masterPassword = generateRandomPassword(12);
+      const investorPassword = generateRandomPassword(12);
+
+      // Extraer datos del usuario y billing para crear la cuenta
+      const { billing } = createOrderDto.user;
+      const fullName = `${billing.first_name} ${billing.last_name}`.trim();
       
+      // Crear el DTO para la API de Fazo
+      const createAccountData: CreateAccountDto = {
+        name: fullName || user.username,
+        groupName: 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
+        email: user.email,
+        phone: billing.phone || user.phone || '+1234567890',
+        country: billing.country || 'US',
+        city: billing.city || 'Unknown',
+        address: `${billing.address_1} ${billing.address_2 || ''}`.trim() || 'Unknown',
+        balance: balance,
+        mPassword: masterPassword,
+        iPassword: investorPassword,
+        leverage: 100, // Apalancamiento por defecto
+      };
+
+      // Llamar al cliente de creación Fazo
+      const fazoResponse = await this.creationFazoClient.createAccount(createAccountData);
+      
+      this.logger.log('Brokeret API account created successfully:', {
+        accountId: fazoResponse.user.accountid,
+        login: fazoResponse.user.id,
+      });
+
+      // Mapear la respuesta de Fazo a CreateBrokerAccountDto
+      const brokerAccountDto: CreateBrokerAccountDto = {
+        login: fazoResponse.user.accountid.toString(),
+        password: masterPassword,
+        server: fazoResponse.user.server || 'MT5-Server',
+        serverIp: 'brokeret-server.com', // IP del servidor por defecto
+        platform: 'MT5',
+        isUsed: false,
+        investorPass: investorPassword,
+        innitialBalance: balance,
+      };
+
+      return brokerAccountDto;
+    } catch (error) {
+      this.logger.error('Error creating Brokeret API account:', error);
+      throw new Error(`Failed to create Brokeret API account: ${error.message}`);
     }
-    return;
   }
 }

@@ -4,7 +4,7 @@ import { IsNumber, IsOptional, IsString, IsNotEmpty } from 'class-validator';
 export class ListClosedPositionsDto {
   @ApiProperty({ description: 'Login del usuario', example: 123456 })
   @IsNumber()
-  login: number;
+  login: number | string;
 
   @ApiProperty({
     description: 'Fecha inicial (YYYY-MM-DD)',
@@ -21,7 +21,14 @@ export class ListClosedPositionsDto {
   @IsString()
   @IsNotEmpty()
   end_time: string; // YYYY-MM-DD
-
+  @ApiProperty({
+    description: 'Demo',
+    example: true,
+    required: false,
+    default: false,
+  })
+  @IsOptional()
+  demo?: boolean;
   @ApiProperty({
     description: 'Offset para paginación',
     example: 0,

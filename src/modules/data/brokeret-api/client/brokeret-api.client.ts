@@ -6,6 +6,7 @@ import { ConfigType } from '@nestjs/config';
 import { brokeretApiConfig } from 'src/config';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { BalanceAccountDto } from '../dto/balance.dto';
+import { ListClosedPositionsDto } from '../dto/list-closed-positions.dto';
 
 export interface BrokeretUserResponse {
   success?: boolean;
@@ -89,27 +90,67 @@ export class BrokeretApiClient {
     }
   }
 
-  // === Endpoints detectados en el flujo n8n (Brokeret) ===
+  // === POSITIONS AND ORDERS===
 
   // POST position/list/open
-  listOpenPositions(param: number) {
+  listOpenPositions(param: number | string) {
     return this.request('get', `positions/user/${param}`);
   }
 
-  // POST position/list/closed
-  listClosedPositions(param: number) {
-    return this.request('post', `positions/close/${param}`);
+  // GET deals/user/{login}
+  listClosedPositions(dto: ListClosedPositionsDto) {
+    const { login, offset, start_time, end_time } = dto;
+    const params: any = { start_time, end_time };
+    if (offset !== undefined) params.offset = offset;
+    return this.request('get', `deals/user/${login}`, { params });
+  }
+
+  // GET deals/closed-within-period
+
+  listAllClosedWithinRisk({
+    start_time,
+    end_time,
+    demo,
+  }: {
+    start_time: string;
+    end_time: string;
+    demo: boolean;
+  }) {
+    return this.request('get', `deals/closed-within-period`, {
+      params: { start_time, end_time, demo },
+    });
   }
 
   // POST order/list/user
-  listUserOrders(body: OrdersListBody) {
-    return this.request('post', 'order/list/user', { data: body });
+  listUserOrders(param: number | string) {
+    return this.request('post', `orders/user/${param}`);
   }
 
   // POST stats/user
   statsUser(login: string | number) {
     return this.request<BrokeretUserResponse>('post', 'stats/user', {
       data: { login },
+    });
+  }
+
+  // === RISK MANAGEMENT ===
+
+  // GET risk/margin/critical-users
+  getCriticalUsersByMargin(marginLevelThreshold: number) {
+    return this.request('get', 'risk/margin/critical-users', {
+      params: {
+        margin_level_threshold: marginLevelThreshold,
+      },
+    });
+  }
+
+  // GET risk/drawdown/users
+  getUsersByDrawdown(minDrawdown: number, periodDays: number) {
+    return this.request('get', 'risk/drawdown/users', {
+      params: {
+        min_drawdown: minDrawdown,
+        period_days: periodDays,
+      },
     });
   }
 
@@ -166,6 +207,47 @@ export class BrokeretApiClient {
         data: body,
       },
     );
+  }
+
+  // POST get all user
+  listAllUsers(body: BalanceAccountDto) {
+    return this.request<BrokeretUserResponse>('get', 'users/all', {
+      data: body,
+    });
+  }
+
+  // POST enable / disable trading
+  enableTrading(param: number) {
+    return this.request<BrokeretUserResponse>(
+      'post',
+      `users/trading/enable/${param}`,
+      {
+        data: param,
+      },
+    );
+  }
+  disableTrading(param: number) {
+    return this.request<BrokeretUserResponse>(
+      'post',
+      `users/trading/disable/${param}`,
+      {
+        data: param,
+      },
+    );
+  }
+
+  // POST positions at risk
+  /**
+   * Obtiene posiciones en riesgo.
+   * GET positions/at-risk?margin_level_threshold=..&loss_threshold=..
+   */
+  listPositionsAtRisk(marginLevelThreshold: number, lossThreshold: number) {
+    return this.request('get', 'positions/at-risk', {
+      params: {
+        margin_level_threshold: marginLevelThreshold,
+        loss_threshold: lossThreshold,
+      },
+    });
   }
 
   // Método genérico por si aparecen endpoints nuevos

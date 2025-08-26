@@ -162,26 +162,17 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         propStats,
       ] = await Promise.all([
         // Posiciones abiertas
-        this.brokeretApiClient.listOpenPositions({
-          Login: [login],
-        }),
+        this.brokeretApiClient.listOpenPositions(login),
 
         // Posiciones cerradas
         this.brokeretApiClient.listClosedPositions({
-          flag: 1,
-          Login: [login],
-          FromDate: this.formatDate(startDate),
-          ToDate: this.formatDate(endDate),
-          fromTime: '00:00:00',
-          toTime: '23:59:59',
+          login,
+          start_time: this.formatDate(startDate),
+          end_time: this.formatDate(endDate),
         }),
 
         // Órdenes del usuario
-        this.brokeretApiClient.listUserOrders({
-          login: login,
-          FromDate: this.formatDate(startDate),
-          ToDate: this.formatDate(endDate),
-        }),
+        this.brokeretApiClient.listUserOrders(login),
 
         // User stats
         this.brokeretApiClient.statsUser(login),

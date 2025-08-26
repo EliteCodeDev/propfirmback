@@ -9,6 +9,7 @@ import { ChallengesModule } from '../challenges/challenges.module';
 import { BrokerAccountsModule } from '../broker-accounts/broker-accounts.module';
 import { ChallengeTemplatesModule } from '../challenge-templates/challenge-templates.module';
 import { SmtApiModule } from 'src/modules/data/smt-api/smt-api.module';
+import { BrokeretApiModule } from '../data/brokeret-api/brokeret-api.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([CustomerOrder]),
@@ -18,6 +19,7 @@ import { SmtApiModule } from 'src/modules/data/smt-api/smt-api.module';
     BrokerAccountsModule,
     ChallengeTemplatesModule,
     SmtApiModule,
+    BrokeretApiModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],
