@@ -4,6 +4,8 @@ import { AxiosRequestConfig } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigType } from '@nestjs/config';
 import { brokeretApiConfig } from 'src/config';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { BalanceAccountDto } from '../dto/balance.dto';
 
 export interface BrokeretUserResponse {
   success?: boolean;
@@ -26,40 +28,9 @@ export interface OrdersListBody {
   ToDate: string; // dd/MM/yyyy
 }
 
-export interface CreateUserBody {
-  group: string;
-  firstName: string;
-  middleName?: string;
-  lastName: string;
-  leverage: number;
-  rights: string;
-  country?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  address?: string;
-  phone?: string;
-  email: string;
-  agent?: number;
-  account?: string;
-  company?: string;
-  language?: number;
-  phonePassword?: string;
-  status?: string;
-  masterPassword: string;
-  investorPassword: string;
-}
-
 export interface TradingActivityBody {
   login: string | number;
   tradingFlag: number; // 0 = disable, 1 = enable
-}
-
-export interface BalanceOperationBody {
-  login: string | number;
-  amount: number;
-  type: number; // 1 = deposit, 2 = withdrawal
-  TransactionComments?: string;
 }
 
 @Injectable()
@@ -173,8 +144,8 @@ export class BrokeretApiClient {
   // === Nuevos endpoints del flujo n8n ===
 
   // POST User/Create
-  createUser(body: CreateUserBody) {
-    return this.request<BrokeretUserResponse>('post', 'User/Create', {
+  createUser(body: CreateUserDto) {
+    return this.request<BrokeretUserResponse>('post', 'users/create', {
       data: body,
     });
   }
@@ -187,7 +158,7 @@ export class BrokeretApiClient {
   }
 
   // POST useraccount/balanceOperation
-  balanceOperation(body: BalanceOperationBody) {
+  balanceOperation(body: BalanceAccountDto) {
     return this.request<BrokeretUserResponse>(
       'post',
       'useraccount/balanceOperation',
