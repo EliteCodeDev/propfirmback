@@ -8,7 +8,10 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { MailerService } from '../mailer/mailer.service';
 import { ChallengesService } from '../challenges/challenges.service';
 import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
-import { SmtApiClient } from 'src/modules/data/smt-api/client/smt-api.client';
+import {
+  createAccountResponse,
+  SmtApiClient,
+} from 'src/modules/data/smt-api/client/smt-api.client';
 import { BrokerAccountsService } from '../broker-accounts/broker-accounts.service';
 import { UsersService } from '../users/services/users.service';
 import {
@@ -22,11 +25,17 @@ import { generateRandomPassword } from 'src/common/utils/randomPassword';
 import { ChallengeStatus, OrderStatus } from 'src/common/enums';
 import { Challenge } from '../challenges/entities/challenge.entity';
 import { Logger } from '@nestjs/common';
-import { ChallengeRelation } from '../challenge-templates/entities';
 import {
+  ChallengeBalance,
+  ChallengeRelation,
+} from '../challenge-templates/entities';
+import {
+  createSmtApiResponseToBrokerAccount,
   getBasicRiskParams,
   getParameterValueBySlug,
 } from 'src/common/utils/account-mapper';
+import { UserAccount } from '../users/entities';
+import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-account.dto';
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -150,24 +159,26 @@ export class OrdersService {
           failedAt: 'relation_balance_match',
         };
       }
+      // //for smt-api
+      // const credentials = await this.completeCreateSmtApiAccount(
+      //   user,
+      //   createOrderDto,
+      //   challengeBalance.balance,
+      //   relation,
+      // );
+      // for brokeret-api
 
-      const url = 'https://access.metatrader5.com/terminal';
-      const leverage = '100';
-      const platform = 'mt5';
-      this.logger.log('Creating SMT API challenge with data:', {
+      const credentials = await this.createBrokeretApiAccount(
         user,
         createOrderDto,
-      });
-      const challengeRes = await this.createSmtApiChallenge({
+        challengeBalance.balance,
+      );
+      // Create broker account and challenge using the separated function
+      const challengeRes = await this.createBrokerAndChallenge(
+        credentials,
         user,
-        createOrderDto,
-        balance: challengeBalance,
-        leverage,
-        url,
-        platform,
         relation,
-      });
-      this.logger.log('SMT API challenge created:', challengeRes.data);
+      );
 
       if (!challengeRes.data) {
         return {
@@ -358,27 +369,15 @@ export class OrdersService {
   }
 
   async createBrokerAndChallenge(
-    accountCredentials: any,
+    credentials: any,
     user: any,
     relation: ChallengeRelation,
-    balance: any,
-    url: string,
   ): Promise<ServiceResult<Challenge>> {
     try {
       // broker account creation
       let brokerAccount;
       try {
-        brokerAccount = await this.brokerAccountsService.create({
-          login: accountCredentials.userDataAccount.login,
-          password: accountCredentials.userDataAccount.password,
-          server: accountCredentials.userDataAccount.servidor,
-          platform: accountCredentials.userDataAccount.tipoCuenta,
-          isUsed: true,
-          investorPass:
-            accountCredentials.userDataAccount?.passwordInversor || '',
-          serverIp: url,
-          innitialBalance: balance.balance,
-        });
+        brokerAccount = await this.brokerAccountsService.create(credentials);
       } catch (err) {
         return {
           status: 'error',
@@ -387,7 +386,6 @@ export class OrdersService {
           details: err?.message ?? err,
         };
       }
-
       // challenge creation
       try {
         const challenge = await this.challengesService.create({
@@ -436,43 +434,39 @@ export class OrdersService {
 
   async createSmtApiChallenge(
     createSmtApiChallengeData: createSmtApiChallengeData,
-  ): Promise<ServiceResult<Challenge>> {
-    const {
-      user,
-      createOrderDto,
-      balance,
-      leverage,
-      url,
-      parentID,
-      platform,
-      relation,
-    } = createSmtApiChallengeData;
+  ): Promise<ServiceResult<createAccountResponse['userDataAccount']>> {
+    const { user, createOrderDto, balance, url, leverage, platform } =
+      createSmtApiChallengeData;
 
     try {
       // smt-api account creation
-      let accountCredentials: any;
       const name = user.firstName || user.username;
       this.logger.log('Creating SMT API account with data:', {
         name,
         lastName: user.lastName || name,
         email: createOrderDto.user.email,
-        balance: balance.balance.toString(),
+        balance: balance.toString(),
         leverage,
         phone: user.phone.replace('+', '') || '123456789',
         platform,
         url,
       });
       try {
-        accountCredentials = await this.smtApiService.createAccount({
+        const response = await this.smtApiService.createAccount({
           name: name,
           lastName: user.lastName || name,
           email: createOrderDto.user.email,
-          balance: Math.floor(balance.balance).toString(),
+          balance: Math.floor(balance).toString(),
           leverage,
           phone: user.phone.replace('+', '') || '123456789',
           platform,
           url,
         });
+        return {
+          status: response.success ? 'success' : 'error',
+          message: response.message ?? 'Error desconocido',
+          data: response.userDataAccount,
+        };
       } catch (err) {
         return {
           status: 'error',
@@ -481,15 +475,6 @@ export class OrdersService {
           details: err?.message ?? err,
         };
       }
-
-      // Create broker account and challenge using the separated function
-      return await this.createBrokerAndChallenge(
-        accountCredentials,
-        user,
-        relation,
-        balance,
-        url,
-      );
     } catch (err) {
       return {
         status: 'error',
@@ -497,5 +482,50 @@ export class OrdersService {
         details: err?.message ?? err,
       };
     }
+  }
+  async completeCreateSmtApiAccount(
+    user: UserAccount,
+    createOrderDto: CreateCompleteOrderDto,
+    balance: number,
+  ): Promise<any> {
+    const url = 'https://access.metatrader5.com/terminal';
+    const leverage = '100';
+    const platform = 'mt5';
+    this.logger.log('Creating SMT API challenge with data:', {
+      user,
+      createOrderDto,
+    });
+    const smtRes = await this.createSmtApiChallenge({
+      user,
+      createOrderDto,
+      balance: balance,
+      url,
+      leverage,
+      platform,
+    });
+    if (smtRes.status === 'error' || !smtRes.data) {
+      return {
+        status: 'error',
+        message: smtRes.message || 'No se pudo crear el challenge',
+        failedAt: smtRes.failedAt ?? 'challenge_create',
+        details: smtRes.details,
+      };
+    }
+    this.logger.log('SMT API challenge created:', smtRes.data);
+    //map smtapi data to broker and challenge
+    const credentials = createSmtApiResponseToBrokerAccount(smtRes.data);
+    credentials.serverIp = url;
+    credentials.platform = platform;
+    return credentials;
+  }
+  async createBrokeretApiAccount(
+    user: UserAccount,
+    createOrderDto: CreateCompleteOrderDto,
+    balance: number,
+  ): Promise<CreateBrokerAccountDto> {
+    const newUser = {
+      
+    }
+    return;
   }
 }

@@ -58,11 +58,11 @@ export interface wooCoupon {
 export interface createSmtApiChallengeData {
   user: UserAccount;
   createOrderDto: CreateCompleteOrderDto;
-  balance: ChallengeBalance;
+  balance: number;
   leverage: string;
+  platform: string;
+
   ip?: string;
   url?: string;
   parentID?: string;
-  platform: string;
-  relation: ChallengeRelation;
 }

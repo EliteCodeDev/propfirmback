@@ -73,16 +73,12 @@ export class BrokeretApiClient {
 
   private buildUrl(path: string): string {
     const base = (this.cfg.url || '').replace(/\/+$/, '');
-    const version = this.cfg.version ? `v${this.cfg.version}` : null;
     const clean = path.replace(/^\/+/, '');
-    if (version) {
-      return `${base}/${version}/${clean}`;
-    }
-    return `${base}/${clean}`;
+    return `${base}/v1/${clean}`;
   }
 
   private buildHeaders(extra?: Record<string, string>) {
-    const headerName = "X-API-Key";
+    const headerName = 'X-API-Key';
     return {
       'Content-Type': 'application/json',
       ...(this.cfg.apiKey ? { [headerName]: `${this.cfg.apiKey}` } : {}),

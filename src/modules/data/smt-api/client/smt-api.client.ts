@@ -30,7 +30,7 @@ interface createAccountData {
   ip?: string;
   url?: string;
 }
-interface createAccountResponse {
+export interface createAccountResponse {
   success: boolean;
   userDataAccount?: {
     nombre: string;

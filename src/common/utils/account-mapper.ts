@@ -9,6 +9,8 @@ import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-details.entity';
 import { BrokerAccount } from 'src/modules/broker-accounts/entities/broker-account.entity';
 import { RiskParams } from 'src/common/utils';
+import { createAccountResponse } from 'src/modules/data/smt-api/client/smt-api.client';
+import { CreateBrokerAccountDto } from 'src/modules/broker-accounts/dto/create-broker-account.dto';
 
 /**
  * Función utilitaria para obtener valores de parámetros por slug desde un challenge
@@ -355,4 +357,17 @@ export function mapChallengesToBasicAccounts(
       }
     })
     .filter((account) => account !== null);
+}
+export function createSmtApiResponseToBrokerAccount(
+  response: createAccountResponse['userDataAccount'],
+): CreateBrokerAccountDto {
+  return {
+    login: response.login,
+    password: response.password,
+    investorPass: response.passwordInversor,
+    server: response.servidor,
+    innitialBalance: parseInt(response.deposito),
+    isUsed: true,
+    
+    };
 }
