@@ -42,4 +42,15 @@ export class MailerService {
 
     return this.transporter.sendMail(mailOptions);
   }
+
+  async sendRawMail({ to, subject, html }: { to: string; subject: string; html: string }) {
+    const mailOptions = {
+      from: this.configService.get<string>('mailer.from'),
+      to,
+      subject,
+      html,
+    };
+
+    return this.transporter.sendMail(mailOptions);
+  }
 }
