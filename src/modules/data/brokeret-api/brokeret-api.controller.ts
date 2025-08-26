@@ -86,20 +86,20 @@ export class BrokeretApiController {
 
   // === Posiciones ===
 
-  @Post('positions/open')
+  @Get('positions/open/:login')
   @ApiOperation({ summary: 'Listar posiciones abiertas' })
   @ApiResponse({ status: 200, description: 'Lista de posiciones abiertas' })
   @ApiBody({ type: Object, description: 'Filtros para posiciones abiertas' })
-  async listOpenPositions(@Body() filters: { Login: (string | number)[] }) {
-    return this.brokeretApiClient.listOpenPositions(filters);
+  async listOpenPositions(@Query() login: number) {
+    return this.brokeretApiClient.listOpenPositions(login);
   }
 
-  @Post('positions/closed')
+  @Get('positions/close/:login')
   @ApiOperation({ summary: 'Listar posiciones cerradas' })
   @ApiResponse({ status: 200, description: 'Lista de posiciones cerradas' })
   @ApiBody({ type: Object, description: 'Filtros para posiciones cerradas' })
-  async listClosedPositions(@Body() filters: PositionsListBody) {
-    return this.brokeretApiClient.listClosedPositions(filters);
+  async listClosedPositions(@Query() login: number) {
+    return this.brokeretApiClient.listClosedPositions(login);
   }
 
   // === Órdenes ===

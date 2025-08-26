@@ -92,13 +92,13 @@ export class BrokeretApiClient {
   // === Endpoints detectados en el flujo n8n (Brokeret) ===
 
   // POST position/list/open
-  listOpenPositions(body: PositionsListBody) {
-    return this.request('post', 'position/list/open', { data: body });
+  listOpenPositions(param: number) {
+    return this.request('get', `positions/user/${param}`);
   }
 
   // POST position/list/closed
-  listClosedPositions(body: PositionsListBody) {
-    return this.request('post', 'position/list/closed', { data: body });
+  listClosedPositions(param: number) {
+    return this.request('post', `positions/close/${param}`);
   }
 
   // POST order/list/user
@@ -161,7 +161,7 @@ export class BrokeretApiClient {
   balanceOperation(body: BalanceAccountDto) {
     return this.request<BrokeretUserResponse>(
       'post',
-      'useraccount/balanceOperation',
+      'users/balance/operation',
       {
         data: body,
       },
