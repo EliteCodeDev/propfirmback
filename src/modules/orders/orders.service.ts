@@ -38,6 +38,8 @@ import { UserAccount } from '../users/entities';
 import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-account.dto';
 import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
 import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
+import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.client';
+import { BalanceAccountDto } from '../data/brokeret-api/dto/balance.dto';
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -52,6 +54,7 @@ export class OrdersService {
     private usersService: UsersService,
     private smtApiService: SmtApiClient,
     private creationFazoClient: CreationFazoClient,
+    private brokeretApiClient: BrokeretApiClient,
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<CustomerOrder> {
@@ -376,16 +379,41 @@ export class OrdersService {
     credentials: any,
     user: any,
     relation: ChallengeRelation,
+    retryCount: number = 0,
   ): Promise<ServiceResult<Challenge>> {
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
+
     try {
       // broker account creation
       let brokerAccount;
       try {
         brokerAccount = await this.brokerAccountsService.create(credentials);
       } catch (err) {
+        // Check if this is a login conflict error and we can retry
+        if (err?.message?.includes('Login already exists') && retryCount < maxRetries) {
+          this.logger.warn(`Login conflict detected, retrying broker account creation. Attempt ${retryCount + 2}/${maxRetries + 1}`, {
+            login: credentials.login,
+            attempt: retryCount + 1,
+          });
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, retryDelay * (retryCount + 1)));
+          
+          // Modify the login to make it unique
+          const modifiedCredentials = {
+            ...credentials,
+            login: `${credentials.login}_${Date.now()}_${retryCount + 1}`,
+          };
+          
+          return this.createBrokerAndChallenge(modifiedCredentials, user, relation, retryCount + 1);
+        }
+        
         return {
           status: 'error',
-          message: 'Fallo al crear la cuenta de bróker',
+          message: retryCount >= maxRetries ? 
+            `Fallo al crear la cuenta de bróker después de ${maxRetries + 1} intentos` : 
+            'Fallo al crear la cuenta de bróker',
           failedAt: 'broker_account_create',
           details: err?.message ?? err,
         };
@@ -526,11 +554,16 @@ export class OrdersService {
     user: UserAccount,
     createOrderDto: CreateCompleteOrderDto,
     balance: number,
+    retryCount: number = 0,
   ): Promise<CreateBrokerAccountDto> {
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
+
     try {
       this.logger.log('Creating Brokeret API account with data:', {
         user: user.email,
         balance,
+        attempt: retryCount + 1,
       });
 
       // Generar contraseñas aleatorias para la cuenta
@@ -541,9 +574,12 @@ export class OrdersService {
       const { billing } = createOrderDto.user;
       const fullName = `${billing.first_name} ${billing.last_name}`.trim();
 
+      // Add timestamp to make name more unique to avoid duplicates
+      const uniqueName = retryCount > 0 ? `${fullName || user.username}_${Date.now()}` : fullName || user.username;
+
       // Crear el DTO para la API de Fazo
       const createAccountData: CreateAccountDto = {
-        name: fullName || user.username,
+        name: uniqueName,
         groupName: 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
         email: user.email,
         phone: billing.phone || user.phone || '+1234567890',
@@ -568,6 +604,37 @@ export class OrdersService {
         balance: fazoResponse.user.balance,
       });
 
+      // Realizar operación de balance para depositar el dinero inicial
+      try {
+        const balanceOperationData: BalanceAccountDto = {
+          login: fazoResponse.user.accountid,
+          amount: balance,
+          comment: 'initial balance',
+          operation: 'deposit',
+        };
+
+        this.logger.log('Making balance operation for initial deposit:', {
+          login: fazoResponse.user.accountid,
+          amount: balance,
+        });
+
+        const balanceResult = await this.brokeretApiClient.balanceOperation(
+          balanceOperationData,
+        );
+
+        this.logger.log('Balance operation completed successfully:', {
+          result: balanceResult,
+        });
+      } catch (balanceError) {
+        this.logger.error(
+          'Error making balance operation for initial deposit:',
+          balanceError.message,
+        );
+        throw new Error(
+          `Failed to deposit initial balance: ${balanceError.message}`,
+        );
+      }
+
       // Mapear la respuesta de Fazo a CreateBrokerAccountDto
       const brokerAccountDto: CreateBrokerAccountDto = {
         login: fazoResponse.user.accountid.toString(),
@@ -582,7 +649,30 @@ export class OrdersService {
 
       return brokerAccountDto;
     } catch (error) {
-      this.logger.error('Error creating Brokeret API account:', error.message);
+      this.logger.error('Error creating Brokeret API account:', {
+        error: error.message,
+        attempt: retryCount + 1,
+        maxRetries,
+      });
+
+      // Check if this is a login conflict error and we can retry
+      if (error.message.includes('Login already exists') || 
+          error.message.includes('already exists') ||
+          error.message.includes('duplicate')) {
+        if (retryCount < maxRetries) {
+          this.logger.warn(`Retrying account creation due to duplicate login. Attempt ${retryCount + 2}/${maxRetries + 1}`);
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, retryDelay * (retryCount + 1)));
+          
+          return this.createBrokeretApiAccount(user, createOrderDto, balance, retryCount + 1);
+        } else {
+          throw new Error(
+            `Failed to create Brokeret API account after ${maxRetries + 1} attempts: Login conflicts persist`,
+          );
+        }
+      }
+
       throw new Error(
         `Failed to create Brokeret API account: ${error.message}`,
       );

@@ -27,12 +27,20 @@ export class BrokeretApiClient {
     private readonly http: HttpService,
     @Inject(brokeretApiConfig.KEY)
     private readonly cfg: ConfigType<typeof brokeretApiConfig>,
-  ) {}
+  ) { }
 
   private buildUrl(path: string): string {
-    const base = (this.cfg.url || '').replace(/\/+$/, '');
+    if (!this.cfg.url) {
+      this.logger.error('BROKERET_API_URL is not configured in environment variables');
+      throw new Error('BROKERET_API_URL is not configured. Please check your environment variables.');
+    }
+    
+    const base = this.cfg.url.replace(/\/+$/, '');
     const clean = path.replace(/^\/+/, '');
-    return `${base}/v1/${clean}`;
+    const fullUrl = `${base}/v1/${clean}`;
+    
+    this.logger.debug(`Building URL: ${fullUrl}`);
+    return fullUrl;
   }
 
   private buildHeaders(extra?: Record<string, string>) {
@@ -179,6 +187,69 @@ export class BrokeretApiClient {
       {
         data: body,
       },
+    );
+  }
+
+  // === FINANCIAL OPERATIONS ===
+  // POST /financial/deposit
+  makeDeposit(body: {
+    login: number;
+    amount: number;
+    comment?: string;
+    payment_method: string;
+  }): Promise<BrokeretUserResponse> {
+    return this.request<BrokeretUserResponse>('post', 'financial/deposit', {
+      data: body,
+    });
+  }
+
+  // POST /financial/withdrawal
+  makeWithdrawal(body: {
+    login: number;
+    amount: number;
+    comment?: string;
+    payment_method: string;
+  }): Promise<BrokeretUserResponse> {
+    return this.request<BrokeretUserResponse>('post', 'financial/withdrawal', {
+      data: body,
+    });
+  }
+
+  // POST /financial/credit
+  manageCredit(body: {
+    login: number;
+    amount: number;
+    comment?: string;
+  }): Promise<BrokeretUserResponse> {
+    return this.request<BrokeretUserResponse>('post', 'financial/credit', {
+      data: body,
+    });
+  }
+
+  // POST /financial/internal-transfer
+  internalTransfer(body: {
+    from_login: number;
+    to_login: number;
+    amount: number;
+    comment?: string;
+  }): Promise<BrokeretUserResponse> {
+    return this.request<BrokeretUserResponse>(
+      'post',
+      'financial/internal-transfer',
+      { data: body },
+    );
+  }
+
+  // POST /financial/commission-adjustment
+  adjustCommission(body: {
+    login: number;
+    amount: number;
+    comment?: string;
+  }): Promise<BrokeretUserResponse> {
+    return this.request<BrokeretUserResponse>(
+      'post',
+      'financial/commission-adjustment',
+      { data: body },
     );
   }
 
