@@ -20,7 +20,7 @@ import { CreationFazoClient } from './client/creation-fazo.client';
 import { GenericApiKeyGuard } from 'src/common/guards/generic-api-key.guard';
 import { ApiKeyService } from 'src/common/decorators/api-key-service.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
-import { BalanceAccountDto } from './dto/balance.dto';
+
 import { AuthDto } from './dto/auth.dto';
 import { CreateAccountDto } from './dto/create-account.dto';
 import {
@@ -103,17 +103,60 @@ export class BrokeretApiController {
 
   // === Gestión de Cuentas ===
 
-  @Post('account/balance-operation')
-  @ApiOperation({ summary: 'Realizar operación de balance (depósito/retiro)' })
-  @ApiResponse({ status: 200, description: 'Operación de balance realizada' })
+  // === FINANCIAL OPERATIONS ===
+
+  @Post('financial/deposit')
+  @ApiOperation({ summary: 'Realizar depósito en cuenta' })
+  @ApiResponse({ status: 200, description: 'Depósito realizado exitosamente' })
   @ApiBody({
-    type: BalanceAccountDto,
-    description: 'Datos de la operación de balance',
+    schema: {
+      type: 'object',
+      properties: {
+        login: { type: 'number' },
+        amount: { type: 'number' },
+        comment: { type: 'string' },
+        payment_method: { type: 'string' }
+      },
+      required: ['login', 'amount', 'payment_method']
+    },
+    description: 'Datos del depósito',
   })
-  async balanceOperation(
-    @Body() balanceData: BalanceAccountDto,
+  async makeDeposit(
+    @Body() depositData: {
+      login: number;
+      amount: number;
+      comment?: string;
+      payment_method: string;
+    },
   ): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.balanceOperation(balanceData);
+    return this.brokeretApiClient.makeDeposit(depositData);
+  }
+
+  @Post('financial/withdrawal')
+  @ApiOperation({ summary: 'Realizar retiro de cuenta' })
+  @ApiResponse({ status: 200, description: 'Retiro realizado exitosamente' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        login: { type: 'number' },
+        amount: { type: 'number' },
+        comment: { type: 'string' },
+        payment_method: { type: 'string' }
+      },
+      required: ['login', 'amount', 'payment_method']
+    },
+    description: 'Datos del retiro',
+  })
+  async makeWithdrawal(
+    @Body() withdrawalData: {
+      login: number;
+      amount: number;
+      comment?: string;
+      payment_method: string;
+    },
+  ): Promise<BrokeretUserResponse> {
+    return this.brokeretApiClient.makeWithdrawal(withdrawalData);
   }
 
   // === Posiciones ===
@@ -220,7 +263,7 @@ export class BrokeretApiController {
   @ApiOperation({ summary: 'Listar todos los usuarios' })
   @ApiResponse({ status: 200, description: 'Lista de todos los usuarios' })
   async listAllUsers(): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.listAllUsers({ login: '', amount: 0 } as BalanceAccountDto);
+    return this.brokeretApiClient.listAllUsers({ login: '', amount: 0 });
   }
 
   @Post('users/trading/enable/:login')

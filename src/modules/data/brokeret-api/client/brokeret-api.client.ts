@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ConfigType } from '@nestjs/config';
 import { brokeretApiConfig } from 'src/config';
 import { CreateUserDto } from '../dto/create-user.dto';
-import { BalanceAccountDto } from '../dto/balance.dto';
+
 import { ListClosedPositionsDto } from '../dto/list-closed-positions.dto';
 import {
   OpenPositionsResponse,
@@ -178,19 +178,6 @@ export class BrokeretApiClient {
     return this.request<UserDetailsResponse>('get', `users/${login}`);
   }
 
-  // === Nuevos endpoints del flujo n8n ===
-
-  // POST account/balance-operation
-  balanceOperation(body: BalanceAccountDto): Promise<BrokeretUserResponse> {
-    return this.request<BrokeretUserResponse>(
-      'post',
-      'account/balance-operation',
-      {
-        data: body,
-      },
-    );
-  }
- //operaciones con balances
   // === FINANCIAL OPERATIONS ===
   // POST /financial/deposit
   makeDeposit(body: {
@@ -254,8 +241,8 @@ export class BrokeretApiClient {
     );
   }
 
-  // POST get all user
-  listAllUsers(body: BalanceAccountDto): Promise<BrokeretUserResponse> {
+  // GET all users
+  listAllUsers(body?: { login?: string; amount?: number }): Promise<BrokeretUserResponse> {
     return this.request<BrokeretUserResponse>('get', 'users/all', {
       data: body,
     });
