@@ -469,7 +469,6 @@ export class OrdersService {
   ): Promise<ServiceResult<createAccountResponse['userDataAccount']>> {
     const { user, createOrderDto, balance, url, leverage, platform } =
       createSmtApiChallengeData;
-
     try {
       // smt-api account creation
       const name = user.firstName || user.username;
