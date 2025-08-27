@@ -27,19 +27,25 @@ export class BrokeretApiClient {
     private readonly http: HttpService,
     @Inject(brokeretApiConfig.KEY)
     private readonly cfg: ConfigType<typeof brokeretApiConfig>,
-  ) { }
+  ) {}
 
   private buildUrl(path: string): string {
     if (!this.cfg.url) {
-      this.logger.error('BROKERET_API_URL is not configured in environment variables');
-      throw new Error('BROKERET_API_URL is not configured. Please check your environment variables.');
+      this.logger.error(
+        'BROKERET_API_URL is not configured in environment variables',
+      );
+      throw new Error(
+        'BROKERET_API_URL is not configured. Please check your environment variables.',
+      );
     }
-    
+
     const base = this.cfg.url.replace(/\/+$/, '');
     const clean = path.replace(/^\/+/, '');
     // Don't add /v1/ if the base URL already ends with /v1
-    const fullUrl = base.endsWith('/v1') ? `${base}/${clean}` : `${base}/v1/${clean}`;
-    
+    const fullUrl = base.endsWith('/v1')
+      ? `${base}/${clean}`
+      : `${base}/v1/${clean}`;
+
     this.logger.debug(`Building URL: ${fullUrl}`);
     return fullUrl;
   }
@@ -96,32 +102,110 @@ export class BrokeretApiClient {
   }
 
   // GET deals/user/{login}
-  listClosedPositions(
+  async listClosedPositions(
     dto: ListClosedPositionsDto,
-  ): Promise<ClosedPositionsResponse> {
+  ): Promise<any> {
     const { login, offset, start_time, end_time } = dto;
-    const params: any = { start_time, end_time };
-    if (offset !== undefined) params.offset = offset;
-    return this.request<ClosedPositionsResponse>('get', `deals/user/${login}`, {
+    
+    // Agregar un día más a la fecha de fin
+    let adjustedEndTime = end_time;
+    if (end_time) {
+      const endDate = new Date(end_time);
+      endDate.setDate(endDate.getDate() + 1);
+      adjustedEndTime = endDate.toISOString().split('T')[0];
+    }
+    
+    const params: any = { start_time, end_time: adjustedEndTime };
+    if (offset !== undefined) params.offset = Number(offset);
+    
+    const response = await this.request<ClosedPositionsResponse>('get', `deals/user/${login}`, {
       params,
     });
+
+    // Filtrar y procesar las posiciones cerradas
+    if (response?.data?.deals) {
+      const filteredDeals = response.data.deals
+        .filter(deal => deal.action_name !== 'BALANCE') // Filtrar operaciones de balance
+        .reduce((groups, deal) => {
+          const key = deal.position_id;
+          if (!groups[key]) {
+            groups[key] = [];
+          }
+          groups[key].push(deal);
+          return groups;
+        }, {} as Record<number, any[]>);
+
+      // Procesar solo los grupos que tienen exactamente 2 operaciones (entrada y salida)
+      const processedPositions = Object.values(filteredDeals)
+        .filter(group => group.length === 2)
+        .map(group => {
+          // Ordenar por fecha para identificar entrada y salida
+          const sortedGroup = group.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+          const entryDeal = sortedGroup[0];
+          const exitDeal = sortedGroup[1];
+          
+          // Calcular duración en segundos
+          const entryTime = new Date(entryDeal.time);
+          const exitTime = new Date(exitDeal.time);
+          const durationSeconds = Math.floor((exitTime.getTime() - entryTime.getTime()) / 1000);
+          
+          return {
+            position_id: entryDeal.position_id,
+            login: entryDeal.login,
+            symbol: entryDeal.symbol,
+            action: entryDeal.action_name,
+            volume: entryDeal.volume,
+            price_open: entryDeal.price,
+            price_close: exitDeal.price,
+            time_open: entryDeal.time,
+            time_close: exitDeal.time,
+            duration_seconds: durationSeconds,
+            profit: exitDeal.profit, // Solo el deal de cierre tiene profit
+            commission: exitDeal.commission,
+            swap: exitDeal.swap,
+            net_profit: exitDeal.profit + exitDeal.commission + exitDeal.swap,
+            comment: entryDeal.comment,
+            group: entryDeal.group,
+            email: entryDeal.email
+          };
+        })
+        .filter(position => position.profit !== 0); // Solo devolver posiciones con profit distinto de 0
+
+      return {
+        ...response,
+        data: {
+          ...response.data,
+          deals: processedPositions
+        }
+      };
+    }
+
+    return response;
   }
 
   // GET deals/closed-within-period
   listAllClosedWithinRisk({
-    start_time,
-    end_time,
+    start_date,
+    end_date,
     demo,
   }: {
-    start_time: string;
-    end_time: string;
+    start_date: string;
+    end_date: string;
     demo: boolean;
   }): Promise<ClosedWithinRiskResponse> {
+    // Agregar un día más a la fecha de fin
+    let adjustedEndDate = end_date;
+    if (end_date) {
+      const endDateObj = new Date(end_date);
+      endDateObj.setDate(endDateObj.getDate() + 1);
+      adjustedEndDate = endDateObj.toISOString().split('T')[0];
+    }
+    
     return this.request<ClosedWithinRiskResponse>(
       'get',
       `deals/closed-within-period`,
       {
-        params: { start_time, end_time, demo },
+        params: { start_date, end_date: adjustedEndDate, demo },
       },
     );
   }
@@ -308,10 +392,20 @@ export class BrokeretApiClient {
     days: number,
     symbol?: string,
     group?: string,
+    startDate?: string,
+    endDate?: string,
   ): Promise<ProfitabilityAnalyticsResponse> {
     const params: any = { login, days };
     if (symbol) params.symbol = symbol;
     if (group) params.group = group;
+    
+    // Si se proporciona endDate, agregar un día más
+    if (endDate) {
+      const endDateObj = new Date(endDate);
+      endDateObj.setDate(endDateObj.getDate() + 1);
+      params.end_date = endDateObj.toISOString().split('T')[0];
+    }
+    if (startDate) params.start_date = startDate;
 
     return this.request<ProfitabilityAnalyticsResponse>(
       'get',

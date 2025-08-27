@@ -48,7 +48,10 @@ export class BrokeretDataMapper {
 
       // Mapear balance y equity desde userDetails
       if (brokeretData.userDetails?.data) {
-        updatedAccount.balance = this.mapBalance(brokeretData.userDetails.data, updatedAccount.balance);
+        updatedAccount.balance = this.mapBalance(
+          brokeretData.userDetails.data,
+          updatedAccount.balance,
+        );
         updatedAccount.equity =
           brokeretData.userDetails.data.equity || updatedAccount.equity;
       }
@@ -102,13 +105,13 @@ export class BrokeretDataMapper {
    */
   private mapBalance(userDetails: any, existingBalance?: Balance): Balance {
     const balance = existingBalance || new Balance();
-    
+
     // Actualizar solo el balance actual desde userDetails
     balance.currentBalance = userDetails.balance || 0;
-    
+
     // NO actualizar initialBalance - es estático desde brokerAccount
     // dailyBalance se actualiza en otro job, no aquí
-    
+
     return balance;
   }
 
@@ -179,20 +182,21 @@ export class BrokeretDataMapper {
   ): MetaStats {
     // Solo usar more-stats para calcular maxMinBalance
     const moreStats = getMoreStats(existingAccount);
-    
+
     // Mapear métricas promedio directamente desde profitabilityAnalytics de Brokeret
     const averageMetrics = new AverageMetrics();
     const analytics = profitabilityAnalytics?.profitability_metrics;
-    
+
     if (analytics) {
       // Usar datos directos de Brokeret API
       averageMetrics.totalTrades = analytics.total_trades || 0;
       averageMetrics.winningTrades = analytics.winning_trades || 0;
       averageMetrics.losingTrades = analytics.losing_trades || 0;
       averageMetrics.winRate = analytics.win_rate || 0;
-      averageMetrics.lossRate = averageMetrics.totalTrades > 0 
-        ? ((averageMetrics.losingTrades / averageMetrics.totalTrades) * 100) 
-        : 0;
+      averageMetrics.lossRate =
+        averageMetrics.totalTrades > 0
+          ? (averageMetrics.losingTrades / averageMetrics.totalTrades) * 100
+          : 0;
       averageMetrics.averageProfit = analytics.average_win || 0;
       averageMetrics.averageLoss = analytics.average_loss || 0;
     }
@@ -209,6 +213,4 @@ export class BrokeretDataMapper {
 
     return metaStats;
   }
-
-
 }

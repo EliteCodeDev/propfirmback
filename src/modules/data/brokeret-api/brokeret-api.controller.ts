@@ -208,8 +208,8 @@ export class BrokeretApiController {
     @Query('demo') demo?: boolean,
   ): Promise<ClosedWithinRiskResponse> {
     return this.brokeretApiClient.listAllClosedWithinRisk({
-      start_time: start_time,
-      end_time: end_time,
+      start_date: start_time,
+      end_date: end_time,
       demo: demo || false,
     });
   }
@@ -220,7 +220,10 @@ export class BrokeretApiController {
   @ApiOperation({ summary: 'Listar todos los usuarios' })
   @ApiResponse({ status: 200, description: 'Lista de todos los usuarios' })
   async listAllUsers(): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.listAllUsers({ login: '', amount: 0 } as BalanceAccountDto);
+    return this.brokeretApiClient.listAllUsers({
+      login: '',
+      amount: 0,
+    } as BalanceAccountDto);
   }
 
   @Post('users/trading/enable/:login')
