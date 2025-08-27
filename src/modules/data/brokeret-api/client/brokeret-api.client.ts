@@ -102,53 +102,62 @@ export class BrokeretApiClient {
   }
 
   // GET deals/user/{login}
-  async listClosedPositions(
-    dto: ListClosedPositionsDto,
-  ): Promise<any> {
+  async listClosedPositions(dto: ListClosedPositionsDto): Promise<any> {
     const { login, offset, start_time, end_time } = dto;
-    
+
     // Agregar un día más a la fecha de fin
     let adjustedEndTime = end_time;
     if (end_time) {
       const endDate = new Date(end_time);
-      endDate.setDate(endDate.getDate() + 1);
+      endDate.setDate(endDate.getDate() + 2);
       adjustedEndTime = endDate.toISOString().split('T')[0];
     }
-    
+
     const params: any = { start_time, end_time: adjustedEndTime };
     if (offset !== undefined) params.offset = Number(offset);
-    
-    const response = await this.request<ClosedPositionsResponse>('get', `deals/user/${login}`, {
-      params,
-    });
+
+    const response = await this.request<ClosedPositionsResponse>(
+      'get',
+      `deals/user/${login}`,
+      {
+        params,
+      },
+    );
 
     // Filtrar y procesar las posiciones cerradas
     if (response?.data?.deals) {
       const filteredDeals = response.data.deals
-        .filter(deal => deal.action_name !== 'BALANCE') // Filtrar operaciones de balance
-        .reduce((groups, deal) => {
-          const key = deal.position_id;
-          if (!groups[key]) {
-            groups[key] = [];
-          }
-          groups[key].push(deal);
-          return groups;
-        }, {} as Record<number, any[]>);
+        .filter((deal) => deal.action_name !== 'BALANCE') // Filtrar operaciones de balance
+        .reduce(
+          (groups, deal) => {
+            const key = deal.position_id;
+            if (!groups[key]) {
+              groups[key] = [];
+            }
+            groups[key].push(deal);
+            return groups;
+          },
+          {} as Record<number, any[]>,
+        );
 
       // Procesar solo los grupos que tienen exactamente 2 operaciones (entrada y salida)
       const processedPositions = Object.values(filteredDeals)
-        .filter(group => group.length === 2)
-        .map(group => {
+        .filter((group) => group.length === 2)
+        .map((group) => {
           // Ordenar por fecha para identificar entrada y salida
-          const sortedGroup = group.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+          const sortedGroup = group.sort(
+            (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
+          );
           const entryDeal = sortedGroup[0];
           const exitDeal = sortedGroup[1];
-          
+
           // Calcular duración en segundos
           const entryTime = new Date(entryDeal.time);
           const exitTime = new Date(exitDeal.time);
-          const durationSeconds = Math.floor((exitTime.getTime() - entryTime.getTime()) / 1000);
-          
+          const durationSeconds = Math.floor(
+            (exitTime.getTime() - entryTime.getTime()) / 1000,
+          );
+
           return {
             position_id: entryDeal.position_id,
             login: entryDeal.login,
@@ -166,17 +175,17 @@ export class BrokeretApiClient {
             net_profit: exitDeal.profit + exitDeal.commission + exitDeal.swap,
             comment: entryDeal.comment,
             group: entryDeal.group,
-            email: entryDeal.email
+            email: entryDeal.email,
           };
         })
-        .filter(position => position.profit !== 0); // Solo devolver posiciones con profit distinto de 0
+        .filter((position) => position.profit !== 0); // Solo devolver posiciones con profit distinto de 0
 
       return {
         ...response,
         data: {
           ...response.data,
-          deals: processedPositions
-        }
+          deals: processedPositions,
+        },
       };
     }
 
@@ -200,7 +209,7 @@ export class BrokeretApiClient {
       endDateObj.setDate(endDateObj.getDate() + 1);
       adjustedEndDate = endDateObj.toISOString().split('T')[0];
     }
-    
+
     return this.request<ClosedWithinRiskResponse>(
       'get',
       `deals/closed-within-period`,
@@ -326,7 +335,10 @@ export class BrokeretApiClient {
   }
 
   // GET all users
-  listAllUsers(body?: { login?: string; amount?: number }): Promise<BrokeretUserResponse> {
+  listAllUsers(body?: {
+    login?: string;
+    amount?: number;
+  }): Promise<BrokeretUserResponse> {
     return this.request<BrokeretUserResponse>('get', 'users/all', {
       data: body,
     });
@@ -385,7 +397,7 @@ export class BrokeretApiClient {
     const params: any = { login, days };
     if (symbol) params.symbol = symbol;
     if (group) params.group = group;
-    
+
     // Si se proporciona endDate, agregar un día más
     if (endDate) {
       const endDateObj = new Date(endDate);
