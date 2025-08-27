@@ -190,7 +190,7 @@ export class BrokeretApiClient {
       },
     );
   }
-
+ //operaciones con balances
   // === FINANCIAL OPERATIONS ===
   // POST /financial/deposit
   makeDeposit(body: {
