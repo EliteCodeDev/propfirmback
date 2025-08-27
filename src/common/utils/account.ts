@@ -43,6 +43,7 @@ export class PositionsClassType {
 export class Account {
   accountID: string;
   login: string;
+  challengeId?: string;
 
   balance?: Balance;
 

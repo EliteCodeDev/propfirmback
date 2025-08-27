@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TasksService } from './tasks.service';
 import { ActivateSmtApiJob, RulesEvaluationJob } from './jobs';
+import { BufferLoaderJob } from './jobs/buffer-loader.job';
 import { SmtApiModule } from 'src/modules';
 import { BufferModule } from 'src/lib/buffer/buffer.module';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
@@ -19,7 +20,7 @@ import { BrokeretApiJobsModule } from './jobs/brokeret-api/brokeret-api-jobs.mod
     BrokeretApiJobsModule,
     TypeOrmModule.forFeature([Challenge, ChallengeRelation, StageParameter]),
   ],
-  providers: [TasksService, ActivateSmtApiJob],
+  providers: [TasksService, ActivateSmtApiJob, BufferLoaderJob],
   exports: [TasksService],
 })
 export class TasksModule {}

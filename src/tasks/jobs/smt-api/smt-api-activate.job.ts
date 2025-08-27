@@ -2,17 +2,10 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { SmtApiClient } from 'src/modules/data/smt-api/client/smt-api.client';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
-import { ChallengeRelation } from 'src/modules/challenge-templates/entities/challenge-relation.entity';
-import { StageParameter } from 'src/modules/challenge-templates/entities/stage/stage-parameter.entity';
-import { ChallengeTemplatesService } from 'src/modules/challenge-templates/challenge-templates.service';
-
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Account, LoginAccount } from 'src/common/utils';
-import { BufferService } from 'src/lib/buffer/buffer.service';
-import { brokers } from 'src/examples/brokers';
-import { mapChallengesToAccounts } from 'src/common/utils/account-mapper';
-import { array } from 'joi';
+import { LoginAccount } from 'src/common/utils';
+import { BufferLoaderJob } from '../buffer-loader.job';
 //inicio de la ejecución
 @Injectable()
 export class ActivateSmtApiJob implements OnModuleInit {
@@ -21,13 +14,7 @@ export class ActivateSmtApiJob implements OnModuleInit {
     private readonly smtApiClient: SmtApiClient,
     @InjectRepository(Challenge)
     private challengeRepository: Repository<Challenge>,
-    @InjectRepository(ChallengeRelation)
-    private relationRepository: Repository<ChallengeRelation>,
-    @InjectRepository(StageParameter)
-    private stageParameterRepository: Repository<StageParameter>,
-    private readonly challengeTemplatesService: ChallengeTemplatesService,
-
-    private readonly buffer: BufferService,
+    private readonly bufferLoaderJob: BufferLoaderJob,
   ) {}
 
   // Ejecuta al iniciar el backend
@@ -62,98 +49,45 @@ export class ActivateSmtApiJob implements OnModuleInit {
 
   async activateSmtApiProcess() {
     try {
-      // const broker = await this.smtApiClient.browserStatus();
-      // this.logger.debug(
-      //   'ActivateSmtApiJob: estado del navegador SMT API: ' +
-      //     JSON.stringify(broker),
-      // );
-      // if (!broker.status) {
-      //   // obtener las cuentas a activar del backend
-      //   // await this.smtApiClient.createBrowser();
-      //   this.logger.debug('ActivateSmtApiJob: navegador SMT API creado');
-      // }
       this.logger.debug(
-        'ActivateSmtApiJob: ejecución del proceso de activación de cuentas',
+        'ActivateSmtApiJob: ejecución del proceso de activación de cuentas SMT API',
       );
 
-      // Cargar challenges activos con todas las relaciones necesarias
+      // Forzar recarga del buffer usando el job genérico
+      await this.bufferLoaderJob.forceReload();
+      this.logger.debug('ActivateSmtApiJob: Buffer actualizado exitosamente');
+
+      // Obtener challenges activos para activación en SMT API
       const activeChallenges = await this.challengeRepository.find({
         where: { isActive: true },
-        relations: ['brokerAccount', 'details'],
+        relations: ['brokerAccount'],
       });
-      
-      // Cargar la cadena completa de relaciones para cada challenge
-      for (const challenge of activeChallenges) {
-        if (challenge.relationID) {
-          challenge.relation = await this.challengeTemplatesService.findCompleteRelationChain(
-            challenge.relationID,
-          );
-          
-          console.log(
-            'CHALLENGE RELATION',
-            JSON.stringify(challenge.relation.stages),
-          );
-        }
-      }
-      this.logger.debug(
-        `ActivateSmtApiJob: Encontrados ${activeChallenges.length} challenges activos`,
-      );
-
-      // Mapear challenges a cuentas del buffer
-      const accountsForBuffer = mapChallengesToAccounts(activeChallenges);
 
       this.logger.debug(
-        `ActivateSmtApiJob: Mapeadas ${accountsForBuffer.length} cuentas para el buffer`,
+        `ActivateSmtApiJob: Encontrados ${activeChallenges.length} challenges activos para SMT API`,
       );
 
-      // Inyectar cuentas al buffer
-      let injectedCount = 0;
-      for (const account of accountsForBuffer) {
-        try {
-          await this.buffer.upsertAccount(account.login, () => account);
-          injectedCount++;
-          this.logger.debug(
-            `ActivateSmtApiJob: Cuenta ${account.login} inyectada al buffer`,
-          );
-        } catch (error) {
-          this.logger.error(
-            `ActivateSmtApiJob: Error inyectando cuenta ${account.login} al buffer:`,
-            error,
-          );
-        }
-      }
+      // Preparar cuentas para activación en SMT API
+      const activeAccounts: LoginAccount[] = activeChallenges
+        .filter((c) => !!c.brokerAccount)
+        .map((c) => ({
+          login: c.brokerAccount.login,
+          password: c.brokerAccount.password,
+          id: c.brokerAccount.brokerAccountID,
+          ip: c.brokerAccount.serverIp || '',
+          platform: c.brokerAccount.platform || '',
+        }));
 
       this.logger.debug(
-        `ActivateSmtApiJob: ${injectedCount}/${accountsForBuffer.length} cuentas inyectadas al buffer exitosamente`,
-      );
-      //listar accounts del buffer:
-      this.logger.debug(
-        `ActivateSmtApiJob: Cuentas en el buffer: ${JSON.stringify(
-          this.buffer.listEntries(),
-        )}`,
+        'ActivateSmtApiJob: Número de cuentas a activar en SMT API: ' +
+          activeAccounts.length,
       );
 
-      // // Preparar cuentas para activación en SMT API
-      // const activeAccounts: LoginAccount[] = activeChallenges
-      //   .filter((c) => !!c.brokerAccount)
-      //   .map((c) => ({
-      //     login: c.brokerAccount.login,
-      //     password: c.brokerAccount.password,
-      //     id: c.brokerAccount.brokerAccountID,
-      //     ip: c.brokerAccount.serverIp || '',
-      //     platform: c.brokerAccount.platform || '',
-      //   }));
-
-      // this.logger.debug(
-      //   'ActivateSmtApiJob: Número de cuentas a activar en SMT API: ' +
-      //     activeAccounts.length,
-      // );
-
-      // // Activar cuentas en SMT API
-      // return await this.smtApiClient.loginAll(activeAccounts);
+      // Activar cuentas en SMT API
+      return await this.smtApiClient.loginAll(activeAccounts);
     } catch (error) {
       this.logger.error(
-        'ActivateSmtApiJob: error en el proceso de activación de cuentas: ' +
+        'ActivateSmtApiJob: error en el proceso de activación de cuentas SMT API: ' +
           error,
       );
       throw error;
