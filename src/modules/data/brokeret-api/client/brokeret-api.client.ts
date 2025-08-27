@@ -37,7 +37,8 @@ export class BrokeretApiClient {
     
     const base = this.cfg.url.replace(/\/+$/, '');
     const clean = path.replace(/^\/+/, '');
-    const fullUrl = `${base}/v1/${clean}`;
+    // Don't add /v1/ if the base URL already ends with /v1
+    const fullUrl = base.endsWith('/v1') ? `${base}/${clean}` : `${base}/v1/${clean}`;
     
     this.logger.debug(`Building URL: ${fullUrl}`);
     return fullUrl;
@@ -179,11 +180,11 @@ export class BrokeretApiClient {
 
   // === Nuevos endpoints del flujo n8n ===
 
-  // POST useraccount/balanceOperation
+  // POST account/balance-operation
   balanceOperation(body: BalanceAccountDto): Promise<BrokeretUserResponse> {
     return this.request<BrokeretUserResponse>(
       'post',
-      'users/balance/operation',
+      'account/balance-operation',
       {
         data: body,
       },

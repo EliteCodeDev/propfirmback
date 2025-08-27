@@ -4,13 +4,13 @@ import { ApiProperty } from '@nestjs/swagger';
 export class BalanceAccountDto {
 
     @ApiProperty({
-        description: 'Login number for the user',
-        example: 0,
+        description: 'Login for the user account',
+        example: '12345678',
         required: false
     })
-    @IsNumber()
+    @IsString()
     @IsNotEmpty()
-    login: number;
+    login: string;
 
     @ApiProperty({
         description: 'Amount to be added or subtracted from the user account',
