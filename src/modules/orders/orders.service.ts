@@ -39,7 +39,7 @@ import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-acc
 import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
 import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
 import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.client';
-import { BalanceAccountDto } from '../data/brokeret-api/dto/balance.dto';
+
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -603,26 +603,26 @@ export class OrdersService {
         balance: fazoResponse.user.balance,
       });
 
-      // Realizar operación de balance para depositar el dinero inicial
+      // Realizar depósito inicial usando el endpoint financiero correcto
       try {
-        const balanceOperationData: BalanceAccountDto = {
-          login: fazoResponse.user.accountid.toString(),
+        const depositData = {
+          login: fazoResponse.user.accountid,
           amount: balance,
-          comment: 'initial balance',
-          operation: 'deposit',
+          comment: 'Initial deposit for challenge account',
+          payment_method: 'internal',
         };
 
-        this.logger.log('Making balance operation for initial deposit:', {
+        this.logger.log('Making initial deposit:', {
           login: fazoResponse.user.accountid,
           amount: balance,
         });
 
-        const balanceResult = await this.brokeretApiClient.balanceOperation(
-          balanceOperationData,
+        const depositResult = await this.brokeretApiClient.makeDeposit(
+          depositData,
         );
 
-        this.logger.log('Balance operation completed successfully:', {
-          result: balanceResult,
+        this.logger.log('Initial deposit completed successfully:', {
+          result: depositResult,
         });
       } catch (balanceError) {
         this.logger.error(
@@ -638,7 +638,7 @@ export class OrdersService {
       const brokerAccountDto: CreateBrokerAccountDto = {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
-        server: fazoResponse.user.server || 'MT5-Server',
+        server: process.env.NEXT_PUBLIC_SERVER,
         serverIp: 'brokeret-server.com', // IP del servidor por defecto
         platform: 'MT5',
         isUsed: false,
