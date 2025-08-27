@@ -17,16 +17,16 @@ export class ChallengeRelation {
   @PrimaryGeneratedColumn('uuid')
   relationID: string;
 
-  @Column({ type: 'uuid' })
-  categoryID: string;
+  @Column({ type: 'uuid', nullable: true })
+  categoryID?: string;
 
   @Column({ type: 'uuid' })
   planID: string;
 
   // Relations
-  @ManyToOne(() => ChallengeCategory, (category) => category.relations)
+  @ManyToOne(() => ChallengeCategory, (category) => category.relations, { nullable: true })
   @JoinColumn({ name: 'categoryID' })
-  category: ChallengeCategory;
+  category?: ChallengeCategory;
 
   @ManyToOne(() => ChallengePlan, (plan) => plan.relations)
   @JoinColumn({ name: 'planID' })
