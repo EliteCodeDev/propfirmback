@@ -607,7 +607,7 @@ export class OrdersService {
       // Realizar operación de balance para depositar el dinero inicial
       try {
         const balanceOperationData: BalanceAccountDto = {
-          login: fazoResponse.user.accountid,
+          login: fazoResponse.user.accountid.toString(),
           amount: balance,
           comment: 'initial balance',
           operation: 'deposit',

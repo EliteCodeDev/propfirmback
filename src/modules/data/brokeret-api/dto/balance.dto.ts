@@ -1,4 +1,4 @@
-import { IsNumber, IsNotEmpty, IsString, IsEmpty } from 'class-validator';
+import { IsNumber, IsNotEmpty, IsString, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class BalanceAccountDto {
@@ -27,16 +27,16 @@ export class BalanceAccountDto {
         required: false
     })
     @IsString()
-    @IsEmpty()
-    comment: string;
+    @IsOptional()
+    comment?: string;
 
     @ApiProperty({
         description: 'Operation type balance',
-        example: 'balance',
+        example: 'deposit',
         required: false
     })
-    @IsEmpty()
     @IsString()
-    operation: string;
+    @IsOptional()
+    operation?: string;
 
 }
