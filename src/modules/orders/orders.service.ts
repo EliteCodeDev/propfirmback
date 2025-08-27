@@ -638,7 +638,7 @@ export class OrdersService {
       const brokerAccountDto: CreateBrokerAccountDto = {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
-        server: fazoResponse.user.server || 'MT5-Server',
+        server: process.env.NEXT_PUBLIC_SERVER,
         serverIp: 'brokeret-server.com', // IP del servidor por defecto
         platform: 'MT5',
         isUsed: false,
