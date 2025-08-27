@@ -44,6 +44,7 @@ export class BufferLoaderJob implements OnModuleInit {
   /**
    * Job programado para recargar cuentas cada hora
    * Mantiene el buffer actualizado con los challenges activos
+   * Tiene prioridad en la carga inicial antes de que otros jobs procesen datos
    */
   @Cron('0 0 * * * *', { timeZone: 'America/Lima' })
   async scheduledBufferReload() {

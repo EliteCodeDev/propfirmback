@@ -36,9 +36,25 @@ export function riskEvaluation(
   );
   
   // Asegurar que createDateTime sea un objeto Date válido
-  const createDateTime = account.createDateTime instanceof Date 
-    ? account.createDateTime 
-    : new Date(account.createDateTime || new Date());
+  let createDateTime: Date;
+  try {
+    if (account.createDateTime instanceof Date) {
+      createDateTime = account.createDateTime;
+    } else if (account.createDateTime) {
+      // Intentar parsear si es string
+      createDateTime = new Date(account.createDateTime);
+      // Verificar si la fecha es válida
+      if (isNaN(createDateTime.getTime())) {
+        throw new Error('Invalid date');
+      }
+    } else {
+      // Si no existe, usar fecha actual
+      createDateTime = new Date();
+    }
+  } catch (error) {
+    // En caso de error en el parseo, usar fecha actual
+    createDateTime = new Date();
+  }
     
   const inactiveDays = consecutiveInactiveDays(
     openPositions.positions,

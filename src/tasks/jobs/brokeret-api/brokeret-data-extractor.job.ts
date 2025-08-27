@@ -19,15 +19,15 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     this.logger.log('BrokeretDataExtractorJob inicializado');
     // No ejecutar al inicio - solo cuando haya datos en el buffer
     this.logger.debug(
-      'Job configurado para ejecutarse cada 5 minutos cuando haya cuentas en el buffer',
+      'Job configurado para ejecutarse cada 30 segundos cuando haya cuentas en el buffer',
     );
   }
 
   /**
-   * Job programado para extraer datos de Brokeret API cada 5 minutos
-   * Cron: cada 5 minutos
+   * Job programado para extraer datos de Brokeret API cada 30 segundos
+   * Cron: cada 30 segundos con offset de 15 segundos para dar tiempo a la carga inicial
    */
-  @Cron('0 */1 * * * *', { timeZone: 'America/Lima' })
+  @Cron('15,45 * * * * *', { timeZone: 'America/Lima' })
   async extractBrokeretData() {
     this.logger.log('Iniciando extracción de datos de Brokeret API');
 

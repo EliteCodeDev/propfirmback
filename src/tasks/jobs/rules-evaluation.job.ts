@@ -10,7 +10,7 @@ export class RulesEvaluationJob {
   private readonly logger = new Logger(RulesEvaluationJob.name);
   constructor(private readonly bufferService: BufferService) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron('20,50 * * * * *')
   async evaluate() {
     try {
       const stats = this.bufferService.getStats();

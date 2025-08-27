@@ -21,10 +21,26 @@ export function consecutiveInactiveDays(
   accountCreateDatetime: Date,
   paramInactiveDays: number,
 ): consecutiveInactiveDaysResult {
+  // Validar que accountCreateDatetime sea una fecha válida
+  let validCreateDate: Date;
+  try {
+    if (!accountCreateDatetime || isNaN(accountCreateDatetime.getTime())) {
+      // Si la fecha no es válida, usar fecha actual menos 1 día
+      validCreateDate = new Date();
+      validCreateDate.setDate(validCreateDate.getDate() - 1);
+    } else {
+      validCreateDate = accountCreateDatetime;
+    }
+  } catch (error) {
+    // En caso de error, usar fecha actual menos 1 día
+    validCreateDate = new Date();
+    validCreateDate.setDate(validCreateDate.getDate() - 1);
+  }
+
   const positionsByDays = groupPositionsByDays(openPositions, closedPositions);
   const today = new Date();
   const daysSinceCreation = Math.floor(
-    (today.getTime() - accountCreateDatetime.getTime()) / (1000 * 60 * 60 * 24),
+    (today.getTime() - validCreateDate.getTime()) / (1000 * 60 * 60 * 24),
   );
 
   let consecutiveInactive = 0;
@@ -35,7 +51,7 @@ export function consecutiveInactiveDays(
 
   for (let i = 0; i <= daysSinceCreation; i++) {
     const currentDate = new Date(
-      accountCreateDatetime.getTime() + i * 24 * 60 * 60 * 1000,
+      validCreateDate.getTime() + i * 24 * 60 * 60 * 1000,
     );
     const dateString = currentDate.toISOString().split('T')[0];
 
@@ -91,11 +107,30 @@ export function groupPositionsByDays(
   const allPositions = mergePositions(openPositions, closedPositions);
   const grouped = allPositions.reduce(
     (acc, position) => {
-      const date = new Date(position.TimeOpen).toISOString().split('T')[0];
-      if (!acc[date]) {
-        acc[date] = [];
+      try {
+        // Validar y parsear la fecha de apertura de la posición
+        let timeOpen: Date;
+        
+        // TimeOpen es siempre string según las definiciones de tipo
+        if (!position.TimeOpen) {
+          throw new Error('TimeOpen is null or undefined');
+        }
+        
+        timeOpen = new Date(position.TimeOpen);
+        // Verificar si la fecha es válida
+        if (isNaN(timeOpen.getTime())) {
+          throw new Error('Invalid TimeOpen date');
+        }
+        
+        const date = timeOpen.toISOString().split('T')[0];
+        if (!acc[date]) {
+          acc[date] = [];
+        }
+        acc[date].push(position);
+      } catch (error) {
+        // Si hay error en el parseo de fecha, omitir esta posición
+        console.warn(`Error parsing TimeOpen for position:`, position, error);
       }
-      acc[date].push(position);
       return acc;
     },
     {} as Record<string, (OpenPosition | ClosedPosition)[]>,

@@ -17,7 +17,7 @@ export class FlushBufferJob {
     private readonly detailsRepo: Repository<ChallengeDetails>,
   ) {}
 
-  // Segundo 0 de cada décimo minuto
+  // Cada minuto en el segundo 0 para persistir datos actualizados
   @Cron('0 * * * * *')
   async flush() {
     const entries = await this.bufferService.listEntries();
@@ -34,16 +34,23 @@ export class FlushBufferJob {
     let failed = 0;
 
     for (const [login] of entries) {
+      this.logger.debug(`FlushBufferJob: flush de ${login}`);
       try {
         await this.bufferService.withLock(login, async () => {
-          // 1) Snapshot inmutable del estado actual
-          const current = await this.bufferService.getSnapshot(login);
+          this.logger.debug(
+            `FlushBufferJob: flush de ${login} - lock obtenido`,
+          );
+          // 1) Snapshot inmutable del estado actual (ya estamos dentro del lock)
+          const current = this.bufferService.getBuffer(login);
           if (!current) {
             skipped++;
             return;
           }
-          const snapshot = JSON.parse(JSON.stringify(current));
 
+          const snapshot = JSON.parse(JSON.stringify(current));
+          this.logger.debug(
+            `FlushBufferJob: flush de ${login} - snapshot: ${JSON.stringify(snapshot)}`,
+          );
           // 2) Resolver challenge activo por login de broker account
           const challenge = await this.challengeRepo
             .createQueryBuilder('c')
@@ -78,9 +85,15 @@ export class FlushBufferJob {
           const details = this.detailsRepo.create(payload);
 
           await this.detailsRepo.save(details);
+          this.logger.debug(
+            `FlushBufferJob: flush de ${login} - ChallengeDetails persistido`,
+          );
 
-          // 4) Liberar el recurso siempre (el lock evita escrituras concurrentes)
-          await this.bufferService.deleteAccount(login);
+          // 4) Mantener la cuenta en el buffer (no eliminar)
+          // await this.bufferService.deleteAccount(login);
+          this.logger.debug(
+            `FlushBufferJob: flush de ${login} - datos persistidos, cuenta mantenida en buffer`,
+          );
           persisted++;
         });
       } catch (err) {
