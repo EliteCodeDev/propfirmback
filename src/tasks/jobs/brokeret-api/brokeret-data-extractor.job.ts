@@ -115,6 +115,9 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
       this.logger.debug(
         `BrokeretDataExtractorJob: Datos extraídos de Brokeret para cuenta ${login}: ${JSON.stringify(brokeretData)}`,
       );
+      this.logger.debug(
+        `BrokeretDataExtractorJob: Datos mapeados para cuenta ${account}}`,
+      );
       // Mapear datos de Brokeret al formato del buffer
       const updatedAccount = await this.dataMapper.mapBrokeretDataToAccount(
         account,

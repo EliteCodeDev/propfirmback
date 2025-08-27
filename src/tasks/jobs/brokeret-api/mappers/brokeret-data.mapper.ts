@@ -3,14 +3,13 @@ import {
   Account,
   Balance,
   MetaStats,
-  RiskValidation,
   PositionsClassType,
   OpenPosition,
   ClosedPosition,
   MaxMinBalance,
   AverageMetrics,
-  RiskParams,
 } from 'src/common/utils';
+import { getMoreStats } from 'src/common/functions/more-stats';
 
 /**
  * Interfaz para los datos extraídos de Brokeret API
@@ -48,35 +47,41 @@ export class BrokeretDataMapper {
       updatedAccount.lastUpdate = new Date(brokeretData.lastUpdate);
 
       // Mapear balance y equity desde userDetails
-      if (brokeretData.userDetails?.result) {
-        updatedAccount.balance = this.mapBalance(brokeretData.userDetails.result);
-        updatedAccount.equity = brokeretData.userDetails.result.equity || updatedAccount.equity || 0;
+      if (brokeretData.userDetails?.data) {
+        updatedAccount.balance = this.mapBalance(brokeretData.userDetails.data, updatedAccount.balance);
+        updatedAccount.equity =
+          brokeretData.userDetails.data.equity || updatedAccount.equity;
       }
 
       // Mapear posiciones abiertas
-      if (brokeretData.openPositions?.result?.openPositionModel) {
+      if (brokeretData.openPositions?.data?.positions) {
         updatedAccount.openPositions = this.mapOpenPositions(
-          brokeretData.openPositions.result.openPositionModel,
+          brokeretData.openPositions.data.positions,
         );
+      } else {
+        // Si no hay posiciones abiertas, crear estructura vacía
+        updatedAccount.openPositions = this.mapOpenPositions([]);
       }
 
       // Mapear posiciones cerradas
-      if (brokeretData.closedPositions?.result?.closedPositions) {
+      if (brokeretData.closedPositions?.data?.deals) {
         updatedAccount.closedPositions = this.mapClosedPositions(
-          brokeretData.closedPositions.result.closedPositions,
+          brokeretData.closedPositions.data.deals,
         );
+      } else {
+        // Si no hay posiciones cerradas, crear estructura vacía
+        updatedAccount.closedPositions = this.mapClosedPositions([]);
       }
 
       // Mapear metaStats (métricas combinadas)
       updatedAccount.metaStats = this.mapMetaStats(
-        brokeretData.userDetails?.result,
-        brokeretData.profitabilityAnalytics?.result,
+        brokeretData.userDetails?.data,
+        brokeretData.profitabilityAnalytics?.data,
+        updatedAccount,
       );
 
-      // Mapear riskValidation
-      updatedAccount.riskValidation = this.mapRiskValidation(
-        brokeretData.profitabilityAnalytics?.result,
-      );
+      // NO actualizar riskValidation - se mantiene desde el challenge original
+      // riskValidation contiene los parámetros de evaluación que no cambian
 
       this.logger.debug(
         `BrokeretDataMapper: Datos mapeados exitosamente para cuenta ${brokeretData.login}`,
@@ -95,11 +100,15 @@ export class BrokeretDataMapper {
   /**
    * Mapea el balance de la cuenta
    */
-  private mapBalance(userDetails: any): Balance {
-    const balance = new Balance();
-    balance.currentBalance = userDetails?.balance || userDetails?.current_Balance || 0;
-    balance.initialBalance = userDetails?.initial_Balance || userDetails?.initialBalance || 0;
-    balance.dailyBalance = userDetails?.daily_Balance || userDetails?.dailyBalance || 0;
+  private mapBalance(userDetails: any, existingBalance?: Balance): Balance {
+    const balance = existingBalance || new Balance();
+    
+    // Actualizar solo el balance actual desde userDetails
+    balance.currentBalance = userDetails.balance || 0;
+    
+    // NO actualizar initialBalance - es estático desde brokerAccount
+    // dailyBalance se actualiza en otro job, no aquí
+    
     return balance;
   }
 
@@ -166,47 +175,39 @@ export class BrokeretDataMapper {
   private mapMetaStats(
     userDetails: any,
     profitabilityAnalytics: any,
+    existingAccount: Account,
   ): MetaStats {
-    // Mapear balance máximo y mínimo desde userDetails
-    const maxMinBalance = new MaxMinBalance();
-    maxMinBalance.maxBalance = userDetails?.max_Balance || userDetails?.maxBalance || userDetails?.balance || 0;
-    maxMinBalance.minBalance = userDetails?.min_Balance || userDetails?.minBalance || userDetails?.balance || 0;
-
-    // Mapear métricas promedio desde profitabilityAnalytics
+    // Solo usar more-stats para calcular maxMinBalance
+    const moreStats = getMoreStats(existingAccount);
+    
+    // Mapear métricas promedio directamente desde profitabilityAnalytics de Brokeret
     const averageMetrics = new AverageMetrics();
-    const analytics = profitabilityAnalytics?.metrics || profitabilityAnalytics;
-    averageMetrics.totalTrades = analytics?.total_trades || analytics?.totalTrades || 0;
-    averageMetrics.winningTrades = analytics?.winning_trades || analytics?.winningTrades || 0;
-    averageMetrics.losingTrades = analytics?.losing_trades || analytics?.losingTrades || 0;
-    averageMetrics.winRate = analytics?.win_rate || analytics?.winRate || 0;
-    averageMetrics.lossRate = analytics?.loss_rate || analytics?.lossRate || 0;
-    averageMetrics.averageProfit = analytics?.average_profit || analytics?.averageProfit || 0;
-    averageMetrics.averageLoss = analytics?.average_loss || analytics?.averageLoss || 0;
+    const analytics = profitabilityAnalytics?.profitability_metrics;
+    
+    if (analytics) {
+      // Usar datos directos de Brokeret API
+      averageMetrics.totalTrades = analytics.total_trades || 0;
+      averageMetrics.winningTrades = analytics.winning_trades || 0;
+      averageMetrics.losingTrades = analytics.losing_trades || 0;
+      averageMetrics.winRate = analytics.win_rate || 0;
+      averageMetrics.lossRate = averageMetrics.totalTrades > 0 
+        ? ((averageMetrics.losingTrades / averageMetrics.totalTrades) * 100) 
+        : 0;
+      averageMetrics.averageProfit = analytics.average_win || 0;
+      averageMetrics.averageLoss = analytics.average_loss || 0;
+    }
 
     const metaStats = new MetaStats();
+    // Usar equity directamente de userDetails de Brokeret
     metaStats.equity = userDetails?.equity || 0;
-    metaStats.maxMinBalance = maxMinBalance;
+    // Solo usar more-stats para maxMinBalance (que requiere cálculo histórico)
+    metaStats.maxMinBalance = moreStats.maxMinBalance;
+    // Usar averageMetrics mapeados directamente de Brokeret
     metaStats.averageMetrics = averageMetrics;
-    metaStats.numTrades = analytics?.total_trades || analytics?.totalTrades || 0;
-    
-    return metaStats;
-  }
+    // Usar numTrades directamente de Brokeret
+    metaStats.numTrades = analytics?.total_trades || 0;
 
-  /**
-   * Mapea la validación de riesgo
-   */
-  private mapRiskValidation(profitabilityAnalytics: any): RiskValidation {
-    const riskValidation = new RiskValidation();
-    
-    // Mapear las propiedades que existen en RiskValidation desde profitabilityAnalytics
-    const analytics = profitabilityAnalytics?.metrics || profitabilityAnalytics;
-    riskValidation.profitTarget = analytics?.profit_target || analytics?.profitTarget || 0;
-    riskValidation.dailyDrawdown = analytics?.daily_drawdown || analytics?.dailyDrawdown || 0;
-    riskValidation.maxDrawdown = analytics?.max_drawdown || analytics?.maxDrawdown || 0;
-    riskValidation.tradingDays = analytics?.trading_days || analytics?.tradingDays || 0;
-    riskValidation.inactiveDays = analytics?.inactive_days || analytics?.inactiveDays || 0;
-    
-    return riskValidation;
+    return metaStats;
   }
 
 
