@@ -7,32 +7,18 @@ import { brokeretApiConfig } from 'src/config';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { BalanceAccountDto } from '../dto/balance.dto';
 import { ListClosedPositionsDto } from '../dto/list-closed-positions.dto';
-
-export interface BrokeretUserResponse {
-  success?: boolean;
-  result?: any;
-  [k: string]: any;
-}
-
-export interface PositionsListBody {
-  flag?: number; // seen as 1 in n8n
-  Login: (string | number)[];
-  FromDate?: string; // dd/MM/yyyy
-  ToDate?: string; // dd/MM/yyyy
-  fromTime?: string; // HH:mm:ss
-  toTime?: string; // HH:mm:ss
-}
-
-export interface OrdersListBody {
-  login: string | number;
-  FromDate: string; // dd/MM/yyyy
-  ToDate: string; // dd/MM/yyyy
-}
-
-export interface TradingActivityBody {
-  login: string | number;
-  tradingFlag: number; // 0 = disable, 1 = enable
-}
+import {
+  OpenPositionsResponse,
+  ClosedPositionsResponse,
+  ClosedWithinRiskResponse,
+  BrokeretUserResponse,
+  CriticalUsersByMarginResponse,
+  UsersByDrawdownResponse,
+  PositionsAtRiskResponse,
+  StatsPropResponse,
+  ProfitabilityAnalyticsResponse,
+  UserDetailsResponse,
+} from '../types/response.type';
 
 @Injectable()
 export class BrokeretApiClient {
@@ -93,20 +79,26 @@ export class BrokeretApiClient {
   // === POSITIONS AND ORDERS===
 
   // POST position/list/open
-  listOpenPositions(param: number | string) {
-    return this.request('get', `positions/user/${param}`);
+  listOpenPositions(param: number | string): Promise<OpenPositionsResponse> {
+    return this.request<OpenPositionsResponse>(
+      'get',
+      `positions/user/${param}`,
+    );
   }
 
   // GET deals/user/{login}
-  listClosedPositions(dto: ListClosedPositionsDto) {
+  listClosedPositions(
+    dto: ListClosedPositionsDto,
+  ): Promise<ClosedPositionsResponse> {
     const { login, offset, start_time, end_time } = dto;
     const params: any = { start_time, end_time };
     if (offset !== undefined) params.offset = offset;
-    return this.request('get', `deals/user/${login}`, { params });
+    return this.request<ClosedPositionsResponse>('get', `deals/user/${login}`, {
+      params,
+    });
   }
 
   // GET deals/closed-within-period
-
   listAllClosedWithinRisk({
     start_time,
     end_time,
@@ -115,38 +107,44 @@ export class BrokeretApiClient {
     start_time: string;
     end_time: string;
     demo: boolean;
-  }) {
-    return this.request('get', `deals/closed-within-period`, {
-      params: { start_time, end_time, demo },
-    });
+  }): Promise<ClosedWithinRiskResponse> {
+    return this.request<ClosedWithinRiskResponse>(
+      'get',
+      `deals/closed-within-period`,
+      {
+        params: { start_time, end_time, demo },
+      },
+    );
   }
 
   // POST order/list/user
-  listUserOrders(param: number | string) {
-    return this.request('post', `orders/user/${param}`);
-  }
-
-  // POST stats/user
-  statsUser(login: string | number) {
-    return this.request<BrokeretUserResponse>('post', 'stats/user', {
-      data: { login },
-    });
+  listUserOrders(param: number | string): Promise<any> {
+    return this.request('get', `orders/user/${param}`);
   }
 
   // === RISK MANAGEMENT ===
 
   // GET risk/margin/critical-users
-  getCriticalUsersByMargin(marginLevelThreshold: number) {
-    return this.request('get', 'risk/margin/critical-users', {
-      params: {
-        margin_level_threshold: marginLevelThreshold,
+  getCriticalUsersByMargin(
+    marginLevelThreshold: number,
+  ): Promise<CriticalUsersByMarginResponse> {
+    return this.request<CriticalUsersByMarginResponse>(
+      'get',
+      'risk/margin/critical-users',
+      {
+        params: {
+          margin_level_threshold: marginLevelThreshold,
+        },
       },
-    });
+    );
   }
 
   // GET risk/drawdown/users
-  getUsersByDrawdown(minDrawdown: number, periodDays: number) {
-    return this.request('get', 'risk/drawdown/users', {
+  getUsersByDrawdown(
+    minDrawdown: number,
+    periodDays: number,
+  ): Promise<UsersByDrawdownResponse> {
+    return this.request<UsersByDrawdownResponse>('get', 'risk/drawdown/users', {
       params: {
         min_drawdown: minDrawdown,
         period_days: periodDays,
@@ -154,52 +152,27 @@ export class BrokeretApiClient {
     });
   }
 
-  // POST Risk/total/score
-  riskTotalScore(login: string | number) {
-    return this.request<BrokeretUserResponse>('post', 'Risk/total/score', {
-      data: { login },
-    });
-  }
-
-  // POST Risk/today/score
-  riskTodayScore(login: string | number) {
-    return this.request<BrokeretUserResponse>('post', 'Risk/today/score', {
-      data: { login },
-    });
-  }
-
-  // POST stats/prop
-  statsProp(logins: Array<string | number>, model?: string) {
-    const payload: any = { logins };
-    if (model) payload.model = model;
-    return this.request('post', 'stats/prop', {
-      data: payload,
-    });
-  }
-
   // POST user/get
-  getUser(login: string | number) {
-    return this.request('post', 'user/get', { data: { login } });
+
+  // new estructure:
+  // curl -X 'GET' \
+  // 'http://mt5api.brokeret.com:9000/api/v1/users/90009096752' \
+  // -H 'accept: application/json' \
+  // -H 'Authorization: Bearer h325lqhefer54g454veb5s4ong567htuy5'
+
+  // GET users/{login} (nueva estructura)
+  /**
+   * Obtiene detalles de usuario usando la nueva estructura GET.
+   * GET users/{login}
+   */
+  getUserDetails(login: string | number): Promise<UserDetailsResponse> {
+    return this.request<UserDetailsResponse>('get', `users/${login}`);
   }
 
   // === Nuevos endpoints del flujo n8n ===
 
-  // POST User/Create
-  createUser(body: CreateUserDto) {
-    return this.request<BrokeretUserResponse>('post', 'users/create', {
-      data: body,
-    });
-  }
-
-  // POST User/tradingactivity
-  setTradingActivity(body: TradingActivityBody) {
-    return this.request<BrokeretUserResponse>('post', 'User/tradingactivity', {
-      data: body,
-    });
-  }
-
   // POST useraccount/balanceOperation
-  balanceOperation(body: BalanceAccountDto) {
+  balanceOperation(body: BalanceAccountDto): Promise<BrokeretUserResponse> {
     return this.request<BrokeretUserResponse>(
       'post',
       'users/balance/operation',
@@ -210,14 +183,14 @@ export class BrokeretApiClient {
   }
 
   // POST get all user
-  listAllUsers(body: BalanceAccountDto) {
+  listAllUsers(body: BalanceAccountDto): Promise<BrokeretUserResponse> {
     return this.request<BrokeretUserResponse>('get', 'users/all', {
       data: body,
     });
   }
 
   // POST enable / disable trading
-  enableTrading(param: number) {
+  enableTrading(param: number): Promise<BrokeretUserResponse> {
     return this.request<BrokeretUserResponse>(
       'post',
       `users/trading/enable/${param}`,
@@ -226,7 +199,7 @@ export class BrokeretApiClient {
       },
     );
   }
-  disableTrading(param: number) {
+  disableTrading(param: number): Promise<BrokeretUserResponse> {
     return this.request<BrokeretUserResponse>(
       'post',
       `users/trading/disable/${param}`,
@@ -241,13 +214,38 @@ export class BrokeretApiClient {
    * Obtiene posiciones en riesgo.
    * GET positions/at-risk?margin_level_threshold=..&loss_threshold=..
    */
-  listPositionsAtRisk(marginLevelThreshold: number, lossThreshold: number) {
-    return this.request('get', 'positions/at-risk', {
+  listPositionsAtRisk(
+    marginLevelThreshold: number,
+    lossThreshold: number,
+  ): Promise<PositionsAtRiskResponse> {
+    return this.request<PositionsAtRiskResponse>('get', 'positions/at-risk', {
       params: {
         margin_level_threshold: marginLevelThreshold,
         loss_threshold: lossThreshold,
       },
     });
+  }
+
+  // GET trading/analytics/profitability
+  /**
+   * Obtiene análisis de rentabilidad para un usuario específico.
+   * GET trading/analytics/profitability?login=...&days=...
+   */
+  getProfitabilityAnalytics(
+    login: string | number,
+    days: number,
+    symbol?: string,
+    group?: string,
+  ): Promise<ProfitabilityAnalyticsResponse> {
+    const params: any = { login, days };
+    if (symbol) params.symbol = symbol;
+    if (group) params.group = group;
+
+    return this.request<ProfitabilityAnalyticsResponse>(
+      'get',
+      'trading/analytics/profitability',
+      { params },
+    );
   }
 
   // Método genérico por si aparecen endpoints nuevos

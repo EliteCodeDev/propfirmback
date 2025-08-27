@@ -1,132 +1,85 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { BufferService } from 'src/lib/buffer/buffer.service';
+import { BufferApiService } from 'src/lib/buffer/buffer-api.service';
 import { Account } from 'src/common/utils/account';
 import { ConnectionStatusDto } from './dto/connection-data/connection.dto';
 import { AccountDataDto } from './dto/account-data/data.dto';
-import { AccountDataTransformPipe } from './pipes/account-data-transform.pipe';
+import { SmtAccountDataTransformPipe } from './pipes/smt-account-data-transform.pipe';
 
 @Injectable()
 export class SmtApiService {
   private readonly logger = new Logger(SmtApiService.name);
 
   constructor(
-    private readonly bufferService: BufferService,
-    private readonly accountDataTransformPipe: AccountDataTransformPipe,
+    private readonly bufferApiService: BufferApiService,
+    private readonly smtAccountDataTransformPipe: SmtAccountDataTransformPipe,
   ) {}
 
   /**
    * Obtiene una cuenta específica del buffer de forma thread-safe
    */
   async getAccount(login: string) {
-    const account = await this.bufferService.getSnapshot(login);
-    if (!account) {
-      this.logger.debug(`[getAccount] login=${login} not-found`);
-      throw new NotFoundException(`Account ${login} not found in buffer`);
-    }
-    this.logger.debug(`[getAccount] login=${login} found`);
-    return { login, ...account };
+    return this.bufferApiService.getAccount(login);
   }
 
   /**
    * Lista todas las cuentas del buffer de forma thread-safe
    */
   async listAccounts() {
-    const entries = await this.bufferService.listEntries();
-    const mapped = entries.map(([login, account]) => ({ login, ...account }));
-    this.logger.debug(`[listAccounts] returned=${mapped.length}`);
-    return {
-      total: mapped.length,
-      accounts: mapped,
-    };
+    return this.bufferApiService.listAccounts();
   }
 
   /**
    * Obtiene estadísticas del buffer
    */
   async getStats() {
-    const stats = this.bufferService.getStats();
-    this.logger.debug(
-      `[getBufferStats] bufferSize=${stats.bufferSize} activeLocks=${stats.mutexStats.activeLocks}`,
-    );
-    return {
-      ...stats,
-      timestamp: new Date().toISOString(),
-    };
+    return this.bufferApiService.getStats();
   }
 
-  /**
-   * Maneja la ingesta de datos de cuenta de forma thread-safe
-   */
-  async handleIngestionAccount(data: Partial<Account> & { login: string }) {
-    this.logger.debug(`[handleIngestionAccount] login=${data.login}`);
 
-    const result = await this.bufferService.upsertAccount(
-      data.login,
-      (prev) => {
-        const base: Account = prev || ({} as Account);
-        return {
-          ...base,
-          ...data,
-          lastUpdate: new Date(),
-        } as Account;
-      },
-    );
-
-    this.logger.debug(
-      `[handleIngestionAccount] stored login=${data.login} balance=${result.balance} equity=${result.equity}`,
-    );
-    return result;
-  }
 
   /**
-   * Procesa datos de cuenta entrantes y los almacena en el buffer
+   * Procesa datos de cuenta entrantes de SMT-API y los almacena en el buffer
    */
   async ingestAccountData(data: AccountDataDto, accountId: string) {
-    // Usar el login del DTO si está disponible
     const login = accountId;
-    const account = data;
 
-    this.logger.debug(`[ingestAccountData] received data for login=${login}`);
+    this.logger.debug(`[ingestAccountData] received SMT data for login=${login}`);
 
     try {
-      await this.saveAccountDataToBuffer(account, login);
-      await this.persistAccountDataToFile(account, login);
+      // Transformar usando el pipe específico de SMT
+      const transformedAccount = this.smtAccountDataTransformPipe.transform(data, login);
+      
+      // Usar el servicio genérico del buffer
+      const result = await this.bufferApiService.ingestAccount(transformedAccount);
+      
+      // Persistir archivo específico de SMT
+      await this.persistAccountDataToFile(data, login);
 
       this.logger.debug(
-        `[ingestAccountData] successfully processed login=${login}`,
+        `[ingestAccountData] successfully processed SMT login=${login}`,
       );
-      return { success: true, login };
+      return { success: true, login, result };
     } catch (error) {
       this.logger.error(
-        `[ingestAccountData] error processing login=${login}:`,
+        `[ingestAccountData] error processing SMT login=${login}:`,
         error,
       );
       throw error;
     }
   }
 
-  /**
-   * Guarda los datos de cuenta en el buffer de forma thread-safe
-   */
-  private async saveAccountDataToBuffer(data: AccountDataDto, login: string) {
-    this.logger.debug(`[saveAccountDataToBuffer] login=${login}`);
 
-    // Usar el pipe de transformación para convertir los datos
-    const account = this.accountDataTransformPipe.transform(data, login);
-
-    await this.handleIngestionAccount(account);
-  }
 
   /**
-   * Persiste los datos de cuenta en archivo
+   * Persiste los datos de cuenta de SMT en archivo
    */
   private async persistAccountDataToFile(data: AccountDataDto, login: string) {
     const filePath = path.join(
       process.cwd(),
       'data',
-      'accounts',
+      'smt-accounts',
       `${login}.json`,
     );
     await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -135,34 +88,56 @@ export class SmtApiService {
     const dataToSave = {
       login,
       timestamp: new Date().toISOString(),
+      source: 'smt-api',
       ...data,
     };
 
     await fs.writeFile(filePath, JSON.stringify(dataToSave, null, 2));
-    this.logger.debug(`[persistAccountDataToFile] saved to ${filePath}`);
+    this.logger.debug(`[persistAccountDataToFile] saved SMT data to ${filePath}`);
   }
 
   /**
    * Elimina una cuenta del buffer de forma thread-safe
    */
   async deleteAccount(login: string) {
-    const deleted = await this.bufferService.deleteAccount(login);
-    if (!deleted) {
-      this.logger.debug(`[deleteAccount] login=${login} not-found`);
-      throw new NotFoundException(`Account ${login} not found in buffer`);
-    }
-    this.logger.debug(`[deleteAccount] login=${login} deleted`);
-    return { success: true, login };
+    return this.bufferApiService.deleteAccount(login);
   }
 
+  /**
+   * Maneja el estado de conexión específico de SMT-API
+   */
   async connectionStatusService(data: ConnectionStatusDto) {
-    const { success_process } = data;
+    const { success_process, error_process } = data;
 
-    console.log('Cuentas success_process', data.success_process);
+    this.logger.debug(
+      `[connectionStatusService] SMT success_process=${success_process?.length || 0} error_process=${error_process?.length || 0}`,
+    );
+
+    // Procesar cuentas exitosas
+    if (success_process && success_process.length > 0) {
+      for (const process of success_process) {
+        this.logger.debug(
+          `[connectionStatusService] processing successful SMT account=${process.account?.login}`,
+        );
+      }
+    }
+
+    // Procesar cuentas con errores
+    if (error_process && error_process.length > 0) {
+      for (const process of error_process) {
+        this.logger.warn(
+          `[connectionStatusService] processing error SMT account=${process.account?.login} error=${process.error}`,
+        );
+      }
+    }
 
     return {
-      message: 'Connection status received',
+      message: 'SMT connection status processed successfully',
       status: 200,
+      processed: {
+        successful: success_process?.length || 0,
+        errors: error_process?.length || 0,
+      },
     };
   }
 

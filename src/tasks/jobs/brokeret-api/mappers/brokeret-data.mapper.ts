@@ -20,10 +20,8 @@ export interface BrokeretAccountData {
   openPositions: any;
   closedPositions: any;
   userOrders: any;
-  userStats: any;
-  totalRisk: any;
-  todayRisk: any;
-  propStats: any;
+  userDetails: any;
+  profitabilityAnalytics: any;
   lastUpdate: string;
 }
 
@@ -49,10 +47,10 @@ export class BrokeretDataMapper {
       // Actualizar timestamp
       updatedAccount.lastUpdate = new Date(brokeretData.lastUpdate);
 
-      // Mapear balance y equity desde userStats
-      if (brokeretData.userStats?.result) {
-        updatedAccount.balance = this.mapBalance(brokeretData.userStats.result);
-        updatedAccount.equity = brokeretData.userStats.result.equity || updatedAccount.equity || 0;
+      // Mapear balance y equity desde userDetails
+      if (brokeretData.userDetails?.result) {
+        updatedAccount.balance = this.mapBalance(brokeretData.userDetails.result);
+        updatedAccount.equity = brokeretData.userDetails.result.equity || updatedAccount.equity || 0;
       }
 
       // Mapear posiciones abiertas
@@ -71,16 +69,13 @@ export class BrokeretDataMapper {
 
       // Mapear metaStats (métricas combinadas)
       updatedAccount.metaStats = this.mapMetaStats(
-        brokeretData.userStats?.result,
-        brokeretData.totalRisk?.result,
-        brokeretData.todayRisk?.result,
-        brokeretData.propStats?.result?.[0],
+        brokeretData.userDetails?.result,
+        brokeretData.profitabilityAnalytics?.result,
       );
 
       // Mapear riskValidation
       updatedAccount.riskValidation = this.mapRiskValidation(
-        brokeretData.totalRisk?.result,
-        brokeretData.todayRisk?.result,
+        brokeretData.profitabilityAnalytics?.result,
       );
 
       this.logger.debug(
@@ -100,11 +95,11 @@ export class BrokeretDataMapper {
   /**
    * Mapea el balance de la cuenta
    */
-  private mapBalance(userStats: any): Balance {
+  private mapBalance(userDetails: any): Balance {
     const balance = new Balance();
-    balance.currentBalance = userStats?.balance || userStats?.current_Balance || 0;
-    balance.initialBalance = userStats?.initial_Balance || userStats?.initialBalance || 0;
-    balance.dailyBalance = userStats?.daily_Balance || userStats?.dailyBalance || 0;
+    balance.currentBalance = userDetails?.balance || userDetails?.current_Balance || 0;
+    balance.initialBalance = userDetails?.initial_Balance || userDetails?.initialBalance || 0;
+    balance.dailyBalance = userDetails?.daily_Balance || userDetails?.dailyBalance || 0;
     return balance;
   }
 
@@ -169,31 +164,30 @@ export class BrokeretDataMapper {
    * Mapea las métricas combinadas (metaStats)
    */
   private mapMetaStats(
-    userStats: any,
-    totalRisk: any,
-    todayRisk: any,
-    propStats: any,
+    userDetails: any,
+    profitabilityAnalytics: any,
   ): MetaStats {
-    // Mapear balance máximo y mínimo
+    // Mapear balance máximo y mínimo desde userDetails
     const maxMinBalance = new MaxMinBalance();
-    maxMinBalance.maxBalance = userStats?.max_Balance || userStats?.maxBalance || 0;
-    maxMinBalance.minBalance = userStats?.min_Balance || userStats?.minBalance || 0;
+    maxMinBalance.maxBalance = userDetails?.max_Balance || userDetails?.maxBalance || userDetails?.balance || 0;
+    maxMinBalance.minBalance = userDetails?.min_Balance || userDetails?.minBalance || userDetails?.balance || 0;
 
-    // Mapear métricas promedio
+    // Mapear métricas promedio desde profitabilityAnalytics
     const averageMetrics = new AverageMetrics();
-    averageMetrics.totalTrades = totalRisk?.total_Trades || totalRisk?.totalTrades || 0;
-    averageMetrics.winningTrades = totalRisk?.winning_Trades || totalRisk?.winningTrades || 0;
-    averageMetrics.losingTrades = totalRisk?.losing_Trades || totalRisk?.losingTrades || 0;
-    averageMetrics.winRate = totalRisk?.win_Rate || totalRisk?.winRate || 0;
-    averageMetrics.lossRate = totalRisk?.loss_Rate || totalRisk?.lossRate || 0;
-    averageMetrics.averageProfit = totalRisk?.average_Profit || totalRisk?.averageProfit || 0;
-    averageMetrics.averageLoss = totalRisk?.average_Loss || totalRisk?.averageLoss || 0;
+    const analytics = profitabilityAnalytics?.metrics || profitabilityAnalytics;
+    averageMetrics.totalTrades = analytics?.total_trades || analytics?.totalTrades || 0;
+    averageMetrics.winningTrades = analytics?.winning_trades || analytics?.winningTrades || 0;
+    averageMetrics.losingTrades = analytics?.losing_trades || analytics?.losingTrades || 0;
+    averageMetrics.winRate = analytics?.win_rate || analytics?.winRate || 0;
+    averageMetrics.lossRate = analytics?.loss_rate || analytics?.lossRate || 0;
+    averageMetrics.averageProfit = analytics?.average_profit || analytics?.averageProfit || 0;
+    averageMetrics.averageLoss = analytics?.average_loss || analytics?.averageLoss || 0;
 
     const metaStats = new MetaStats();
-    metaStats.equity = userStats?.equity || 0;
+    metaStats.equity = userDetails?.equity || 0;
     metaStats.maxMinBalance = maxMinBalance;
     metaStats.averageMetrics = averageMetrics;
-    metaStats.numTrades = totalRisk?.total_Trades || totalRisk?.totalTrades || 0;
+    metaStats.numTrades = analytics?.total_trades || analytics?.totalTrades || 0;
     
     return metaStats;
   }
@@ -201,15 +195,16 @@ export class BrokeretDataMapper {
   /**
    * Mapea la validación de riesgo
    */
-  private mapRiskValidation(totalRisk: any, todayRisk: any): RiskValidation {
+  private mapRiskValidation(profitabilityAnalytics: any): RiskValidation {
     const riskValidation = new RiskValidation();
     
-    // Mapear las propiedades que existen en RiskValidation
-    riskValidation.profitTarget = totalRisk?.profit_Target || totalRisk?.profitTarget || 0;
-    riskValidation.dailyDrawdown = totalRisk?.daily_Drawdown || totalRisk?.dailyDrawdown || 0;
-    riskValidation.maxDrawdown = totalRisk?.max_Drawdown || totalRisk?.maxDrawdown || 0;
-    riskValidation.tradingDays = totalRisk?.trading_Days || totalRisk?.tradingDays || 0;
-    riskValidation.inactiveDays = totalRisk?.inactive_Days || totalRisk?.inactiveDays || 0;
+    // Mapear las propiedades que existen en RiskValidation desde profitabilityAnalytics
+    const analytics = profitabilityAnalytics?.metrics || profitabilityAnalytics;
+    riskValidation.profitTarget = analytics?.profit_target || analytics?.profitTarget || 0;
+    riskValidation.dailyDrawdown = analytics?.daily_drawdown || analytics?.dailyDrawdown || 0;
+    riskValidation.maxDrawdown = analytics?.max_drawdown || analytics?.maxDrawdown || 0;
+    riskValidation.tradingDays = analytics?.trading_days || analytics?.tradingDays || 0;
+    riskValidation.inactiveDays = analytics?.inactive_days || analytics?.inactiveDays || 0;
     
     return riskValidation;
   }

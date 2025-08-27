@@ -510,6 +510,76 @@ export interface StatsPropResponse {
   timestamp: string | null;
 }
 
+// Respuesta para trading/analytics/profitability
+export interface ProfitabilityAnalyticsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    days: number;
+    profitability_metrics: {
+      total_trades: number;
+      winning_trades: number;
+      losing_trades: number;
+      win_rate: number;
+      profit_factor: string | number;
+      total_profit: number;
+      total_loss: number;
+      net_profit: number;
+      average_win: number;
+      average_loss: number;
+      expectancy: number;
+      total_volume: number;
+    };
+    symbol_performance: {
+      symbol: string;
+      profit: number;
+      trades: number;
+      avg_profit: number;
+    }[];
+    daily_profit_chart: {
+      date: string;
+      profit: number;
+    }[];
+    filters: {
+      login: number;
+      symbol: string | null;
+      group: string | null;
+    };
+  };
+  total_count: number | null;
+  timestamp: string | null;
+}
+
+// Respuesta para users/{login} (nueva estructura GET)
+export interface UserDetailsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    login: number;
+    group: string;
+    name: string;
+    email: string;
+    phone: string;
+    enable: number;
+    leverage: number;
+    balance: number;
+    credit: number;
+    margin: number;
+    margin_free: number;
+    margin_level: number;
+    equity: number;
+    floating_pl: number;
+    registration: string;
+    last_access: string;
+    last_ip: string;
+    status: string;
+    open_positions: number;
+    pending_orders: number;
+  };
+  total_count: number | null;
+  timestamp: string | null;
+}
+
 // === Tipos de respuesta para Fazo API ===
 
 // Respuesta del endpoint de autenticación
@@ -541,4 +611,34 @@ export interface CreateAccountResponse {
   };
 }
 
+//users/{login}
 
+
+// {
+//   "success": true,
+//   "message": "User details retrieved successfully",
+//   "data": {
+//     "login": 90009096752,
+//     "group": "contest\\PG\\kbst\\contestphase1",
+//     "name": "Takayla Harris ",
+//     "email": "",
+//     "phone": "",
+//     "enable": 1,
+//     "leverage": 33,
+//     "balance": 9399.94,
+//     "credit": 0,
+//     "margin": 1000624.24,
+//     "margin_free": -990337.6,
+//     "margin_level": 1.03,
+//     "equity": 10286.64,
+//     "floating_pl": 886.7,
+//     "registration": "2025-07-16 04:36:24",
+//     "last_access": "2025-07-24 15:05:02",
+//     "last_ip": "24.199.213.102",
+//     "status": "Active",
+//     "open_positions": 1,
+//     "pending_orders": 0
+//   },
+//   "total_count": null,
+//   "timestamp": null
+// }

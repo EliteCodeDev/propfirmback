@@ -1,0 +1,99 @@
+{
+  "login": "90009104494",
+  "openPositions": {
+    "success": true,
+    "message": "No open positions for user 90009104494",
+    "data": {
+      "login": 90009104494,
+      "positions": [],
+      "summary": { "total_positions": 0, "total_profit": 0, "total_volume": 0 }
+    },
+    "total_count": 0,
+    "timestamp": null
+  },
+  "closedPositions": {
+    "success": true,
+    "message": "No deals found for user 90009104494",
+    "data": {
+      "login": 90009104494,
+      "deals": [],
+      "summary": {
+        "total_deals": 0,
+        "total_profit": 0,
+        "total_volume": 0,
+        "date_from": "2025-08-01T00:00:00",
+        "date_to": "2025-08-26T00:00:00"
+      }
+    },
+    "total_count": 0,
+    "timestamp": null
+  },
+  "userOrders": {
+    "success": true,
+    "message": "No pending orders for user 90009104494",
+    "data": {
+      "login": 90009104494,
+      "orders": [],
+      "summary": { "total_orders": 0, "total_volume": 0 }
+    },
+    "total_count": 0,
+    "timestamp": null
+  },
+  "userDetails": {
+    "success": true,
+    "message": "User details retrieved successfully",
+    "data": {
+      "login": 90009104494,
+      "group": "contest\\PG\\kbst\\contestphase1",
+      "name": "Daniel Armas",
+      "email": "danielarmasabad@gmail.com",
+      "phone": "+51959543569",
+      "enable": 1,
+      "leverage": 100,
+      "balance": 10017.4,
+      "credit": 0,
+      "margin": 0,
+      "margin_free": 10017.4,
+      "margin_level": 0,
+      "equity": 10017.4,
+      "floating_pl": 0,
+      "registration": "2025-08-27 02:20:31",
+      "last_access": "2025-08-27 05:08:12",
+      "last_ip": "38.56.214.159",
+      "status": "Active",
+      "open_positions": 0,
+      "pending_orders": 0
+    },
+    "total_count": null,
+    "timestamp": null
+  },
+  "profitabilityAnalytics": {
+    "success": true,
+    "message": "Profitability analysis completed for 30 days",
+    "data": {
+      "days": 30,
+      "profitability_metrics": {
+        "total_trades": 3,
+        "winning_trades": 3,
+        "losing_trades": 0,
+        "win_rate": 100,
+        "profit_factor": "N/A",
+        "total_profit": 17.4,
+        "total_loss": 0,
+        "net_profit": 17.4,
+        "average_win": 5.8,
+        "average_loss": 0,
+        "expectancy": 5.8,
+        "total_volume": 1.8
+      },
+      "symbol_performance": [
+        { "symbol": "XAUUSD.k", "profit": 17.4, "trades": 6, "avg_profit": 2.9 }
+      ],
+      "daily_profit_chart": [{ "date": "2025-08-27", "profit": 17.4 }],
+      "filters": { "login": 90009104494, "symbol": null, "group": null }
+    },
+    "total_count": null,
+    "timestamp": null
+  },
+  "lastUpdate": "2025-08-27T04:31:00.739Z"
+}

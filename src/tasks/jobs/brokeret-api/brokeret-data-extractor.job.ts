@@ -17,15 +17,17 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
 
   onModuleInit() {
     this.logger.log('BrokeretDataExtractorJob inicializado');
-    // Ejecutar una vez al inicio para pruebas
-    // this.extractBrokeretData();
+    // No ejecutar al inicio - solo cuando haya datos en el buffer
+    this.logger.debug(
+      'Job configurado para ejecutarse cada 5 minutos cuando haya cuentas en el buffer',
+    );
   }
 
   /**
    * Job programado para extraer datos de Brokeret API cada 5 minutos
    * Cron: cada 5 minutos
    */
-  @Cron('0 */5 * * * *', { timeZone: 'America/Lima' })
+  @Cron('0 */1 * * * *', { timeZone: 'America/Lima' })
   async extractBrokeretData() {
     this.logger.log('Iniciando extracción de datos de Brokeret API');
 
@@ -110,7 +112,9 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     try {
       // Extraer datos de Brokeret API para esta cuenta
       const brokeretData = await this.extractAccountDataFromBrokeret(login);
-
+      this.logger.debug(
+        `BrokeretDataExtractorJob: Datos extraídos de Brokeret para cuenta ${login}: ${JSON.stringify(brokeretData)}`,
+      );
       // Mapear datos de Brokeret al formato del buffer
       const updatedAccount = await this.dataMapper.mapBrokeretDataToAccount(
         account,
@@ -156,10 +160,8 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         openPositions,
         closedPositions,
         userOrders,
-        userStats,
-        totalRisk,
-        todayRisk,
-        propStats,
+        userDetails,
+        profitabilityAnalytics,
       ] = await Promise.all([
         // Posiciones abiertas
         this.brokeretApiClient.listOpenPositions(login),
@@ -174,17 +176,13 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         // Órdenes del usuario
         this.brokeretApiClient.listUserOrders(login),
 
-        // User stats
-        this.brokeretApiClient.statsUser(login),
+        // Estadísticas del usuario
 
-        // Risk total score
-        this.brokeretApiClient.riskTotalScore(login),
+        // Detalles del usuario (nueva estructura)
+        this.brokeretApiClient.getUserDetails(login),
 
-        // Risk today score
-        this.brokeretApiClient.riskTodayScore(login),
-
-        // Stats prop (opcional, puede no tener model específico)
-        this.brokeretApiClient.statsProp([login]),
+        // Análisis de rentabilidad (últimos 30 días)
+        this.brokeretApiClient.getProfitabilityAnalytics(login, 30),
       ]);
 
       return {
@@ -192,10 +190,8 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         openPositions,
         closedPositions,
         userOrders,
-        userStats,
-        totalRisk,
-        todayRisk,
-        propStats,
+        userDetails,
+        profitabilityAnalytics,
         lastUpdate: new Date().toISOString(),
       };
     } catch (error) {
@@ -214,6 +210,6 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${year}-${month}-${day}`;
   }
 }

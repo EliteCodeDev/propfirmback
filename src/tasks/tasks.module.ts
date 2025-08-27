@@ -16,7 +16,7 @@ import { BrokeretApiJobsModule } from './jobs/brokeret-api/brokeret-api-jobs.mod
     BufferModule,
     ChallengeTemplatesModule,
     MailerModule,
-    // BrokeretApiJobsModule,
+    BrokeretApiJobsModule,
     TypeOrmModule.forFeature([Challenge, ChallengeRelation, StageParameter]),
   ],
   providers: [TasksService, ActivateSmtApiJob],

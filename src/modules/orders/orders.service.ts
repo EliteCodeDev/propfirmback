@@ -106,7 +106,8 @@ export class OrdersService {
         } catch (err) {
           return {
             status: 'error',
-            message: 'No se pudo enviar el correo de credenciales de la cuenta',
+            message:
+              'User Account created, not able to send credentials email ',
             failedAt: 'email_send',
             details: err?.message ?? err,
           };
@@ -130,7 +131,7 @@ export class OrdersService {
         if (!relation) {
           return {
             status: 'error',
-            message: 'No se encontró una relación válida para el plan',
+            message: 'Plan hasnt a relation',
             failedAt: 'relation_fetch',
           };
         }
@@ -138,7 +139,7 @@ export class OrdersService {
         return {
           status: 'error',
           message: 'Fallo al obtener la relación del plan',
-          failedAt: 'relation_fetch',
+          failedAt: 'relation_fetch_error',
           details: err?.message ?? err,
         };
       }
@@ -533,13 +534,13 @@ export class OrdersService {
       });
 
       // Generar contraseñas aleatorias para la cuenta
-      const masterPassword = generateRandomPassword(12);
-      const investorPassword = generateRandomPassword(12);
+      const masterPassword = generateRandomPassword(8);
+      const investorPassword = generateRandomPassword(8);
 
       // Extraer datos del usuario y billing para crear la cuenta
       const { billing } = createOrderDto.user;
       const fullName = `${billing.first_name} ${billing.last_name}`.trim();
-      
+
       // Crear el DTO para la API de Fazo
       const createAccountData: CreateAccountDto = {
         name: fullName || user.username,
@@ -548,7 +549,8 @@ export class OrdersService {
         phone: billing.phone || user.phone || '+1234567890',
         country: billing.country || 'US',
         city: billing.city || 'Unknown',
-        address: `${billing.address_1} ${billing.address_2 || ''}`.trim() || 'Unknown',
+        address:
+          `${billing.address_1} ${billing.address_2 || ''}`.trim() || 'Unknown',
         balance: balance,
         mPassword: masterPassword,
         iPassword: investorPassword,
@@ -556,11 +558,14 @@ export class OrdersService {
       };
 
       // Llamar al cliente de creación Fazo
-      const fazoResponse = await this.creationFazoClient.createAccount(createAccountData);
-      
+      const fazoResponse =
+        await this.creationFazoClient.createAccount(createAccountData);
+
       this.logger.log('Brokeret API account created successfully:', {
+        message: fazoResponse.message,
+        data: fazoResponse.user,
         accountId: fazoResponse.user.accountid,
-        login: fazoResponse.user.id,
+        balance: fazoResponse.user.balance,
       });
 
       // Mapear la respuesta de Fazo a CreateBrokerAccountDto
@@ -577,8 +582,10 @@ export class OrdersService {
 
       return brokerAccountDto;
     } catch (error) {
-      this.logger.error('Error creating Brokeret API account:', error);
-      throw new Error(`Failed to create Brokeret API account: ${error.message}`);
+      this.logger.error('Error creating Brokeret API account:', error.message);
+      throw new Error(
+        `Failed to create Brokeret API account: ${error.message}`,
+      );
     }
   }
 }

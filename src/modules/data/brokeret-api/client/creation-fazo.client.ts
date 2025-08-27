@@ -20,7 +20,6 @@ export class CreationFazoClient {
   private readonly logger = new Logger(CreationFazoClient.name);
   private token: string | null = null;
   private tokenExpiry: Date | null = null;
-  private readonly FAZO_BASE_URL = 'http://69.30.199.194:6705';
   private readonly TOKEN_DURATION_MINUTES = 15;
 
   constructor(
@@ -32,6 +31,7 @@ export class CreationFazoClient {
   private buildFazoUrl(path: string): string {
     const base = (this.cfg.creationApiUrl || '').replace(/\/+$/, '');
     const clean = path.replace(/^\/+/, '');
+    this.logger.log(`Building Fazo URL: ${base}/${clean}`);
     return `${base}/${clean}`;
   }
 

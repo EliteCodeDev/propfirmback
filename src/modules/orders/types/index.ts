@@ -15,6 +15,7 @@ export interface ServiceResult<T> {
     | 'user_create'
     | 'email_send'
     | 'relation_fetch'
+    | 'relation_fetch_error'
     | 'relation_balance_match'
     | 'smt_account_create'
     | 'broker_account_create'

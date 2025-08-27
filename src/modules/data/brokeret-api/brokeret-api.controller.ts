@@ -15,12 +15,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { BrokeretApiService } from './brokeret-api.service';
-import {
-  BrokeretApiClient,
-  TradingActivityBody,
-  PositionsListBody,
-  OrdersListBody,
-} from './client/brokeret-api.client';
+import { BrokeretApiClient } from './client/brokeret-api.client';
 import { CreationFazoClient } from './client/creation-fazo.client';
 import { GenericApiKeyGuard } from 'src/common/guards/generic-api-key.guard';
 import { ApiKeyService } from 'src/common/decorators/api-key-service.decorator';
@@ -84,54 +79,29 @@ export class BrokeretApiController {
     return this.creationFazoClient.createAccount(accountData);
   }
 
-  // === Gestión de Usuarios ===
-
-  @Post('user/create')
-  @ApiOperation({ summary: 'Crear un nuevo usuario en Brokeret' })
-  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
-  @ApiBody({ type: CreateUserDto, description: 'Datos del usuario a crear' })
-  async createUser(
-    @Body() createUserData: CreateUserDto,
-  ): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.createUser(createUserData);
-  }
-
   @Get('user/:login')
   @ApiOperation({ summary: 'Obtener información de un usuario' })
   @ApiResponse({ status: 200, description: 'Información del usuario obtenida' })
   async getUser(@Param('login') login: string): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.getUser(login);
+    return this.brokeretApiClient.getUserDetails(login);
   }
 
-  @Post('user/stats')
-  @ApiOperation({ summary: 'Obtener estadísticas de un usuario' })
-  @ApiResponse({
-    status: 200,
-    description: 'Estadísticas del usuario obtenidas',
-  })
-  @ApiBody({
-    schema: { type: 'object', properties: { login: { type: 'string' } } },
-  })
-  async getUserStats(
-    @Body() body: { login: string | number },
-  ): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.statsUser(body.login);
-  }
+  // @Post('user/stats')
+  // @ApiOperation({ summary: 'Obtener estadísticas de un usuario' })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Estadísticas del usuario obtenidas',
+  // })
+  // @ApiBody({
+  //   schema: { type: 'object', properties: { login: { type: 'string' } } },
+  // })
+  // async getUserStats(
+  //   @Body() body: { login: string | number },
+  // ): Promise<BrokeretUserResponse> {
+  //   return this.brokeretApiClient.statsUser(body.login);
+  // }
 
   // === Gestión de Cuentas ===
-
-  @Post('account/trading-activity')
-  @ApiOperation({ summary: 'Activar o desactivar trading en una cuenta' })
-  @ApiResponse({ status: 200, description: 'Estado de trading actualizado' })
-  @ApiBody({
-    type: Object,
-    description: 'Datos para cambiar estado de trading',
-  })
-  async setTradingActivity(
-    @Body() tradingActivityData: TradingActivityBody,
-  ): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.setTradingActivity(tradingActivityData);
-  }
 
   @Post('account/balance-operation')
   @ApiOperation({ summary: 'Realizar operación de balance (depósito/retiro)' })
@@ -181,63 +151,9 @@ export class BrokeretApiController {
 
   // === Risk Management ===
 
-  @Post('risk/total-score')
-  @ApiOperation({ summary: 'Obtener puntuación total de riesgo' })
-  @ApiResponse({
-    status: 200,
-    description: 'Puntuación total de riesgo obtenida',
-  })
-  @ApiBody({
-    schema: { type: 'object', properties: { login: { type: 'string' } } },
-  })
-  async getRiskTotalScore(
-    @Body() body: { login: string | number },
-  ): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.riskTotalScore(body.login);
-  }
-
-  @Post('risk/today-score')
-  @ApiOperation({ summary: 'Obtener puntuación de riesgo del día' })
-  @ApiResponse({
-    status: 200,
-    description: 'Puntuación de riesgo del día obtenida',
-  })
-  @ApiBody({
-    schema: { type: 'object', properties: { login: { type: 'string' } } },
-  })
-  async getRiskTodayScore(
-    @Body() body: { login: string | number },
-  ): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.riskTodayScore(body.login);
-  }
-
-  // === Estadísticas Prop ===
-
-  @Post('stats/prop')
-  @ApiOperation({ summary: 'Obtener estadísticas de prop trading' })
-  @ApiResponse({
-    status: 200,
-    description: 'Estadísticas de prop trading obtenidas',
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        logins: { type: 'array', items: { type: 'string' } },
-        model: { type: 'string', required: ['false'], default: 'prop' },
-      },
-    },
-  })
-  async getStatsProp(
-    @Body() body: { logins: Array<string | number>; model?: string },
-  ): Promise<StatsPropResponse> {
-    return this.brokeretApiClient.statsProp(body.logins, body.model);
-  }
-
   // === Endpoint genérico para llamadas personalizadas ===
 
   // === Risk Management Adicional ===
-
   @Get('risk/critical-users-margin')
   @ApiOperation({ summary: 'Obtener usuarios críticos por margen' })
   @ApiResponse({ status: 200, description: 'Usuarios críticos por margen' })

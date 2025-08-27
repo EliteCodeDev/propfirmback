@@ -56,6 +56,9 @@ export class GenericApiKeyGuard implements CanActivate {
                "EXTERNAL-API-KEY-DEFAULT",
       brokeret: this.configService.get<string>('apiKeys.brokeret.apiKey') || 
                "BROKERET-API-KEY-DEFAULT",
+      buffer: this.configService.get<string>('apiKeys.scrap.apiKey') || 
+              this.configService.get<string>('scrap.apiKey') || 
+              "FundedHero=2c87a99a-59f2-c57-962f-628ac0688c05-b228c21dccc-490e-b29b401-8f30c56621d-5fc4b8c61-d8cb7b4-44828df51-5f6507d9",
       // Agregar más servicios según necesites
     };
 
