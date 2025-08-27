@@ -220,7 +220,7 @@ export class BrokeretApiController {
   @ApiOperation({ summary: 'Listar todos los usuarios' })
   @ApiResponse({ status: 200, description: 'Lista de todos los usuarios' })
   async listAllUsers(): Promise<BrokeretUserResponse> {
-    return this.brokeretApiClient.listAllUsers({} as BalanceAccountDto);
+    return this.brokeretApiClient.listAllUsers({ login: '', amount: 0 } as BalanceAccountDto);
   }
 
   @Post('users/trading/enable/:login')

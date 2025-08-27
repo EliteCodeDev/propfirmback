@@ -1,16 +1,16 @@
-import { IsNumber, IsNotEmpty, IsString, IsEmpty } from 'class-validator';
+import { IsNumber, IsNotEmpty, IsString, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class BalanceAccountDto {
 
     @ApiProperty({
-        description: 'Login number for the user',
-        example: 0,
+        description: 'Login for the user account',
+        example: '12345678',
         required: false
     })
-    @IsNumber()
+    @IsString()
     @IsNotEmpty()
-    login: number;
+    login: string;
 
     @ApiProperty({
         description: 'Amount to be added or subtracted from the user account',
@@ -27,16 +27,16 @@ export class BalanceAccountDto {
         required: false
     })
     @IsString()
-    @IsEmpty()
-    comment: string;
+    @IsOptional()
+    comment?: string;
 
     @ApiProperty({
         description: 'Operation type balance',
-        example: 'balance',
+        example: 'deposit',
         required: false
     })
-    @IsEmpty()
     @IsString()
-    operation: string;
+    @IsOptional()
+    operation?: string;
 
 }
