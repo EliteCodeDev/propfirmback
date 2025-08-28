@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { BufferService } from 'src/lib/buffer/buffer.service';
-import { Account, RiskParams, RiskValidation } from 'src/common/utils';
+import { Account, RiskParams } from 'src/common/utils';
 import * as riskFunctions from 'src/common/functions';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
 import { ChallengeStatus } from 'src/common/enums';
@@ -34,7 +34,8 @@ export class RulesEvaluationJob {
           // Evaluar reglas de riesgo
           const riskEvaluation = await this.evaluateAccountRules(
             account,
-            this.getDefaultRiskParams(), // Usar parámetros por defecto o desde configuración
+            account.riskValidation,
+            // this.getDefaultRiskParams(), // Usar parámetros por defecto o desde configuración
           );
 
           // lógica de cambio de estado
@@ -154,7 +155,7 @@ export class RulesEvaluationJob {
    */
   private getDefaultRiskParams(): RiskParams {
     return {
-      profitTarget: 10000, // $10,000 profit target
+      profitTarget: 8, // 8% profit target
       dailyDrawdown: 5, // 5% daily drawdown
       maxDrawdown: 10, // 10% max drawdown
       lossPerTrade: 1, // 1% loss per trade
@@ -165,13 +166,13 @@ export class RulesEvaluationJob {
 
   /**
    * Mapea el resultado de evaluación de riesgo a RiskValidation
-   * @param riskEvaluation Resultado de la evaluación
+   * @param riskParams Resultado de la evaluación
    * @returns RiskValidation para guardar en la cuenta
    */
   private mapToRiskValidation(
     riskEvaluation: riskEvaluationResult,
-  ): RiskValidation {
-    const validation = new RiskValidation();
+  ): RiskParams {
+    const validation = new RiskParams();
     validation.profitTarget = riskEvaluation.profitTarget.profit;
     validation.dailyDrawdown = riskEvaluation.dailyDrawdown.drawdown;
     validation.tradingDays = riskEvaluation.tradingDays.numDays;

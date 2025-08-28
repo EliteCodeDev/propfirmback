@@ -25,7 +25,7 @@ export class RiskParams {
   profitTarget: number;
   dailyDrawdown: number;
   maxDrawdown: number;
-  lossPerTrade: number;
+  lossPerTrade?: number;
   tradingDays: number;
   inactiveDays: number;
 }

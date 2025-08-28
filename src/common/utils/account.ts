@@ -4,7 +4,7 @@ import {
   ClosedPosition,
   ResumePositionClose,
 } from './positions';
-import { MaxMinBalance, AverageMetrics } from './risk';
+import { MaxMinBalance, AverageMetrics, RiskParams } from './risk';
 import { riskEvaluationResult } from '../types/risk-results';
 import { ChallengeStatus } from 'src/common/enums';
 
@@ -59,7 +59,7 @@ export class Account {
 
   metaStats?: MetaStats;
 
-  riskValidation?: RiskValidation;
+  riskValidation?: RiskParams;
 
   rulesEvaluation?: riskEvaluationResult;
   status: ChallengeStatus;
@@ -129,13 +129,7 @@ export class positionsDetails {
   closedPositions: ClosedPosition[];
 }
 
-export class RiskValidation {
-  profitTarget: number;
-  dailyDrawdown: number;
-  maxDrawdown: number;
-  tradingDays: number;
-  inactiveDays: number;
-}
+
 
 export class Balance {
   currentBalance: number;

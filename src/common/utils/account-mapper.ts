@@ -2,7 +2,7 @@ import {
   Account,
   Balance,
   MetaStats,
-  RiskValidation,
+
   PositionsClassType,
 } from './account';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
@@ -111,7 +111,7 @@ export function mapChallengeToAccount(challenge: Challenge): Account {
 
   // Inicializar riskValidation si no existe
   if (!account.riskValidation) {
-    account.riskValidation = new RiskValidation();
+    account.riskValidation = new RiskParams();
   }
   if (challenge.details.rulesParams) {
     account.riskValidation = {
@@ -283,9 +283,10 @@ export function createBasicAccountFromChallenge(challenge: Challenge): Account {
   account.closedPositions.setLenght(0);
 
   // Validaciones vacías
-  account.riskValidation = new RiskValidation();
+  account.riskValidation = new RiskParams();
   account.riskValidation.profitTarget = 0;
   account.riskValidation.dailyDrawdown = 0;
+  account.riskValidation.maxDrawdown = 0;
   account.riskValidation.tradingDays = 0;
   account.riskValidation.inactiveDays = 0;
 

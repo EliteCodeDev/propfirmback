@@ -18,7 +18,7 @@ import { DocumentType } from '../common/enums/verification-document-type.enum';
 import { MediaType } from '../common/enums/media-type.enum';
 import { WithdrawalStatus } from '../common/enums/withdrawal-status.enum';
 import { ChallengeDetails } from '../modules/challenges/entities/challenge-details.entity';
-import { MetaStats, positionsDetails, RiskValidation } from '../common/utils/account';
+import { MetaStats, positionsDetails } from '../common/utils/account';
 import { RiskParams, MaxMinBalance, AverageMetrics } from '../common/utils/risk';
 import { riskEvaluationResult } from '../common/types/risk-results';
 import { OpenPosition, ClosedPosition, ResumenPositionOpen, ResumePositionClose } from '../common/utils/positions';
