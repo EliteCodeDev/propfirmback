@@ -66,14 +66,27 @@ export class BrokeretDataMapper {
         updatedAccount.openPositions = this.mapOpenPositions([]);
       }
 
-      // Mapear posiciones cerradas
+      // Mapear posiciones cerradas con validación para evitar sobrescribir datos existentes con datos vacíos
       if (brokeretData.closedPositions?.data?.deals) {
         updatedAccount.closedPositions = this.mapClosedPositions(
           brokeretData.closedPositions.data.deals,
         );
       } else {
-        // Si no hay posiciones cerradas, crear estructura vacía
-        updatedAccount.closedPositions = this.mapClosedPositions([]);
+        // Validar si ya existen posiciones cerradas previas
+        const hasExistingClosedPositions = 
+          updatedAccount.closedPositions?.positions && 
+          updatedAccount.closedPositions.positions.length > 0;
+        
+        if (hasExistingClosedPositions) {
+          // Si ya existen posiciones cerradas y llegan datos vacíos, no sobrescribir
+          this.logger.debug(
+            `BrokeretDataMapper: Omitiendo actualización de posiciones cerradas vacías para cuenta ${brokeretData.login} - datos previos existen (${updatedAccount.closedPositions.positions.length} posiciones)`
+          );
+          // Mantener las posiciones cerradas existentes sin cambios
+        } else {
+          // Si no hay posiciones cerradas previas, crear estructura vacía
+          updatedAccount.closedPositions = this.mapClosedPositions([]);
+        }
       }
 
       // Mapear metaStats (métricas combinadas)

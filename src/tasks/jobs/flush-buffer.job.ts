@@ -18,7 +18,7 @@ export class FlushBufferJob {
   ) {}
 
   // Cada minuto en el segundo 0 para persistir datos actualizados
-  @Cron('0 * * * * *')
+  @Cron('30 * * * * *')
   async flush() {
     const entries = await this.bufferService.listEntries();
     const total = entries.length;
