@@ -33,13 +33,17 @@ import {
   mapChallengesToAccounts,
   mapChallengeToAccount,
 } from 'src/common/utils/account-mapper';
+import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
 
 @ApiTags('Challenges')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('challenges')
 export class ChallengesController {
-  constructor(private readonly challengesService: ChallengesService) {}
+  constructor(
+    private readonly challengesService: ChallengesService,
+    private readonly challengeTemplatesService: ChallengeTemplatesService,
+  ) {}
 
   @Post()
   // @UseGuards(RolesGuard)
@@ -97,7 +101,10 @@ export class ChallengesController {
     if (challenge.userID !== req.user.userID) {
       throw new ForbiddenException('You do not have access to this challenge');
     }
-
+    challenge.relation =
+      await this.challengeTemplatesService.findCompleteRelationChain(
+        challenge.relationID,
+      );
     return mapChallengeToAccount(challenge);
   }
 

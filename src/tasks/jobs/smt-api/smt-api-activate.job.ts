@@ -5,7 +5,7 @@ import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LoginAccount } from 'src/common/utils';
-import { BufferLoaderJob } from '../buffer-loader.job';
+import { BufferLoaderJob } from '../buffer/buffer-loader.job';
 //inicio de la ejecución
 @Injectable()
 export class ActivateSmtApiJob implements OnModuleInit {
