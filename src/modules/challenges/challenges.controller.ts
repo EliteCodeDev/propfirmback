@@ -105,6 +105,7 @@ export class ChallengesController {
       await this.challengeTemplatesService.findCompleteRelationChain(
         challenge.relationID,
       );
+      
     return mapChallengeToAccount(challenge);
   }
 

@@ -113,29 +113,33 @@ export function mapChallengeToAccount(challenge: Challenge): Account {
   if (!account.riskValidation) {
     account.riskValidation = new RiskValidation();
   }
-
+  if (challenge.details.rulesParams) {
+    account.riskValidation = {
+      ...challenge.details.rulesParams,
+    };
+  } else {
+    account.riskValidation.profitTarget = getParameterValueBySlug(
+      challenge,
+      'profit-target',
+    );
+    account.riskValidation.dailyDrawdown = getParameterValueBySlug(
+      challenge,
+      'daily-drawdown',
+    );
+    account.riskValidation.maxDrawdown = getParameterValueBySlug(
+      challenge,
+      'max-drawdown',
+    );
+    account.riskValidation.tradingDays = getParameterValueBySlug(
+      challenge,
+      'trading-days',
+    );
+    account.riskValidation.inactiveDays = getParameterValueBySlug(
+      challenge,
+      'inactive-days',
+    );
+  }
   // Asignar valores usando la función helper reutilizable
-  account.riskValidation.profitTarget = getParameterValueBySlug(
-    challenge,
-    'profit-target',
-  );
-  account.riskValidation.dailyDrawdown = getParameterValueBySlug(
-    challenge,
-    'daily-drawdown',
-  );
-  account.riskValidation.maxDrawdown = getParameterValueBySlug(
-    challenge,
-    'max-drawdown',
-  );
-  account.riskValidation.tradingDays = getParameterValueBySlug(
-    challenge,
-    'trading-days',
-  );
-  account.riskValidation.inactiveDays = getParameterValueBySlug(
-    challenge,
-    'inactive-days',
-  );
-
   return account;
 }
 
@@ -368,6 +372,5 @@ export function createSmtApiResponseToBrokerAccount(
     server: response.servidor,
     innitialBalance: parseInt(response.deposito),
     isUsed: true,
-    
-    };
+  };
 }
