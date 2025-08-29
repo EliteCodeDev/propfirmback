@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TasksService } from './tasks.service';
-import { ActivateSmtApiJob, FlushBufferJob, RulesEvaluationJob, UpdateDailyBalanceJob } from './jobs';
+import {
+  ActivateSmtApiJob,
+  FlushBufferJob,
+  RulesEvaluationJob,
+  UpdateDailyBalanceJob,
+} from './jobs';
 import { BufferLoaderJob } from './jobs/buffer/buffer-loader.job';
 import { BufferDataUpdaterJob } from './jobs/buffer-data-updater.job';
 import { SmtApiModule } from 'src/modules';
@@ -15,7 +20,7 @@ import { MailerModule } from 'src/modules';
 import { BrokeretApiJobsModule } from './jobs/brokeret-api/brokeret-api-jobs.module';
 @Module({
   imports: [
-    SmtApiModule,
+    // SmtApiModule,
     BufferModule,
     ChallengeTemplatesModule,
     ChallengesModule,
@@ -25,7 +30,7 @@ import { BrokeretApiJobsModule } from './jobs/brokeret-api/brokeret-api-jobs.mod
   ],
   providers: [
     TasksService,
-    ActivateSmtApiJob,
+    // ActivateSmtApiJob,
     BufferLoaderJob,
     FlushBufferJob,
     RulesEvaluationJob,
