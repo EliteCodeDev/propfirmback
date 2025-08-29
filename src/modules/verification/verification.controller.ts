@@ -82,6 +82,28 @@ export class VerificationController {
     return this.verificationService.update(id, updateVerificationDto);
   }
 
+  @Patch(':id/approve')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Approve verification' })
+  approve(@Param('id') id: string) {
+    return this.verificationService.update(id, { status: 'approved' });
+  }
+
+  @Patch(':id/reject')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Reject verification' })
+  reject(
+    @Param('id') id: string,
+    @Body() body: { rejectionReason: string },
+  ) {
+    return this.verificationService.update(id, {
+      status: 'rejected',
+      rejectionReason: body.rejectionReason,
+    });
+  }
+
   @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles('admin')

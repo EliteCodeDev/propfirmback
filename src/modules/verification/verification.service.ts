@@ -169,6 +169,7 @@ export class VerificationService {
     updateVerificationDto: UpdateVerificationDto,
   ): Promise<Verification> {
     const verification = await this.findOne(id);
+    const previousStatus = verification.status;
 
     Object.assign(verification, updateVerificationDto);
 
@@ -178,7 +179,53 @@ export class VerificationService {
       verification.rejectedAt = new Date();
     }
 
-    return this.verificationRepository.save(verification);
+    const updatedVerification = await this.verificationRepository.save(verification);
+
+    // Enviar correo solo si el estado cambió
+    if (previousStatus !== updateVerificationDto.status) {
+      await this.sendVerificationStatusEmail(updatedVerification, updateVerificationDto.status);
+    }
+
+    return updatedVerification;
+  }
+
+  private async sendVerificationStatusEmail(
+    verification: Verification,
+    newStatus: string,
+  ): Promise<void> {
+    try {
+      const user = verification.user;
+      
+      if (newStatus === VerificationStatus.APPROVED) {
+        await this.mailerService.sendMail({
+          to: user.email,
+          subject: '¡Verificación Aprobada! - FundingHero',
+          template: 'verification-approved',
+          context: {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            verificationID: verification.verificationID,
+            currentYear: new Date().getFullYear(),
+          },
+        });
+      } else if (newStatus === VerificationStatus.REJECTED) {
+        await this.mailerService.sendMail({
+          to: user.email,
+          subject: 'Verificación Rechazada - FundingHero',
+          template: 'verification-rejected',
+          context: {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            verificationID: verification.verificationID,
+            rejectionReason: verification.rejectionReason,
+            currentYear: new Date().getFullYear(),
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error sending verification status email:', error);
+      // No lanzamos el error para no afectar la actualización de la verificación
+    }
   }
 
   async remove(id: string): Promise<void> {
