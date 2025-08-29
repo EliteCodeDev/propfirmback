@@ -70,12 +70,16 @@ export class FlushBufferJob {
           }
 
           // 3) Mapear snapshot -> ChallengeDetails (upsert por PK challengeID)
+          // Extract positions from the PositionsClassType structure
+          const openPositions = snapshot.openPositions?.positions ?? [];
+          const closedPositions = snapshot.closedPositions?.positions ?? [];
+          
           const payload: DeepPartial<ChallengeDetails> = {
             challengeID: challenge.challengeID,
             metaStats: snapshot.metaStats ?? null,
             positions: {
-              openPositions: snapshot.openPositions ?? [],
-              closedPositions: snapshot.closedPositions ?? [],
+              openPositions,
+              closedPositions,
             },
             rulesValidation: snapshot.rulesEvaluation ?? null,
             lastUpdate: snapshot.lastUpdate

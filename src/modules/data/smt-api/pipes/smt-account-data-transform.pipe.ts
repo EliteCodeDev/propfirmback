@@ -10,7 +10,7 @@ export class SmtAccountDataTransformPipe {
   /**
    * Transforma AccountDataDto a Partial<Account> con login requerido
    */
-  transform(data: AccountDataDto, login: string): Partial<Account> & { login: string } {
+  transform(data: AccountDataDto, login: string, existingAccount?: Account): Partial<Account> & { login: string } {
     this.logger.debug(`[transform] Transforming data for login=${login}`);
 
     const openResume = data.data?.open?.resume;
@@ -47,13 +47,33 @@ export class SmtAccountDataTransformPipe {
       );
     }
 
-    // Mapear posiciones cerradas
+    // Mapear posiciones cerradas con validación para evitar sobrescribir datos existentes con datos vacíos
     if (closedPositions.length > 0 || closeResume) {
       account.closedPositions = this.createPositionsClassType(
         this.mapClosedPositions(closedPositions),
         this.mapCloseResume(closeResume),
         closedPositions.length
       );
+    } else {
+      // Validar si ya existen posiciones cerradas previas en la cuenta existente
+      const hasExistingClosedPositions = 
+        existingAccount?.closedPositions?.positions &&
+        existingAccount.closedPositions.positions.length > 0;
+
+      if (hasExistingClosedPositions) {
+        // Si ya existen posiciones cerradas y llegan datos vacíos, no sobrescribir
+        this.logger.debug(
+          `[transform] Omitiendo actualización de posiciones cerradas vacías para cuenta ${login} - datos previos existen (${existingAccount.closedPositions.positions.length} posiciones)`,
+        );
+        // No incluir closedPositions en el resultado para mantener las existentes
+      } else {
+        // Si no hay posiciones cerradas previas, crear estructura vacía
+        account.closedPositions = this.createPositionsClassType(
+          this.mapClosedPositions([]),
+          this.mapCloseResume(closeResume),
+          0
+        );
+      }
     }
 
     this.logger.debug(`[transform] Transformed account for login=${login}, equity=${account.equity}, balance=${account.balance?.currentBalance}`);

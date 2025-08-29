@@ -31,7 +31,8 @@
     "seed:certificates": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-certificates.ts",
     "seed:orders": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-orders.ts",
     "seed:verifications": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-verifications.ts",
-    "seed:specific-challenge": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-specific-challenge.ts"
+    "seed:specific-challenge": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-specific-challenge.ts",
+    "seed:styles": "ts-node -r tsconfig-paths/register -r reflect-metadata src/seeds/seed-styles.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

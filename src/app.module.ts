@@ -44,6 +44,7 @@ import {
   StorageModule,
   MinioModule,
   N8nModule,
+  StylesModule,
 } from 'src/modules';
 // Seed on boot support
 import { SeedOnBootModule } from './seeds/seed-on-boot.module';
@@ -101,6 +102,7 @@ import { BufferModule } from './lib/buffer/buffer.module';
     SeedOnBootModule,
     TasksModule,
     N8nModule,
+    StylesModule,
   ],
   controllers: [
     //aea

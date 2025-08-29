@@ -16,3 +16,4 @@ export * from './n8n/n8n.module';
 export * from './data/smt-api/smt-api.module';
 export * from './data/brokeret-api/brokeret-api.module';
 export * from './business-requirement/business-requirement.module';
+export * from './styles/styles.module';

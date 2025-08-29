@@ -48,8 +48,18 @@ export class SmtApiService {
     this.logger.debug(`[ingestAccountData] received SMT data for login=${login}`);
 
     try {
-      // Transformar usando el pipe específico de SMT
-      const transformedAccount = this.smtAccountDataTransformPipe.transform(data, login);
+      // Obtener cuenta existente del buffer para validación
+      let existingAccount;
+      try {
+        const existingAccountData = await this.bufferApiService.getAccount(login);
+        existingAccount = existingAccountData;
+      } catch (error) {
+        // Si no existe la cuenta, continuar sin cuenta existente
+        this.logger.debug(`[ingestAccountData] no existing account found for login=${login}`);
+      }
+
+      // Transformar usando el pipe específico de SMT con cuenta existente
+      const transformedAccount = this.smtAccountDataTransformPipe.transform(data, login, existingAccount);
       
       // Usar el servicio genérico del buffer
       const result = await this.bufferApiService.ingestAccount(transformedAccount);
