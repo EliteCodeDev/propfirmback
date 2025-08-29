@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LoginAccount } from 'src/common/utils';
 import { BufferLoaderJob } from '../buffer/buffer-loader.job';
+import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 //inicio de la ejecución
 @Injectable()
 export class ActivateSmtApiJob implements OnModuleInit {
@@ -15,6 +16,7 @@ export class ActivateSmtApiJob implements OnModuleInit {
     @InjectRepository(Challenge)
     private challengeRepository: Repository<Challenge>,
     private readonly bufferLoaderJob: BufferLoaderJob,
+    private readonly customLogger: CustomLoggerService,
   ) {}
 
   // Ejecuta al iniciar el backend
@@ -32,16 +34,51 @@ export class ActivateSmtApiJob implements OnModuleInit {
   // Todos los días a las 18:00:00 (con segundos) en la zona horaria indicada
   @Cron('0 45 17 * * *', { timeZone: 'America/Lima' })
   async activateSmtApi() {
+    const startTime = Date.now();
     this.logger.debug('ActivateSmtApiJob: ejecución programada');
+    
+    this.customLogger.logJob({
+      jobName: 'ActivateSmtApiJob',
+      operation: 'activate_smt_api',
+      status: 'started',
+      details: { trigger: 'scheduled' }
+    });
+    
     try {
       const response = await this.activateSmtApiProcess();
+      const duration = Date.now() - startTime;
+      
       this.logger.debug(
         'ActivateSmtApiJob: respuesta de la API: ' + JSON.stringify(response),
       );
+      
+      this.customLogger.logJob({
+        jobName: 'ActivateSmtApiJob',
+        operation: 'activate_smt_api',
+        status: 'completed',
+        details: { 
+          trigger: 'scheduled',
+          duration_ms: duration,
+          response: response
+        }
+      });
     } catch (error) {
+      const duration = Date.now() - startTime;
+      
       this.logger.error(
         'ActivateSmtApiJob: error durante la ejecución programada: ' + error,
       );
+      
+      this.customLogger.logJob({
+        jobName: 'ActivateSmtApiJob',
+        operation: 'activate_smt_api',
+        status: 'failed',
+        details: { 
+          trigger: 'scheduled',
+          duration_ms: duration,
+          error: error?.message || error.toString()
+        }
+      });
       // Re-lanzar si se desea que el scheduler registre fallo
       // throw error;
     }

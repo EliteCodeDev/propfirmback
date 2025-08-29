@@ -5,23 +5,54 @@ import { Account, RiskParams } from 'src/common/utils';
 import * as riskFunctions from 'src/common/functions';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
 import { ChallengeStatus } from 'src/common/enums';
+import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 @Injectable()
 export class RulesEvaluationJob {
   private readonly logger = new Logger(RulesEvaluationJob.name);
-  constructor(private readonly bufferService: BufferService) {}
+  constructor(
+    private readonly bufferService: BufferService,
+    private readonly customLogger: CustomLoggerService,
+  ) {}
 
   @Cron('20,50 * * * * *')
   async evaluate() {
+    const startTime = Date.now();
+    
+    this.customLogger.logJob({
+      jobName: 'RulesEvaluationJob',
+      operation: 'evaluate_rules',
+      status: 'started',
+      details: { trigger: 'scheduled' }
+    });
+    
     try {
       const stats = this.bufferService.getStats();
       if (stats.bufferSize === 0) {
         this.logger.debug('Buffer vacío, saltando evaluación de reglas');
+        
+        this.customLogger.logJob({
+          jobName: 'RulesEvaluationJob',
+          operation: 'evaluate_rules_empty',
+          status: 'completed',
+          details: { 
+            trigger: 'scheduled',
+            buffer_size: 0,
+            duration_ms: Date.now() - startTime
+          }
+        });
         return;
       }
 
       this.logger.debug(
         `Iniciando evaluación de reglas para ${stats.bufferSize} cuentas`,
       );
+      
+      this.customLogger.logJob({
+        jobName: 'RulesEvaluationJob',
+        operation: 'evaluate_rules_processing',
+        status: 'in_progress',
+        details: { buffer_size: stats.bufferSize }
+      });
 
       // Obtener todas las entradas del buffer
       const entries = await this.bufferService.listEntries();
@@ -73,8 +104,36 @@ export class RulesEvaluationJob {
       this.logger.debug(
         `RulesEvaluationJob completado: procesadas=${processedCount}/${stats.bufferSize}, validaciones_exitosas=${validationCount}`,
       );
+      
+      const duration = Date.now() - startTime;
+      
+      this.customLogger.logJob({
+        jobName: 'RulesEvaluationJob',
+        operation: 'evaluate_rules_success',
+        status: 'completed',
+        details: {
+          trigger: 'scheduled',
+          duration_ms: duration,
+          total_accounts: stats.bufferSize,
+          processed_count: processedCount,
+          validation_count: validationCount
+        }
+      });
     } catch (error) {
+      const duration = Date.now() - startTime;
+      
       this.logger.error(`Error en RulesEvaluationJob:`, error);
+      
+      this.customLogger.logJob({
+        jobName: 'RulesEvaluationJob',
+        operation: 'evaluate_rules_error',
+        status: 'failed',
+        details: {
+          trigger: 'scheduled',
+          duration_ms: duration,
+          error: error?.message || error.toString()
+        }
+      });
     }
   }
 

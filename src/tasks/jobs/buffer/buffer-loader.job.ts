@@ -8,6 +8,7 @@ import { StageParameter } from 'src/modules/challenge-templates/entities/stage/s
 import { ChallengeTemplatesService } from 'src/modules/challenge-templates/challenge-templates.service';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { mapChallengesToAccounts } from 'src/common/utils/account-mapper';
+import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 
 /**
  * Job genérico responsable de cargar cuentas desde la base de datos al buffer
@@ -26,6 +27,7 @@ export class BufferLoaderJob implements OnModuleInit {
     private stageParameterRepository: Repository<StageParameter>,
     private readonly challengeTemplatesService: ChallengeTemplatesService,
     private readonly buffer: BufferService,
+    private readonly customLogger: CustomLoggerService,
   ) {}
 
   /**
@@ -48,13 +50,46 @@ export class BufferLoaderJob implements OnModuleInit {
    */
   @Cron('0 0 * * * *', { timeZone: 'America/Lima' })
   async scheduledBufferReload() {
+    const startTime = Date.now();
     this.logger.debug('BufferLoaderJob: Recarga programada del buffer');
+    
+    // Log timeline del buffer
+    this.customLogger.logBufferTimeline(
+      'BufferLoaderJob',
+      {
+        action: 'scheduled_reload_start',
+        metadata: { trigger: 'cron_schedule' }
+      },
+      'Starting scheduled buffer reload'
+    );
+    
     try {
       await this.loadAccountsToBuffer();
+      const duration = Date.now() - startTime;
+      
       this.logger.debug('BufferLoaderJob: Recarga programada completada exitosamente');
+      this.customLogger.logBufferTimeline(
+        'BufferLoaderJob',
+        {
+          action: 'scheduled_reload_success',
+          duration: duration
+        },
+        'Scheduled buffer reload completed successfully'
+      );
     } catch (error) {
+      const duration = Date.now() - startTime;
+      
       this.logger.error(
         'BufferLoaderJob: Error durante la recarga programada: ' + error,
+      );
+      this.customLogger.logBufferTimeline(
+        'BufferLoaderJob',
+        {
+          action: 'scheduled_reload_error',
+          duration: duration,
+          error: error.message
+        },
+        'Scheduled buffer reload failed'
       );
     }
   }
@@ -63,9 +98,19 @@ export class BufferLoaderJob implements OnModuleInit {
    * Proceso principal para cargar cuentas desde la base de datos al buffer
    */
   async loadAccountsToBuffer() {
+    const startTime = Date.now();
+    
     try {
       this.logger.debug(
         'BufferLoaderJob: Iniciando proceso de carga de cuentas al buffer',
+      );
+      
+      this.customLogger.logBufferTimeline(
+        'BufferLoaderJob',
+        {
+          action: 'load_accounts_start'
+        },
+        'Starting accounts load to buffer'
       );
 
       // Cargar challenges activos con todas las relaciones necesarias
@@ -90,12 +135,30 @@ export class BufferLoaderJob implements OnModuleInit {
       this.logger.debug(
         `BufferLoaderJob: Encontrados ${activeChallenges.length} challenges activos`,
       );
+      
+      this.customLogger.logBufferTimeline(
+        'BufferLoaderJob',
+        {
+          action: 'challenges_loaded',
+          metadata: { active_challenges_count: activeChallenges.length }
+        },
+        'Active challenges loaded successfully'
+      );
 
       // Mapear challenges a cuentas del buffer
       const accountsForBuffer = mapChallengesToAccounts(activeChallenges);
 
       this.logger.debug(
         `BufferLoaderJob: Mapeadas ${accountsForBuffer.length} cuentas para el buffer`,
+      );
+      
+      this.customLogger.logBufferTimeline(
+        'BufferLoaderJob',
+        {
+          action: 'accounts_mapped',
+          metadata: { mapped_accounts_count: accountsForBuffer.length }
+        },
+        'Accounts mapped for buffer injection'
       );
 
       // Inyectar cuentas al buffer
@@ -140,6 +203,24 @@ export class BufferLoaderJob implements OnModuleInit {
       this.logger.debug(
         `BufferLoaderJob: Estado del buffer: ${JSON.stringify(bufferStats)}`,
       );
+      
+      const duration = Date.now() - startTime;
+      
+      this.customLogger.logBufferTimeline(
+        'BufferLoaderJob',
+        {
+          action: 'load_accounts_success',
+          duration: duration,
+          metadata: {
+            total_challenges: activeChallenges.length,
+            accounts_mapped: accountsForBuffer.length,
+            accounts_injected: injectedCount,
+            accounts_updated: updatedCount,
+            buffer_stats: bufferStats
+          }
+        },
+        'Accounts loaded to buffer successfully'
+      );
 
       return {
         totalChallenges: activeChallenges.length,
@@ -149,9 +230,22 @@ export class BufferLoaderJob implements OnModuleInit {
         bufferStats,
       };
     } catch (error) {
+      const duration = Date.now() - startTime;
+      
       this.logger.error(
         'BufferLoaderJob: Error en el proceso de carga de cuentas al buffer: ' + error,
       );
+      
+      this.customLogger.logBufferTimeline(
+        'BufferLoaderJob',
+        {
+          action: 'load_accounts_error',
+          duration: duration,
+          error: error.message
+        },
+        'Failed to load accounts to buffer'
+      );
+      
       throw error;
     }
   }

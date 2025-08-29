@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
+import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 
 @Injectable()
 export class UpdateDailyBalanceJob {
@@ -13,21 +14,57 @@ export class UpdateDailyBalanceJob {
     private readonly bufferService: BufferService,
     @InjectRepository(Challenge)
     private readonly challengeRepo: Repository<Challenge>,
+    private readonly customLogger: CustomLoggerService,
   ) {}
 
   @Cron('10 0 17 * * *', { timeZone: 'America/Lima' })
   async updateDailyBalance() {
+    const startTime = Date.now();
+    
+    this.customLogger.logJob({
+      jobName: 'UpdateDailyBalanceJob',
+      operation: 'update_daily_balance',
+      status: 'started',
+      details: {
+        trigger: 'scheduled',
+        timezone: 'America/Lima'
+      }
+    });
+    
     this.logger.log('Iniciando actualización de balance diario');
     
-    const entries = await this.bufferService.listEntries();
-    const total = entries.length;
-    
-    if (total === 0) {
-      this.logger.debug('No hay cuentas en el buffer para procesar');
-      return;
-    }
+    try {
+      const entries = await this.bufferService.listEntries();
+      const total = entries.length;
+      
+      if (total === 0) {
+        this.logger.debug('No hay cuentas en el buffer para procesar');
+        
+        this.customLogger.logJob({
+          jobName: 'UpdateDailyBalanceJob',
+          operation: 'update_daily_balance_empty',
+          status: 'completed',
+          details: {
+            trigger: 'scheduled',
+            duration_ms: Date.now() - startTime,
+            buffer_size: 0
+          }
+        });
+        
+        return;
+      }
 
-    this.logger.debug(`Procesando ${total} cuentas del buffer`);
+      this.logger.debug(`Procesando ${total} cuentas del buffer`);
+      
+      this.customLogger.logJob({
+        jobName: 'UpdateDailyBalanceJob',
+        operation: 'update_daily_balance_processing',
+        status: 'in_progress',
+        details: {
+          trigger: 'scheduled',
+          buffer_size: total
+        }
+      });
 
     let updated = 0;
     let skipped = 0;
@@ -97,8 +134,40 @@ export class UpdateDailyBalanceJob {
       }
     }
 
-    this.logger.log(
-      `UpdateDailyBalanceJob: fin actualización -> total=${total} updated=${updated} skipped=${skipped} failed=${failed}`,
-    );
+      this.logger.log(
+        `UpdateDailyBalanceJob: fin actualización -> total=${total} updated=${updated} skipped=${skipped} failed=${failed}`,
+      );
+      
+      const duration = Date.now() - startTime;
+      
+      this.customLogger.logJob({
+        jobName: 'UpdateDailyBalanceJob',
+        operation: 'update_daily_balance_success',
+        status: 'completed',
+        details: {
+          trigger: 'scheduled',
+          duration_ms: duration,
+          total_accounts: total,
+          updated_count: updated,
+          skipped_count: skipped,
+          failed_count: failed
+        }
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      this.logger.error(`Error en UpdateDailyBalanceJob:`, error);
+      
+      this.customLogger.logJob({
+        jobName: 'UpdateDailyBalanceJob',
+        operation: 'update_daily_balance_error',
+        status: 'failed',
+        details: {
+          trigger: 'scheduled',
+          duration_ms: duration,
+          error: error?.message || error.toString()
+        }
+      });
+    }
   }
 }

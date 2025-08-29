@@ -6,6 +6,7 @@ import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-details.entity';
 import { Account } from 'src/common/utils';
+import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 
 @Injectable()
 export class FlushBufferJob {
@@ -33,6 +34,7 @@ export class FlushBufferJob {
     private readonly challengeRepo: Repository<Challenge>,
     @InjectRepository(ChallengeDetails)
     private readonly detailsRepo: Repository<ChallengeDetails>,
+    private readonly customLogger: CustomLoggerService,
   ) {}
 
   // Cada minuto en el segundo 30 para persistir datos actualizados
@@ -40,6 +42,14 @@ export class FlushBufferJob {
   async flush() {
     const startTime = Date.now();
     this.logger.debug('FlushBufferJob: iniciando flush optimizado...');
+    
+    this.customLogger.logBufferTimeline(
+      'FlushBufferJob',
+      {
+        action: 'flush_start'
+      },
+      'Starting buffer flush'
+    );
 
     try {
       const entries = await this.bufferService.listEntries();
@@ -47,6 +57,14 @@ export class FlushBufferJob {
       
       if (total === 0) {
         this.logger.debug('FlushBufferJob: no hay cuentas en buffer');
+        this.customLogger.logBufferTimeline(
+          'FlushBufferJob',
+          {
+            action: 'flush_empty',
+            duration: Date.now() - startTime
+          },
+          'Buffer is empty, nothing to flush'
+        );
         return;
       }
 
@@ -70,6 +88,17 @@ export class FlushBufferJob {
 
       if (dirtyAccounts.length === 0) {
         this.logger.debug('FlushBufferJob: no hay cuentas dirty para procesar');
+        this.customLogger.logBufferTimeline(
+          'FlushBufferJob',
+          {
+            action: 'flush_no_dirty',
+            duration: Date.now() - startTime,
+            metadata: { 
+              total_accounts: total
+            }
+          },
+          'No dirty accounts to flush'
+        );
         return;
       }
 
@@ -101,12 +130,42 @@ export class FlushBufferJob {
          `skipped=${totalSkipped} failed=${totalFailed} batches=${batches.length}`
        );
        
+       this.customLogger.logBufferTimeline(
+         'FlushBufferJob',
+         {
+           action: 'flush_success',
+           duration: duration,
+           metadata: {
+             total_accounts: total,
+             dirty_accounts: dirtyAccounts.length,
+             persisted_count: totalPersisted,
+             skipped_count: totalSkipped,
+             failed_count: totalFailed,
+             batches_count: batches.length
+           }
+         },
+         'Buffer flush completed successfully'
+       );
+       
        // Log performance summary every 10 flushes
        if (this.metrics.totalFlushes % 10 === 0) {
          this.logPerformanceMetrics();
        }
     } catch (error) {
+      const duration = Date.now() - startTime;
+      
       this.logger.error(`FlushBufferJob: error general: ${error?.message || error}`);
+      
+      this.customLogger.logBufferTimeline(
+         'FlushBufferJob',
+         {
+           action: 'flush_error',
+           duration: duration,
+           error: error?.message || error.toString()
+         },
+         'Buffer flush failed'
+       );
+      
       throw error;
     }
   }
