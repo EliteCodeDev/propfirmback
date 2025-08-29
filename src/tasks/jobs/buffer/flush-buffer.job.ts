@@ -5,6 +5,7 @@ import { DeepPartial, Repository } from 'typeorm';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-details.entity';
+import { Account } from 'src/common/utils';
 
 @Injectable()
 export class FlushBufferJob {
@@ -47,7 +48,7 @@ export class FlushBufferJob {
             return;
           }
 
-          const snapshot = JSON.parse(JSON.stringify(current));
+          const snapshot = JSON.parse(JSON.stringify(current)) as Account;
           // this.logger.debug(
           //   `FlushBufferJob: flush de ${login} - snapshot: ${JSON.stringify(snapshot)}`,
           // );
@@ -55,10 +56,17 @@ export class FlushBufferJob {
           const challenge = await this.challengeRepo
             .createQueryBuilder('c')
             .innerJoin('c.brokerAccount', 'ba')
+            .innerJoin('c.challengeDetails', 'cd')
             .where('ba.login = :login', { login })
             .andWhere('c.isActive = :isActive', { isActive: true })
             .orderBy('c.startDate', 'DESC')
             .getOne();
+          // this.logger.debug(
+          //   `FlushBufferJob: flush de ${login} - challenge: ${JSON.stringify(challenge)}`,
+          // );
+          this.logger.debug(
+            `FlushBufferJob: flush de ${login} - challengeDetails: ${JSON.stringify(challenge.details)}`,
+          );
 
           if (!challenge) {
             // No hay challenge activo asociado -> omitir pero no borrar el buffer
@@ -73,7 +81,7 @@ export class FlushBufferJob {
           // Extract positions from the PositionsClassType structure
           const openPositions = snapshot.openPositions?.positions ?? [];
           const closedPositions = snapshot.closedPositions?.positions ?? [];
-          
+
           const payload: DeepPartial<ChallengeDetails> = {
             challengeID: challenge.challengeID,
             metaStats: snapshot.metaStats ?? null,

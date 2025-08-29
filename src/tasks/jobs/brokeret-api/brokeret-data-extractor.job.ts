@@ -92,15 +92,24 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     );
 
     try {
-      // Extraer datos de Brokeret API para esta cuenta
-      const brokeretData = await this.extractAccountDataFromBrokeret(login);
-      this.logger.debug(
-        `BrokeretDataExtractorJob: Datos extraídos de Brokeret para cuenta ${login}: ${JSON.stringify(brokeretData)}`,
-      );
-      this.logger.debug(
-        `BrokeretDataExtractorJob: Datos mapeados para cuenta ${account}}`,
-      );
-      // Mapear datos de Brokeret al formato del buffer
+      let brokeretData = null;
+      
+      try {
+        // Extraer datos de Brokeret API para esta cuenta
+        brokeretData = await this.extractAccountDataFromBrokeret(login);
+        this.logger.debug(
+          `BrokeretDataExtractorJob: Datos extraídos de Brokeret para cuenta ${login}`,
+        );
+      } catch (apiError) {
+        // REGLA 1: Si no hay respuesta de la API, continuar con data existente
+        this.logger.warn(
+          `BrokeretDataExtractorJob: Error en API de Brokeret para cuenta ${login}, continuando con data existente:`,
+          apiError.message,
+        );
+        brokeretData = null; // Esto activará las operaciones de riesgo y guardado
+      }
+
+      // Mapear datos de Brokeret al formato del buffer (puede ser null)
       const updatedAccount = await this.dataMapper.mapBrokeretDataToAccount(
         account,
         brokeretData,
@@ -112,9 +121,15 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         return updatedAccount;
       });
 
-      this.logger.debug(
-        `BrokeretDataExtractorJob: Cuenta ${login} actualizada en el buffer`,
-      );
+      if (brokeretData === null) {
+        this.logger.debug(
+          `BrokeretDataExtractorJob: Cuenta ${login} procesada con data existente debido a error de API`,
+        );
+      } else {
+        this.logger.debug(
+          `BrokeretDataExtractorJob: Cuenta ${login} actualizada con nueva data de Brokeret`,
+        );
+      }
 
       return true;
     } catch (error) {

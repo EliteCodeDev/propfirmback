@@ -8,8 +8,11 @@ import {
   ClosedPosition,
   MaxMinBalance,
   AverageMetrics,
+  RiskParams,
 } from 'src/common/utils';
 import { getMoreStats } from 'src/common/functions/more-stats';
+import { riskEvaluation } from 'src/common/functions/risk-evaluation';
+import { riskEvaluationResult } from 'src/common/types/risk-results';
 import {
   OpenPositionsResponse,
   ClosedPositionsResponse,
@@ -70,15 +73,54 @@ export class BrokeretDataMapper {
    */
   async mapBrokeretDataToAccount(
     existingAccount: Account,
-    brokeretData: BrokeretAccountData,
+    brokeretData: BrokeretAccountData | null,
   ): Promise<Account> {
     try {
       this.logger.debug(
-        `BrokeretDataMapper: Mapeando datos para cuenta ${brokeretData.login}`,
+        `BrokeretDataMapper: Mapeando datos para cuenta ${existingAccount.login}`,
       );
 
       // Trabajar directamente con la instancia existente
       const updatedAccount = existingAccount;
+
+      // REGLA 1: Si no hay respuesta de la API, realizar operaciones de riesgo y guardado
+      if (!brokeretData) {
+        this.logger.debug(
+          `BrokeretDataMapper: No hay respuesta de API para cuenta ${existingAccount.login}, realizando operaciones de riesgo con data existente`,
+        );
+
+        // // Ejecutar evaluación de riesgo con la data existente
+        // try {
+        //   if (updatedAccount.riskValidation) {
+        //     const riskEvaluationResult: riskEvaluationResult = riskEvaluation(
+        //       updatedAccount,
+        //       updatedAccount.riskValidation,
+        //     );
+
+        //     // Actualizar rulesEvaluation con el resultado de la evaluación
+        //     updatedAccount.rulesEvaluation = riskEvaluationResult;
+
+        //     // También actualizar riskValidation con valores numéricos para compatibilidad
+        //     updatedAccount.riskValidation = this.mapToRiskValidation(riskEvaluationResult);
+
+        //     this.logger.debug(
+        //       `BrokeretDataMapper: Evaluación de riesgo completada para cuenta ${existingAccount.login}`,
+        //     );
+        //   }
+        // } catch (riskError) {
+        //   this.logger.error(
+        //     `BrokeretDataMapper: Error en evaluación de riesgo para cuenta ${existingAccount.login}:`,
+        //     riskError,
+        //   );
+        // }
+
+        // // Marcar como guardada y actualizada
+        // updatedAccount.saved = true;
+        // updatedAccount.updated = true;
+        // updatedAccount.lastUpdate = new Date();
+
+        return updatedAccount;
+      }
 
       // Actualizar timestamp
       updatedAccount.lastUpdate = new Date(brokeretData.lastUpdate);
@@ -93,37 +135,91 @@ export class BrokeretDataMapper {
           brokeretData.userDetails.data.equity || updatedAccount.equity;
       }
 
-      // Mapear posiciones abiertas
-      if (brokeretData.openPositions?.data?.positions) {
-        updatedAccount.openPositions = this.mapOpenPositions(
-          brokeretData.openPositions.data.positions,
-        );
+      // REGLA 2.1: Validación para posiciones abiertas
+      const newOpenPositions =
+        brokeretData.openPositions?.data?.positions || [];
+      const existingOpenPositions =
+        updatedAccount.openPositions?.positions || [];
+      const newClosedPositions =
+        brokeretData.closedPositions?.data?.deals || [];
+
+      if (newOpenPositions.length === 0) {
+        // 2.1.1: Si no había posiciones abiertas en el buffer, seguir con normalidad
+        if (existingOpenPositions.length === 0) {
+          this.logger.debug(
+            `BrokeretDataMapper: No hay posiciones abiertas nuevas ni existentes para cuenta ${brokeretData.login}`,
+          );
+          updatedAccount.openPositions = this.mapOpenPositions([]);
+        } else {
+          // 2.1.2: Si había posiciones abiertas en el buffer, verificar si están en closed positions
+          const existingOrderIds = existingOpenPositions.map(
+            (pos: OpenPosition) => pos.OrderId,
+          );
+          const closedOrderIds = newClosedPositions.map(
+            (pos: any) => pos.order,
+          );
+
+          const missingPositions = existingOrderIds.filter(
+            (orderId) => !closedOrderIds.includes(orderId),
+          );
+
+          if (missingPositions.length > 0) {
+            // 2.1.2.2: Error - posiciones no cerradas pero no aparecen en la data nueva
+            this.logger.error(
+              `BrokeretDataMapper: Error en cuenta ${brokeretData.login} - Posiciones abiertas ${missingPositions.join(', ')} no aparecen en closed positions ni en open positions`,
+            );
+            // Mantener las posiciones existentes y marcar como error
+            updatedAccount.openPositions = updatedAccount.openPositions;
+            updatedAccount.saved = false;
+            updatedAccount.updated = false;
+            return updatedAccount;
+          } else {
+            // 2.1.2.1: Las posiciones fueron cerradas correctamente
+            this.logger.debug(
+              `BrokeretDataMapper: Posiciones abiertas de cuenta ${brokeretData.login} fueron cerradas correctamente`,
+            );
+            updatedAccount.openPositions = this.mapOpenPositions([]);
+          }
+        }
       } else {
-        // Si no hay posiciones abiertas, crear estructura vacía
-        updatedAccount.openPositions = this.mapOpenPositions([]);
+        // Hay posiciones abiertas nuevas, mapear normalmente
+        updatedAccount.openPositions = this.mapOpenPositions(newOpenPositions);
       }
 
-      // Mapear posiciones cerradas con validación para evitar sobrescribir datos existentes con datos vacíos
-      if (brokeretData.closedPositions?.data?.deals) {
-        updatedAccount.closedPositions = this.mapClosedPositions(
-          brokeretData.closedPositions.data.deals,
-        );
-      } else {
-        // Validar si ya existen posiciones cerradas previas
-        const hasExistingClosedPositions =
-          updatedAccount.closedPositions?.positions &&
-          updatedAccount.closedPositions.positions.length > 0;
+      // REGLA 2.2: Validación para posiciones cerradas
+      const existingClosedCount =
+        updatedAccount.closedPositions?.positions?.length || 0;
+      const newClosedCount = newClosedPositions.length;
 
-        if (hasExistingClosedPositions) {
-          // Si ya existen posiciones cerradas y llegan datos vacíos, no sobrescribir
-          this.logger.debug(
-            `BrokeretDataMapper: Omitiendo actualización de posiciones cerradas vacías para cuenta ${brokeretData.login} - datos previos existen (${updatedAccount.closedPositions.positions.length} posiciones)`,
-          );
-          // Mantener las posiciones cerradas existentes sin cambios
-        } else {
-          // Si no hay posiciones cerradas previas, crear estructura vacía
-          updatedAccount.closedPositions = this.mapClosedPositions([]);
+      if (newClosedCount > existingClosedCount) {
+        // Hay más posiciones cerradas en la nueva data, actualizar
+        this.logger.debug(
+          `BrokeretDataMapper: Actualizando posiciones cerradas para cuenta ${brokeretData.login} - de ${existingClosedCount} a ${newClosedCount}`,
+        );
+        updatedAccount.closedPositions =
+          this.mapClosedPositions(newClosedPositions);
+      } else if (
+        newClosedCount < existingClosedCount &&
+        existingClosedCount > 0
+      ) {
+        // Hay menos posiciones cerradas en la nueva data, error
+        this.logger.error(
+          `BrokeretDataMapper: Error en cuenta ${brokeretData.login} - Nueva data tiene menos posiciones cerradas (${newClosedCount}) que las existentes (${existingClosedCount})`,
+        );
+        // Mantener las posiciones existentes y marcar como error
+        updatedAccount.saved = false;
+        updatedAccount.updated = false;
+        return updatedAccount;
+      } else if (newClosedCount === 0 && existingClosedCount === 0) {
+        // No hay posiciones cerradas en ningún lado, crear estructura vacía
+        updatedAccount.closedPositions = this.mapClosedPositions([]);
+      } else {
+        // Mismo número de posiciones, actualizar normalmente
+        if (newClosedCount > 0) {
+          updatedAccount.closedPositions =
+            this.mapClosedPositions(newClosedPositions);
         }
+        // Si newClosedCount === 0 pero existingClosedCount > 0, mantener existentes (ya manejado arriba)
       }
 
       // Mapear metaStats (métricas combinadas)
@@ -269,5 +365,21 @@ export class BrokeretDataMapper {
     metaStats.numTrades = analytics?.total_trades || 0;
 
     return metaStats;
+  }
+
+  /**
+   * Mapea el resultado de evaluación de riesgo a RiskValidation
+   * @param riskEvaluationResult Resultado de la evaluación
+   * @returns RiskParams para guardar en la cuenta
+   */
+  private mapToRiskValidation(
+    riskEvaluationResult: riskEvaluationResult,
+  ): RiskParams {
+    const validation = new RiskParams();
+    validation.profitTarget = riskEvaluationResult.profitTarget.profit;
+    validation.dailyDrawdown = riskEvaluationResult.dailyDrawdown.drawdown;
+    validation.tradingDays = riskEvaluationResult.tradingDays.numDays;
+    validation.inactiveDays = riskEvaluationResult.inactiveDays.inactiveDays;
+    return validation;
   }
 }

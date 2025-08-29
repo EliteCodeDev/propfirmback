@@ -64,6 +64,10 @@ export class Account {
   rulesEvaluation?: riskEvaluationResult;
   status: ChallengeStatus;
 
+  //fue guardada en base de datos
+  saved: boolean;
+  updated: boolean;
+  //
   constructor(accountID: string, login: string) {
     this.accountID = accountID;
     this.login = login;
@@ -128,8 +132,6 @@ export class positionsDetails {
   openPositions: OpenPosition[];
   closedPositions: ClosedPosition[];
 }
-
-
 
 export class Balance {
   currentBalance: number;

@@ -6,16 +6,16 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { ChallengeBalance } from './challenge-balance.entity';
+import { ChallengeAddon } from './challenge-addon.entity';
 import { ChallengeRelation } from '../challenge-relation.entity';
 
-@Entity('RelationBalance')
-export class RelationBalance {
+@Entity('RelationAddon')
+export class RelationAddon {
   @PrimaryGeneratedColumn('uuid')
-  relationBalanceID: string;
+  relationAddonID: string;
 
   @Column({ type: 'uuid' })
-  balanceID: string;
+  addonID: string;
 
   @Column({ type: 'uuid' })
   relationID: string;
@@ -36,11 +36,11 @@ export class RelationBalance {
   wooID: number;
 
   // Relations
-  @ManyToOne(() => ChallengeBalance, (balance) => balance.relationBalances)
-  @JoinColumn({ name: 'balanceID' })
-  balance: ChallengeBalance;
+  @ManyToOne(() => ChallengeAddon, (addon) => addon.relationAddons)
+  @JoinColumn({ name: 'addonID' })
+  addon: ChallengeAddon;
 
-  @ManyToOne(() => ChallengeRelation, (relation) => relation.balances)
+  @ManyToOne(() => ChallengeRelation, (relation) => relation.addons)
   @JoinColumn({ name: 'relationID' })
   relation: ChallengeRelation;
 }

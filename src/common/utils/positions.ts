@@ -12,7 +12,7 @@ export class OpenPosition {
   Profit: number;
   Commentary: string;
 
-  constructor() { }
+  constructor() {}
 }
 
 export class ClosedPosition {
@@ -32,7 +32,7 @@ export class ClosedPosition {
   Profit: number;
   Commentary: string;
 
-  constructor() { }
+  constructor() {}
 }
 
 export class UserData {
@@ -41,7 +41,7 @@ export class UserData {
   server: string;
   login: string;
 
-  constructor() { }
+  constructor() {}
 }
 
 export class ResumenPositionOpen {
@@ -53,9 +53,7 @@ export class ResumenPositionOpen {
   Level: number;
   Profit: number;
 
-  constructor(){
-
-  }
+  constructor() {}
 }
 
 export class ResumePositionClose {
@@ -69,8 +67,5 @@ export class ResumePositionClose {
   Commission: number;
   Balance: number;
 
-  constructor(){
-
-  }
+  constructor() {}
 }
-
