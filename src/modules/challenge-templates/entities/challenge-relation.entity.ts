@@ -11,6 +11,7 @@ import { ChallengePlan } from './challenge-plan.entity';
 import { RelationBalance } from './balance';
 import { RelationStage } from './stage';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
+import { RelationAddon } from './addons/relation-addon.entity';
 
 @Entity('ChallengeRelation')
 export class ChallengeRelation {
@@ -45,6 +46,9 @@ export class ChallengeRelation {
     (relationBalance) => relationBalance.relation,
   )
   balances: RelationBalance[];
+
+  @OneToMany(() => RelationAddon, (relationAddon) => relationAddon.relation)
+  addons: RelationAddon[];
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   groupName?: string;

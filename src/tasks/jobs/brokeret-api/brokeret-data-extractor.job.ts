@@ -4,6 +4,7 @@ import { BrokeretApiClient } from 'src/modules/data/brokeret-api/client/brokeret
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Account } from 'src/common/utils/account';
 import { BrokeretDataMapper } from './mappers/brokeret-data.mapper';
+import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 
 @Injectable()
 export class BrokeretDataExtractorJob implements OnModuleInit {
@@ -13,6 +14,7 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     private readonly brokeretApiClient: BrokeretApiClient,
     private readonly buffer: BufferService,
     private readonly dataMapper: BrokeretDataMapper,
+    private readonly customLogger: CustomLoggerService,
   ) {}
 
   onModuleInit() {
@@ -30,18 +32,44 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
    * Proceso principal de extracción de datos (público para ser llamado por BufferDataUpdaterJob)
    */
   async extractBrokeretDataProcess() {
+    const startTime = Date.now();
+    
+    this.customLogger.logJob({
+      jobName: 'BrokeretDataExtractorJob',
+      operation: 'extract_data_start',
+      status: 'started',
+      details: {}
+    });
+    
     try {
       // Obtener estadísticas del buffer para verificar si hay cuentas
       const stats = this.buffer.getStats();
 
       if (stats.bufferSize === 0) {
         this.logger.debug('No hay cuentas en el buffer para procesar');
+        
+        this.customLogger.logJob({
+          jobName: 'BrokeretDataExtractorJob',
+          operation: 'extract_data_empty',
+          status: 'completed',
+          details: { 
+            buffer_size: 0,
+            duration_ms: Date.now() - startTime
+          }
+        });
         return;
       }
 
       this.logger.debug(
         `BrokeretDataExtractorJob: Procesando ${stats.bufferSize} cuentas del buffer`,
       );
+      
+      this.customLogger.logJob({
+        jobName: 'BrokeretDataExtractorJob',
+        operation: 'extract_data_processing',
+        status: 'in_progress',
+        details: { buffer_size: stats.bufferSize }
+      });
 
       // Usar processAllParallel para procesamiento thread-safe y paralelo
       const results = await this.buffer.processAllParallel(
@@ -71,11 +99,40 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
           this.buffer.getStats(),
         )}`,
       );
+      
+      const duration = Date.now() - startTime;
+      
+      this.customLogger.logJob({
+        jobName: 'BrokeretDataExtractorJob',
+        operation: 'extract_data_success',
+        status: 'completed',
+        details: {
+          duration_ms: duration,
+          total_accounts: results.length,
+          processed_count: processedCount,
+          error_count: errorCount,
+          buffer_size: stats.bufferSize
+        }
+      });
+
     } catch (error) {
+      const duration = Date.now() - startTime;
+      
       this.logger.error(
         'BrokeretDataExtractorJob: Error en el proceso de extracción:',
         error,
       );
+      
+      this.customLogger.logJob({
+        jobName: 'BrokeretDataExtractorJob',
+        operation: 'extract_data_error',
+        status: 'failed',
+        details: {
+          duration_ms: duration,
+          error: error?.message || error.toString()
+        }
+      });
+      
       throw error;
     }
   }
@@ -92,15 +149,24 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     );
 
     try {
-      // Extraer datos de Brokeret API para esta cuenta
-      const brokeretData = await this.extractAccountDataFromBrokeret(login);
-      this.logger.debug(
-        `BrokeretDataExtractorJob: Datos extraídos de Brokeret para cuenta ${login}: ${JSON.stringify(brokeretData)}`,
-      );
-      this.logger.debug(
-        `BrokeretDataExtractorJob: Datos mapeados para cuenta ${account}}`,
-      );
-      // Mapear datos de Brokeret al formato del buffer
+      let brokeretData = null;
+      
+      try {
+        // Extraer datos de Brokeret API para esta cuenta
+        brokeretData = await this.extractAccountDataFromBrokeret(login);
+        this.logger.debug(
+          `BrokeretDataExtractorJob: Datos extraídos de Brokeret para cuenta ${login}`,
+        );
+      } catch (apiError) {
+        // REGLA 1: Si no hay respuesta de la API, continuar con data existente
+        this.logger.warn(
+          `BrokeretDataExtractorJob: Error en API de Brokeret para cuenta ${login}, continuando con data existente:`,
+          apiError.message,
+        );
+        brokeretData = null; // Esto activará las operaciones de riesgo y guardado
+      }
+
+      // Mapear datos de Brokeret al formato del buffer (puede ser null)
       const updatedAccount = await this.dataMapper.mapBrokeretDataToAccount(
         account,
         brokeretData,
@@ -112,9 +178,15 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         return updatedAccount;
       });
 
-      this.logger.debug(
-        `BrokeretDataExtractorJob: Cuenta ${login} actualizada en el buffer`,
-      );
+      if (brokeretData === null) {
+        this.logger.debug(
+          `BrokeretDataExtractorJob: Cuenta ${login} procesada con data existente debido a error de API`,
+        );
+      } else {
+        this.logger.debug(
+          `BrokeretDataExtractorJob: Cuenta ${login} actualizada con nueva data de Brokeret`,
+        );
+      }
 
       return true;
     } catch (error) {

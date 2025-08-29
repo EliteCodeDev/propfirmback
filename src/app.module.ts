@@ -2,11 +2,13 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { WinstonModule } from 'nest-winston';
 import { TurnstileService } from './common/security/turnstile.service';
+import { CustomLoggerService } from './common/services/custom-logger.service';
 
 import {
   validationSchema,
@@ -19,6 +21,7 @@ import {
   brokeretApiConfig,
   apiKeysConfig,
   minioConfig,
+  loggerConfig,
 } from './config';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
@@ -69,6 +72,14 @@ import { BufferModule } from './lib/buffer/buffer.module';
     ConfigModule.forFeature(brokeretApiConfig),
     ConfigModule.forFeature(apiKeysConfig),
     ConfigModule.forFeature(minioConfig),
+    ConfigModule.forFeature(loggerConfig),
+    // Winston Logger
+    WinstonModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => 
+        configService.get('logger'),
+      inject: [ConfigService]
+    }),
     // base de datos
     TypeOrmModule.forRootAsync(databaseConfig),
     // JWT
@@ -118,6 +129,7 @@ import { BufferModule } from './lib/buffer/buffer.module';
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     TurnstileService,
+    CustomLoggerService,
   ],
 })
 export class AppModule {}
