@@ -39,6 +39,8 @@ import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-acc
 import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
 import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
 import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.client';
+import { BufferService } from 'src/lib/buffer/buffer.service';
+import { mapChallengeToAccount } from 'src/common/utils/account-mapper';
 
 @Injectable()
 export class OrdersService {
@@ -55,6 +57,7 @@ export class OrdersService {
     private smtApiService: SmtApiClient,
     private creationFazoClient: CreationFazoClient,
     private brokeretApiClient: BrokeretApiClient,
+    private bufferService: BufferService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<CustomerOrder> {
@@ -197,6 +200,44 @@ export class OrdersService {
       }
 
       const challenge = challengeRes.data;
+
+      // Cargar la nueva cuenta en el buffer para seguimiento
+      try {
+        this.logger.log('Cargando nueva cuenta en el buffer:', {
+          challengeId: challenge.challengeID,
+          login: challenge.brokerAccount.login,
+        });
+        
+        const accountForBuffer = mapChallengeToAccount(challenge);
+        
+        await this.bufferService.upsertAccount(
+          challenge.brokerAccount.login,
+          (prev) => {
+            if (prev) {
+              // Si ya existe, actualizar con los nuevos datos del challenge
+              this.logger.log('Actualizando cuenta existente en buffer:', challenge.brokerAccount.login);
+              prev.challengeId = challenge.challengeID;
+              prev.riskValidation = accountForBuffer.riskValidation;
+              prev.lastUpdate = new Date();
+              return prev;
+            } else {
+              // Nueva cuenta
+              this.logger.log('Agregando nueva cuenta al buffer:', challenge.brokerAccount.login);
+              return accountForBuffer;
+            }
+          }
+        );
+        
+        this.logger.log('Cuenta cargada exitosamente en el buffer');
+      } catch (bufferError) {
+        this.logger.warn('Error al cargar cuenta en el buffer (no crítico):', {
+          error: bufferError.message,
+          challengeId: challenge.challengeID,
+          login: challenge.brokerAccount.login,
+        });
+        // No retornamos error aquí porque el buffer es para seguimiento,
+        // no es crítico para la creación de la orden
+      }
 
       // build and save order
       const order = this.orderRepository.create({
