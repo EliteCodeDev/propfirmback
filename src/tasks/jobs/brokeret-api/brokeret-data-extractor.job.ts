@@ -23,29 +23,11 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     );
   }
 
-  /**
-   * Job programado para extraer datos de Brokeret API cada 30 segundos
-   * Cron: cada 30 segundos con offset de 15 segundos para dar tiempo a la carga inicial
-   */
-  @Cron('15,45 * * * * *', { timeZone: 'America/Lima' })
-  async extractBrokeretData() {
-    this.logger.log('Iniciando extracción de datos de Brokeret API');
-
-    try {
-      await this.extractBrokeretDataProcess();
-      this.logger.log(
-        'Extracción de datos de Brokeret API completada exitosamente',
-      );
-    } catch (error) {
-      this.logger.error(
-        'Error en el proceso de extracción de datos de Brokeret API:',
-        error,
-      );
-    }
-  }
+  // Método removido - ahora es llamado por BufferDataUpdaterJob
+  // El decorador @Cron fue movido al BufferDataUpdaterJob centralizado
 
   /**
-   * Proceso principal de extracción de datos
+   * Proceso principal de extracción de datos (público para ser llamado por BufferDataUpdaterJob)
    */
   async extractBrokeretDataProcess() {
     try {

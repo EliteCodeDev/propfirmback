@@ -24,7 +24,9 @@ export class ChallengeRelation {
   planID: string;
 
   // Relations
-  @ManyToOne(() => ChallengeCategory, (category) => category.relations, { nullable: true })
+  @ManyToOne(() => ChallengeCategory, (category) => category.relations, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'categoryID' })
   category?: ChallengeCategory;
 
@@ -43,4 +45,7 @@ export class ChallengeRelation {
     (relationBalance) => relationBalance.relation,
   )
   balances: RelationBalance[];
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  groupName?: string;
 }

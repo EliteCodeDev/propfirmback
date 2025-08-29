@@ -4,7 +4,6 @@ import { AxiosRequestConfig } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigType } from '@nestjs/config';
 import { brokeretApiConfig } from 'src/config';
-import { CreateUserDto } from '../dto/create-user.dto';
 
 import { ListClosedPositionsDto } from '../dto/list-closed-positions.dto';
 import {
@@ -15,7 +14,6 @@ import {
   CriticalUsersByMarginResponse,
   UsersByDrawdownResponse,
   PositionsAtRiskResponse,
-  StatsPropResponse,
   ProfitabilityAnalyticsResponse,
   UserDetailsResponse,
 } from '../types/response.type';
@@ -102,7 +100,9 @@ export class BrokeretApiClient {
   }
 
   // GET deals/user/{login}
-  async listClosedPositions(dto: ListClosedPositionsDto): Promise<any> {
+  async listClosedPositions(
+    dto: ListClosedPositionsDto,
+  ): Promise<ClosedPositionsResponse> {
     const { login, offset, start_time, end_time } = dto;
 
     // Agregar un día más a la fecha de fin
@@ -159,10 +159,13 @@ export class BrokeretApiClient {
           );
 
           return {
+            ticket: entryDeal.ticket,
+            order: entryDeal.order,
             position_id: entryDeal.position_id,
             login: entryDeal.login,
             symbol: entryDeal.symbol,
-            action: entryDeal.action_name,
+            action: entryDeal.action,
+            action_name: entryDeal.action_name,
             volume: entryDeal.volume,
             price_open: entryDeal.price,
             price_close: exitDeal.price,

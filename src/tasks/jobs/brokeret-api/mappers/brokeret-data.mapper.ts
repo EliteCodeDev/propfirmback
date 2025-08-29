@@ -10,17 +10,54 @@ import {
   AverageMetrics,
 } from 'src/common/utils';
 import { getMoreStats } from 'src/common/functions/more-stats';
+import {
+  OpenPositionsResponse,
+  ClosedPositionsResponse,
+  UserDetailsResponse,
+  ProfitabilityAnalyticsResponse,
+} from 'src/modules/data/brokeret-api/types/response.type';
 
 /**
- * Interfaz para los datos extraídos de Brokeret API
+ * Interfaz para las órdenes de usuario (userOrders)
+ */
+export interface UserOrdersResponse {
+  success: boolean;
+  message: string;
+  data: {
+    login: number;
+    orders: {
+      ticket: number;
+      login: number;
+      symbol: string;
+      action: number;
+      action_name: string;
+      volume: number;
+      price_open: number;
+      price_sl: number;
+      price_tp: number;
+      time_create: string;
+      time_expiration: string;
+      comment: string;
+    }[];
+    summary: {
+      total_orders: number;
+      total_volume: number;
+    };
+  };
+  total_count: number;
+  timestamp: string | null;
+}
+
+/**
+ * Interfaz completa para los datos extraídos de Brokeret API
  */
 export interface BrokeretAccountData {
   login: string;
-  openPositions: any;
-  closedPositions: any;
-  userOrders: any;
-  userDetails: any;
-  profitabilityAnalytics: any;
+  openPositions: OpenPositionsResponse;
+  closedPositions: ClosedPositionsResponse;
+  userOrders: UserOrdersResponse;
+  userDetails: UserDetailsResponse;
+  profitabilityAnalytics: ProfitabilityAnalyticsResponse;
   lastUpdate: string;
 }
 
@@ -73,14 +110,14 @@ export class BrokeretDataMapper {
         );
       } else {
         // Validar si ya existen posiciones cerradas previas
-        const hasExistingClosedPositions = 
-          updatedAccount.closedPositions?.positions && 
+        const hasExistingClosedPositions =
+          updatedAccount.closedPositions?.positions &&
           updatedAccount.closedPositions.positions.length > 0;
-        
+
         if (hasExistingClosedPositions) {
           // Si ya existen posiciones cerradas y llegan datos vacíos, no sobrescribir
           this.logger.debug(
-            `BrokeretDataMapper: Omitiendo actualización de posiciones cerradas vacías para cuenta ${brokeretData.login} - datos previos existen (${updatedAccount.closedPositions.positions.length} posiciones)`
+            `BrokeretDataMapper: Omitiendo actualización de posiciones cerradas vacías para cuenta ${brokeretData.login} - datos previos existen (${updatedAccount.closedPositions.positions.length} posiciones)`,
           );
           // Mantener las posiciones cerradas existentes sin cambios
         } else {
@@ -116,11 +153,14 @@ export class BrokeretDataMapper {
   /**
    * Mapea el balance de la cuenta
    */
-  private mapBalance(userDetails: any, existingBalance?: Balance): Balance {
+  private mapBalance(
+    userDetails: UserDetailsResponse['data'],
+    existingBalance?: Balance,
+  ): Balance {
     const balance = existingBalance || new Balance();
 
     // Actualizar solo el balance actual desde userDetails
-    balance.currentBalance = userDetails.balance || 0;
+    balance.currentBalance = userDetails.balance;
 
     // NO actualizar initialBalance - es estático desde brokerAccount
     // dailyBalance se actualiza en otro job, no aquí
@@ -131,21 +171,23 @@ export class BrokeretDataMapper {
   /**
    * Mapea las posiciones abiertas
    */
-  private mapOpenPositions(openPositionsData: any[]): PositionsClassType {
+  private mapOpenPositions(
+    openPositionsData: OpenPositionsResponse['data']['positions'],
+  ): PositionsClassType {
     const positions = openPositionsData.map((pos) => {
       const position = new OpenPosition();
-      position.OrderId = pos.ticket || pos.orderID;
+      position.OrderId = pos.ticket.toString();
       position.Symbol = pos.symbol;
-      position.Type = pos.type || pos.cmd;
-      position.Volume = pos.volume || pos.lots;
-      position.OpenPrice = pos.open_price || pos.openPrice || pos.price;
-      position.ClosePrice = pos.current_price || pos.currentPrice;
+      position.Type = pos.action_name;
+      position.Volume = pos.volume;
+      position.OpenPrice = pos.price_open;
+      position.ClosePrice = pos.price_current;
       position.Profit = pos.profit;
       position.Swap = pos.swap;
-      position.TimeOpen = pos.open_time || pos.openTime;
+      position.TimeOpen = pos.time_create;
       position.Commentary = pos.comment;
-      position.SL = pos.sl || pos.stopLoss;
-      position.TP = pos.tp || pos.takeProfit;
+      position.SL = pos.price_sl;
+      position.TP = pos.price_tp;
       return position;
     });
 
@@ -158,24 +200,26 @@ export class BrokeretDataMapper {
   /**
    * Mapea las posiciones cerradas
    */
-  private mapClosedPositions(closedPositionsData: any[]): PositionsClassType {
+  private mapClosedPositions(
+    closedPositionsData: ClosedPositionsResponse['data']['deals'],
+  ): PositionsClassType {
     const positions = closedPositionsData.map((pos) => {
       const position = new ClosedPosition();
-      position.OrderId = pos.ticket || pos.orderID;
+      position.OrderId = pos.order.toString();
       position.Symbol = pos.symbol;
-      position.Type = pos.type || pos.cmd;
-      position.Volume = pos.volume || pos.lots;
-      position.OpenPrice = pos.open_price || pos.openPrice || pos.price;
-      position.ClosePrice = pos.close_price || pos.closePrice;
+      position.Type = pos.action;
+      position.Volume = pos.volume;
+      position.OpenPrice = pos.price_open;
+      position.ClosePrice = pos.price_close;
       position.Profit = pos.profit;
       position.Swap = pos.swap;
       position.Commission = pos.commission;
-      position.Rate = pos.rate;
-      position.TimeOpen = pos.open_time || pos.openTime;
-      position.TimeClose = pos.close_time || pos.closeTime;
+      position.Rate = 1; // No disponible en la estructura, usar valor por defecto
+      position.TimeOpen = pos.time_open;
+      position.TimeClose = pos.time_close;
       position.Commentary = pos.comment;
-      position.SL = pos.sl || pos.stopLoss;
-      position.TP = pos.tp || pos.takeProfit;
+      position.SL = 0; // No disponible en posiciones cerradas transformadas
+      position.TP = 0; // No disponible en posiciones cerradas transformadas
       return position;
     });
 
@@ -189,8 +233,8 @@ export class BrokeretDataMapper {
    * Mapea las métricas combinadas (metaStats)
    */
   private mapMetaStats(
-    userDetails: any,
-    profitabilityAnalytics: any,
+    userDetails: UserDetailsResponse['data'] | undefined,
+    profitabilityAnalytics: ProfitabilityAnalyticsResponse['data'] | undefined,
     existingAccount: Account,
   ): MetaStats {
     // Solo usar more-stats para calcular maxMinBalance
@@ -202,16 +246,16 @@ export class BrokeretDataMapper {
 
     if (analytics) {
       // Usar datos directos de Brokeret API
-      averageMetrics.totalTrades = analytics.total_trades || 0;
-      averageMetrics.winningTrades = analytics.winning_trades || 0;
-      averageMetrics.losingTrades = analytics.losing_trades || 0;
-      averageMetrics.winRate = analytics.win_rate || 0;
+      averageMetrics.totalTrades = analytics.total_trades;
+      averageMetrics.winningTrades = analytics.winning_trades;
+      averageMetrics.losingTrades = analytics.losing_trades;
+      averageMetrics.winRate = analytics.win_rate;
       averageMetrics.lossRate =
         averageMetrics.totalTrades > 0
           ? (averageMetrics.losingTrades / averageMetrics.totalTrades) * 100
           : 0;
-      averageMetrics.averageProfit = analytics.average_win || 0;
-      averageMetrics.averageLoss = analytics.average_loss || 0;
+      averageMetrics.averageProfit = analytics.average_win;
+      averageMetrics.averageLoss = analytics.average_loss;
     }
 
     const metaStats = new MetaStats();

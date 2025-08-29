@@ -307,7 +307,7 @@ export interface OpenPositionsResponse {
   timestamp: string | null;
 }
 
-// Respuesta para listClosedPositions (deals/user/{login})
+// Respuesta para listClosedPositions (deals/user/{login}) - Transformada en posiciones cerradas
 export interface ClosedPositionsResponse {
   success: boolean;
   message: string;
@@ -319,14 +319,18 @@ export interface ClosedPositionsResponse {
       position_id: number;
       login: number;
       symbol: string;
-      action: number;
+      action: string;
       action_name: string;
       volume: number;
-      price: number;
+      price_open: number;
+      price_close: number;
+      time_open: string;
+      time_close: string;
+      duration_seconds: number;
       profit: number;
       commission: number;
       swap: number;
-      time: string;
+      net_profit: number;
       comment: string;
       group: string;
       email: string;
@@ -476,39 +480,39 @@ export interface PositionsAtRiskResponse {
 }
 
 // Respuesta para statsProp
-export interface StatsPropResponse {
-  success: boolean;
-  message: string;
-  data: {
-    logins: (string | number)[];
-    model: string;
-    statistics: {
-      [login: string]: {
-        balance: number;
-        equity: number;
-        profit: number;
-        margin: number;
-        free_margin: number;
-        margin_level: number;
-        total_trades: number;
-        winning_trades: number;
-        losing_trades: number;
-        win_rate: number;
-        profit_factor: number;
-        max_drawdown: number;
-        current_drawdown: number;
-      };
-    };
-    summary: {
-      total_accounts: number;
-      total_profit: number;
-      average_profit: number;
-      total_trades: number;
-      overall_win_rate: number;
-    };
-  };
-  timestamp: string | null;
-}
+// export interface StatsPropResponse {
+//   success: boolean;
+//   message: string;
+//   data: {
+//     logins: (string | number)[];
+//     model: string;
+//     statistics: {
+//       [login: string]: {
+//         balance: number;
+//         equity: number;
+//         profit: number;
+//         margin: number;
+//         free_margin: number;
+//         margin_level: number;
+//         total_trades: number;
+//         winning_trades: number;
+//         losing_trades: number;
+//         win_rate: number;
+//         profit_factor: number;
+//         max_drawdown: number;
+//         current_drawdown: number;
+//       };
+//     };
+//     summary: {
+//       total_accounts: number;
+//       total_profit: number;
+//       average_profit: number;
+//       total_trades: number;
+//       overall_win_rate: number;
+//     };
+//   };
+//   timestamp: string | null;
+// }
 
 // Respuesta para trading/analytics/profitability
 export interface ProfitabilityAnalyticsResponse {
@@ -612,7 +616,6 @@ export interface CreateAccountResponse {
 }
 
 //users/{login}
-
 
 // {
 //   "success": true,

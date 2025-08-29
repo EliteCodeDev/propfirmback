@@ -1,7 +1,7 @@
 import { MigrationInterface,QueryRunner } from "typeorm";
 
 
-export class CoordenadasCertificadosMigration implements MigrationInterface {
+export class CoordenadasCertificados1700000000003 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner):Promise<void>{
         await queryRunner.query(`

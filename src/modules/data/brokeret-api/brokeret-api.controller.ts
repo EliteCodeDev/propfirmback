@@ -19,7 +19,6 @@ import { BrokeretApiClient } from './client/brokeret-api.client';
 import { CreationFazoClient } from './client/creation-fazo.client';
 import { GenericApiKeyGuard } from 'src/common/guards/generic-api-key.guard';
 import { ApiKeyService } from 'src/common/decorators/api-key-service.decorator';
-import { CreateUserDto } from './dto/create-user.dto';
 
 import { AuthDto } from './dto/auth.dto';
 import { CreateAccountDto } from './dto/create-account.dto';
@@ -33,7 +32,6 @@ import {
   CriticalUsersByMarginResponse,
   UsersByDrawdownResponse,
   PositionsAtRiskResponse,
-  StatsPropResponse,
 } from './types/response.type';
 import { ListClosedPositionsDto } from './dto/list-closed-positions.dto';
 import { BalanceAccountDto } from './dto/balance.dto';

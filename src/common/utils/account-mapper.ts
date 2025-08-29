@@ -1,10 +1,4 @@
-import {
-  Account,
-  Balance,
-  MetaStats,
-
-  PositionsClassType,
-} from './account';
+import { Account, Balance, MetaStats, PositionsClassType } from './account';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-details.entity';
 import { BrokerAccount } from 'src/modules/broker-accounts/entities/broker-account.entity';
@@ -79,6 +73,7 @@ export function mapChallengeToAccount(challenge: Challenge): Account {
     challenge.brokerAccount.brokerAccountID,
     challenge.brokerAccount.login,
   );
+  account.challengeId = challenge.challengeID;
   account.status = challenge.status;
   // Configurar fechas - asegurar que sean objetos Date válidos
   account.createDateTime = challenge.startDate

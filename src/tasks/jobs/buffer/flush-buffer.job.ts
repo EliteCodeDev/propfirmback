@@ -48,9 +48,9 @@ export class FlushBufferJob {
           }
 
           const snapshot = JSON.parse(JSON.stringify(current));
-          this.logger.debug(
-            `FlushBufferJob: flush de ${login} - snapshot: ${JSON.stringify(snapshot)}`,
-          );
+          // this.logger.debug(
+          //   `FlushBufferJob: flush de ${login} - snapshot: ${JSON.stringify(snapshot)}`,
+          // );
           // 2) Resolver challenge activo por login de broker account
           const challenge = await this.challengeRepo
             .createQueryBuilder('c')
@@ -82,6 +82,9 @@ export class FlushBufferJob {
               ? new Date(snapshot.lastUpdate)
               : new Date(),
           };
+          this.logger.debug(
+            `GAAAAFlushBufferJob: flush de ${login} - payload: ${JSON.stringify(payload)}`,
+          );
           const details = this.detailsRepo.create(payload);
 
           await this.detailsRepo.save(details);
