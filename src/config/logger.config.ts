@@ -46,74 +46,78 @@ export const loggerConfig = registerAs('logger', () => {
   );
 
   const transports: winston.transport[] = [];
+  
+  // Variable de entorno para desactivar logs de archivo
+  const disableFileLogging = process.env.DISABLE_FILE_LOGGING === 'true';
 
-  // Console para desarrollo
-  if (isDevelopment) {
+  // Console transport (siempre activo)
+  transports.push(
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    })
+  );
+
+  // Solo agregar file transports si no están desactivados
+  if (!disableFileLogging) {
+    // Log general de la aplicación
     transports.push(
-      new winston.transports.Console({
-        format: winston.format.combine(
-          winston.format.colorize(),
-          winston.format.simple()
-        )
+      new DailyRotateFile({
+        filename: path.join(logDir, 'app-%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '20m',
+        maxFiles: '14d',
+        format: baseFormat
+      })
+    );
+
+    // Log solo para errores
+    transports.push(
+      new DailyRotateFile({
+        filename: path.join(logDir, 'error-%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        level: 'error',
+        maxSize: '10m',
+        maxFiles: '30d',
+        format: baseFormat
+      })
+    );
+
+    // Log específico para jobs
+    transports.push(
+      new DailyRotateFile({
+        filename: path.join(logDir, 'jobs-%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '15m',
+        maxFiles: '7d',
+        format: baseFormat
+      })
+    );
+
+    // Log específico para módulos
+    transports.push(
+      new DailyRotateFile({
+        filename: path.join(logDir, 'modules-%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '15m',
+        maxFiles: '7d',
+        format: baseFormat
+      })
+    );
+
+    // Log especial para buffer timeline (ligero y efectivo)
+    transports.push(
+      new DailyRotateFile({
+        filename: path.join(logDir, 'buffer-timeline-%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '10m',
+        maxFiles: '14d',
+        format: bufferTimelineFormat
       })
     );
   }
-
-  // Log general de la aplicación
-  transports.push(
-    new DailyRotateFile({
-      filename: path.join(logDir, 'app-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxFiles: '14d',
-      format: baseFormat
-    })
-  );
-
-  // Log solo para errores
-  transports.push(
-    new DailyRotateFile({
-      filename: path.join(logDir, 'error-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      level: 'error',
-      maxSize: '10m',
-      maxFiles: '30d',
-      format: baseFormat
-    })
-  );
-
-  // Log específico para jobs
-  transports.push(
-    new DailyRotateFile({
-      filename: path.join(logDir, 'jobs-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '15m',
-      maxFiles: '7d',
-      format: baseFormat
-    })
-  );
-
-  // Log específico para módulos
-  transports.push(
-    new DailyRotateFile({
-      filename: path.join(logDir, 'modules-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '15m',
-      maxFiles: '7d',
-      format: baseFormat
-    })
-  );
-
-  // Log especial para buffer timeline (ligero y efectivo)
-  transports.push(
-    new DailyRotateFile({
-      filename: path.join(logDir, 'buffer-timeline-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '10m',
-      maxFiles: '14d',
-      format: bufferTimelineFormat
-    })
-  );
 
   return {
     level: process.env.LOG_LEVEL || 'info',
@@ -126,6 +130,31 @@ export const loggerConfig = registerAs('logger', () => {
 // Configuraciones específicas para diferentes categorías
 export const createCategoryLogger = (category: string) => {
   const logDir = process.env.LOG_DIR || './logs';
+  const disableFileLogging = process.env.DISABLE_FILE_LOGGING === 'true';
+  
+  const transports: winston.transport[] = [];
+  
+  // Console transport (siempre activo)
+  transports.push(
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    })
+  );
+  
+  // Solo agregar file transport si no está desactivado
+  if (!disableFileLogging) {
+    transports.push(
+      new DailyRotateFile({
+        filename: path.join(logDir, `${category}-%DATE%.log`),
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '10m',
+        maxFiles: '7d'
+      })
+    );
+  }
   
   return winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
@@ -141,13 +170,6 @@ export const createCategoryLogger = (category: string) => {
         return logMessage;
       })
     ),
-    transports: [
-      new DailyRotateFile({
-        filename: path.join(logDir, `${category}-%DATE%.log`),
-        datePattern: 'YYYY-MM-DD',
-        maxSize: '10m',
-        maxFiles: '7d'
-      })
-    ]
+    transports
   });
 };
