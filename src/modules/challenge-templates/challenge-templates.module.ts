@@ -14,6 +14,9 @@ import {
   RelationStage,
   StageRule,
   StageParameter,
+  Addon,
+  ChallengeAddon,
+  RelationAddon,
 } from './entities';
 @Module({
   imports: [
@@ -27,6 +30,9 @@ import {
       RelationStage,
       StageRule,
       StageParameter,
+      Addon,
+      ChallengeAddon,
+      RelationAddon,
     ]),
   ],
   controllers: [ChallengeTemplatesController],

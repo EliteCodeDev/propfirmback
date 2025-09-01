@@ -1,2 +1,2 @@
-export * from './challenge-balance.entity';
-export * from './relation-balance.entity';
+export { ChallengeBalance} from './challenge-balance.entity';
+export { RelationBalance} from './relation-balance.entity';

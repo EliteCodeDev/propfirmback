@@ -1,23 +1,20 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
   JoinColumn,
+  PrimaryColumn
 } from 'typeorm';
-import { ChallengeAddon } from './challenge-addon.entity';
+import { Addon } from './addon.entity';
 import { ChallengeRelation } from '../challenge-relation.entity';
 
 @Entity('RelationAddon')
 export class RelationAddon {
-  @PrimaryGeneratedColumn('uuid')
-  relationAddonID: string;
 
-  @Column({ type: 'uuid' })
+  @PrimaryColumn('uuid')
   addonID: string;
 
-  @Column({ type: 'uuid' })
+  @PrimaryColumn('uuid')
   relationID: string;
 
   @Column({ type: 'float', nullable: true, default: 0 })
@@ -36,9 +33,9 @@ export class RelationAddon {
   wooID: number;
 
   // Relations
-  @ManyToOne(() => ChallengeAddon, (addon) => addon.relationAddons)
+  @ManyToOne(() => Addon, (addon) => addon.relationAddons)
   @JoinColumn({ name: 'addonID' })
-  addon: ChallengeAddon;
+  addon: Addon;
 
   @ManyToOne(() => ChallengeRelation, (relation) => relation.addons)
   @JoinColumn({ name: 'relationID' })
