@@ -21,4 +21,11 @@ export class MailerController {
     }
     return { error: 'Either html or template must be provided' };
   }
+
+  @Post('send-admin')
+  @Auth('admin')
+  @ApiOperation({ summary: 'Send a styled admin email using company branding' })
+  async sendAdmin(@Body() dto: { to: string; subject: string; title?: string; body: string }) {
+    return this.mailerService.sendAdminMail(dto);
+  }
 }
