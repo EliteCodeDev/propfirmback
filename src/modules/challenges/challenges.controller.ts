@@ -273,4 +273,17 @@ export class ChallengesController {
       disapproveChallengeDto.observation,
     );
   }
+
+  @Post(':id/send-credentials')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Send challenge credentials via email' })
+  @ApiResponse({
+    status: 200,
+    description: 'Credentials sent successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Challenge not found' })
+  sendCredentials(@Param('id') id: string) {
+    return this.challengesService.sendChallengeCredentials(id);
+  }
 }

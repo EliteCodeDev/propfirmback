@@ -23,6 +23,7 @@ import { MailerService } from '../mailer/mailer.service';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { ConfigService } from '@nestjs/config';
+import { StylesService } from '../styles/styles.service';
 import {
   ChallengeStatus,
   VerificationStatus,
@@ -44,6 +45,7 @@ export class ChallengesService {
     private mailerService: MailerService,
     private bufferService: BufferService,
     private configService: ConfigService,
+    private stylesService: StylesService,
     private dataSource: DataSource,
   ) {}
 
@@ -307,7 +309,7 @@ export class ChallengesService {
         startDate: new Date(),
       });
 
-      // Enviar email con credenciales de la nueva cuenta
+      // Enviar email de aprobación con credenciales de la nueva cuenta
       const user = challenge.user;
       const challengeBalance = relation.balances.find(
         (b) => Number(b.balance) === Number(challenge.dynamicBalance),
@@ -315,19 +317,23 @@ export class ChallengesService {
 
       await this.mailerService.sendMail({
         to: user.email,
-        subject: 'New Phase Challenge Credentials',
-        template: 'challenge-credentials',
+        subject: 'Challenge Approved - Next Phase Credentials',
+        template: 'challenge-approved',
         context: {
+          object: 'Challenge Approved',
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
           email: user.email,
-          challenge_type: relation.plan.name,
-          Account_size: challengeBalance?.balance || challenge.dynamicBalance,
-          login_details: {
-            login: newBrokerAccount.login,
-            password: newBrokerAccount.password,
-            server: newBrokerAccount.server,
-            platform: newBrokerAccount.platform,
-          },
+          old_login: challenge.brokerAccount?.login || 'N/A',
+          login: newBrokerAccount.login,
+          password: newBrokerAccount.password,
+          server: newBrokerAccount.server,
+          account_size: challengeBalance?.balance?.balance || challenge.dynamicBalance,
+          profit_target: challengeBalance?.balance?.balance || 'N/A',
+          currentYear: new Date().getFullYear(),
+          logoUrl: this.configService.get<string>('app.logoUrl') || '',
           landingUrl: this.configService.get<string>('app.clientUrl'),
+          certificateUrl: `${this.configService.get<string>('app.clientUrl')}/certificates/${challenge.challengeID}`,
         },
       });
 
@@ -401,14 +407,16 @@ export class ChallengesService {
       await this.mailerService.sendMail({
         to: challenge.user.email,
         subject: 'Challenge Not Approved - Review Required',
-        template: 'challenge-disapproved',
+        template: 'challenge-not-approved',
         context: {
           email: challenge.user.email,
-          challengeType: relation.plan.name,
-          accountSize: challengeBalance?.balance || challenge.dynamicBalance,
-          reviewDate: new Date().toLocaleDateString(),
-          observation: observation || null,
+          challenge_type: relation.plan.name,
+          account_size: challengeBalance?.balance || challenge.dynamicBalance,
+          challenge_id: challenge.challengeID,
+          disapproval_reason: observation || 'No specific reason provided',
+          logoUrl: this.configService.get<string>('app.logoUrl') || '',
           landingUrl: this.configService.get<string>('app.clientUrl'),
+          new_challenge_url: `${this.configService.get<string>('app.clientUrl')}/challenges/new`,
         },
       });
 
@@ -617,5 +625,79 @@ export class ChallengesService {
   async removeChallengeDetails(challengeID: string): Promise<void> {
     const challengeDetails = await this.findChallengeDetails(challengeID);
     await this.challengeDetailsRepository.remove(challengeDetails);
+  }
+
+  async sendChallengeCredentials(id: string): Promise<{ message: string }> {
+    // Buscar el challenge con todas las relaciones necesarias
+    const challenge = await this.challengeRepository.findOne({
+      where: { challengeID: id },
+      relations: ['user', 'relation', 'brokerAccount'],
+    });
+
+    if (!challenge) {
+      throw new NotFoundException(`Challenge with ID ${id} not found`);
+    }
+
+    if (!challenge.brokerAccount) {
+      throw new NotFoundException('No broker account found for this challenge');
+    }
+
+    // Obtener información del challenge para el email
+    const relation =
+      await this.challengeTemplatesService.findCompleteRelationChain(
+        challenge.relationID,
+      );
+    const challengeBalance = relation.balances.find(
+      (b) => Number(b.balance?.balance) === Number(challenge.dynamicBalance),
+    );
+
+    // Obtener el estilo activo de la base de datos
+    const activeStyle = await this.stylesService.findActiveStyle();
+    
+    // Valores por defecto si no hay estilo activo
+    const defaultStyle = {
+      primaryColor: '#007bff',
+      secondaryColor: '#6c757d',
+      tertiaryColor: '#28a745',
+      banner: this.configService.get<string>('DEFAULT_BANNER_URL') || '',
+    };
+
+    // Asegurar que siempre tengamos los valores de color
+    const styleData = {
+      primaryColor: activeStyle?.primaryColor || defaultStyle.primaryColor,
+      secondaryColor: activeStyle?.secondaryColor || defaultStyle.secondaryColor,
+      tertiaryColor: activeStyle?.tertiaryColor || defaultStyle.tertiaryColor,
+      banner: activeStyle?.banner || defaultStyle.banner,
+    };
+
+    // Log para depuración
+    console.log('Active Style:', activeStyle);
+    console.log('Style Data being sent to template:', styleData);
+
+    // Enviar email con credenciales usando la plantilla
+    await this.mailerService.sendMail({
+      to: challenge.user.email,
+      subject: 'Challenge Credentials - Access Information',
+      template: 'challenge-credentials',
+      context: {
+        ...styleData,
+        object: 'Challenge Credentials',
+        email: challenge.user.email,
+        subject: 'Challenge Credentials - Access Information',
+        challenge_type: relation.plan.name,
+        account_size: challengeBalance?.balance?.balance || challenge.dynamicBalance,
+        platform: challenge.brokerAccount.platform,
+        login_details: {
+          login: challenge.brokerAccount.login,
+          password: challenge.brokerAccount.password,
+          server: challenge.brokerAccount.server,
+          platform: challenge.brokerAccount.platform,
+        },
+        logoUrl: this.configService.get<string>('app.logoUrl') || '',
+        landingUrl: this.configService.get<string>('app.clientUrl'),
+      },
+    });
+
+    return { message: 'Credentials sent successfully' };
   }
 }

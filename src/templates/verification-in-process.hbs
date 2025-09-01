@@ -27,7 +27,7 @@
       margin-bottom:20px; 
     }
     .title { 
-      color:#E6B800; 
+      color:#007bff; 
       font-size:24px; 
       font-weight:bold; 
       margin-bottom:30px; 
@@ -49,7 +49,7 @@
       line-height:1.6; 
     }
     .highlight { 
-      color:#B8860B; 
+      color:#007bff; 
       font-weight:bold; 
     }
     .footer-text { 
@@ -59,7 +59,7 @@
       text-align:center; 
     }
     .company-name { 
-      color:#E6B800; 
+      color:#007bff; 
       font-weight:bold; 
     }
     .copyright { 
@@ -72,7 +72,9 @@
 </head>
 <body>
   <div class="email-container">
-    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+    {{#if banner}}
+    <img src="{{banner}}" alt="FundingHero Banner" class="banner">
+    {{/if}}
 
     <div class="title">Verificación en Proceso</div>
     <div class="user-greeting">Hola {{firstName}} {{lastName}}</div>
@@ -89,7 +91,7 @@
     </div>
 
     <div class="copyright">
-      © {{currentYear}} <span class="company-name">FundingHero</span>. Todos los derechos reservados.
+      © 2024 <span class="company-name">FundingHero</span>. Todos los derechos reservados.
     </div>
   </div>
 </body>

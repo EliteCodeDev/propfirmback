@@ -27,7 +27,7 @@
       margin-bottom:20px; 
     }
     .title { 
-      color:#E6B800; 
+      color:#007bff; 
       font-size:24px; 
       font-weight:bold; 
       margin-bottom:20px; 
@@ -46,7 +46,7 @@
     }
     .certificate-message { 
       background:#f8f9fa; 
-      border-left:4px solid #E6B800; 
+      border-left:4px solid #007bff; 
       padding:12px 15px; 
       margin-bottom:20px; 
       color:#333; 
@@ -63,7 +63,7 @@
       background:#fff; 
       padding:15px; 
       border-radius:6px; 
-      border:2px solid #E6B800; 
+      border:2px solid #007bff; 
       margin-bottom:20px; 
     }
     .status-info { 
@@ -72,17 +72,17 @@
       margin-bottom:8px; 
     }
     .highlight { 
-      color:#E6B800; 
+      color:#007bff; 
       font-weight:bold; 
     }
     .amount-highlight { 
-      color:#B8860B; 
+      color:#6c757d; 
       font-weight:bold; 
       font-size:18px; 
     }
     .action-button { 
-      background:#E6B800; 
-      color:#fff; 
+      background:#007bff; 
+      color:#ffffff; 
       padding:12px 20px; 
       border:none; 
       border-radius:6px; 
@@ -97,7 +97,8 @@
       box-sizing:border-box;
     }
     .action-button:hover { 
-      background:#B8860B; 
+      background:#0056b3; 
+      color:#ffffff; 
     }
     .certificate-button { 
       margin-top:10px; 
@@ -108,7 +109,7 @@
       margin-top:20px; 
     }
     .company-name { 
-      color:#E6B800; 
+      color:#007bff; 
       font-weight:bold; 
     }
     .copyright { 
@@ -121,7 +122,9 @@
 </head>
 <body>
   <div class="email-container">
-    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+    {{#if banner}}
+    <img src="{{banner}}" alt="FundingHero Banner" class="banner">
+    {{/if}}
     <div class="title">{{object}}</div>
     <div class="user-greeting">Hello {{firstName}} {{lastName}}</div>
     <div class="main-message">Congratulations, your challenge has been approved!</div>

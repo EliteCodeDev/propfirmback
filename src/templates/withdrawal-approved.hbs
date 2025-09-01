@@ -54,11 +54,11 @@
       background:#fff; 
       padding:15px; 
       border-radius:6px; 
-      border:2px solid #E6B800; 
+      border:2px solid #007bff; 
       margin:20px 0; 
     }
     .highlight { 
-      color:#E6B800; 
+      color:#007bff; 
       font-weight:bold; 
     }
     .status-info { 
@@ -67,7 +67,7 @@
       margin-bottom:8px; 
     }
     .amount-highlight { 
-      color:#B8860B; 
+      color:#6c757d; 
       font-weight:bold; 
       font-size:18px; 
     }
@@ -83,14 +83,16 @@
       text-align:center; 
     }
     .company-name { 
-      color:#E6B800; 
+      color:#007bff; 
       font-weight:bold; 
     }
   </style>
 </head>
 <body>
   <div class="email-container">
-    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+    {{#if banner}}
+    <img src="{{banner}}" alt="FundingHero Banner" class="banner">
+    {{/if}}
     
     <div class="title">Withdrawal Approved</div>
     

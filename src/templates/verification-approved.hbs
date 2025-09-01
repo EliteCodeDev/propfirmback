@@ -27,7 +27,7 @@
       margin-bottom:20px; 
     }
     .title { 
-      color:#28a745; 
+      color:#007bff; 
       font-size:24px; 
       font-weight:bold; 
       margin-bottom:30px; 
@@ -59,8 +59,8 @@
       width: 200px;
       margin: 30px auto;
       padding: 12px 24px;
-      background: #28a745;
-      color: white;
+      background: #007bff;
+      color: #ffffff;
       text-decoration: none;
       border-radius: 6px;
       text-align: center;
@@ -78,6 +78,9 @@
 </head>
 <body>
   <div class="email-container">
+    {{#if banner}}
+    <img src="{{banner}}" alt="FundingHero Banner" class="banner">
+    {{/if}}
     <div class="title">¡Verificación Aprobada!</div>
     
     <div class="success-icon">✅</div>

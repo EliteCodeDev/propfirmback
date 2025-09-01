@@ -26,7 +26,7 @@
         margin-bottom: 20px;
       }
       .title {
-        color: #e6b800;
+        color: #007bff;
         font-size: 24px;
         font-weight: bold;
         margin-bottom: 30px;
@@ -49,18 +49,18 @@
       }
       .challenge-info {
         background: #f8f9fa;
-        border-left: 4px solid #e6b800;
+        border-left: 4px solid #007bff;
         padding: 15px;
         margin: 20px 0;
         border-radius: 0 6px 6px 0;
       }
       .highlight {
-        color: #b8860b;
+        color: #007bff;
         font-weight: bold;
       }
       .action-button {
-        background: #e6b800;
-        color: #fff;
+        background: #007bff;
+        color: #ffffff;
         padding: 12px 20px;
         border: none;
         border-radius: 6px;
@@ -75,7 +75,8 @@
         box-sizing: border-box;
       }
       .action-button:hover {
-        background: #b8860b;
+        background: #0056b3;
+        color: #ffffff;
       }
       .footer-text {
         color: #666;
@@ -84,7 +85,7 @@
         text-align: center;
       }
       .company-name {
-        color: #e6b800;
+        color: #007bff;
         font-weight: bold;
       }
       .copyright {
@@ -97,8 +98,8 @@
   </head>
   <body>
     <div class='email-container'>
-      {{#if logoUrl}}
-        <img src='{{logoUrl}}' alt='FundingHero Banner' class='banner' />
+      {{#if banner}}
+        <img src='{{banner}}' alt='FundingHero Banner' class='banner' />
       {{/if}}
 
       <div class='title'>🔐 Verificación Requerida</div>
@@ -140,7 +141,7 @@
       </div>
 
       <div class='copyright'>
-        © 2025
+        © 2024
         <span class='company-name'>FundingHero</span>. Todos los derechos
         reservados.
       </div>

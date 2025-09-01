@@ -1,140 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Challenge Not Approved</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #e74c3c;
-            margin-bottom: 10px;
-        }
-        .title {
-            color: #e74c3c;
-            font-size: 28px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .highlight {
-            background-color: #fff5f5;
-            padding: 15px;
-            border-left: 4px solid #e74c3c;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-        .observation {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border: 1px solid #dee2e6;
-        }
-        .observation-title {
-            font-weight: bold;
-            color: #495057;
-            margin-bottom: 10px;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 30px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin: 10px 5px;
-            text-align: center;
-        }
-        .button:hover {
-            background-color: #0056b3;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            color: #666;
-            font-size: 14px;
-        }
-        .actions {
-            text-align: center;
-            margin: 30px 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenge Not Approved – FundingHero</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; color: #333; }
+    .email-container { max-width: 400px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06); }
+    .banner { width: 100%; height: auto; border-radius: 8px 8px 0 0; margin-bottom: 20px; }
+    .greeting { font-size: 16px; margin-bottom: 10px; }
+    .title { color: #dc3545; font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+    .challenge-type { color: #333; font-size: 16px; margin-bottom: 20px; font-weight: bold; }
+    .description { color: #666; font-size: 14px; line-height: 1.4; margin-bottom: 20px; }
+    .challenge-info { background: #fff; padding: 15px; border-radius: 6px; border: 2px solid #dc3545; margin-bottom: 20px; }
+    .info-item { color: #333; font-size: 14px; margin-bottom: 8px; }
+    .info-value { color: #6c757d; font-weight: bold; }
+    .observation { background: #fff; padding: 15px; border-radius: 6px; border: 2px solid #007bff; margin-bottom: 20px; }
+    .observation-title { color: #6c757d; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
+    .observation-content { color: #333; font-size: 12px; line-height: 1.4; }
+    .action-button { background: #007bff; color: #ffffff; padding: 12px 20px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; width: 100%; text-align: center; text-decoration: none; display: block; cursor: pointer; box-sizing: border-box; margin-bottom: 10px; }
+    .action-button:hover { background: #0056b3; color: #ffffff; }
+    .footer { color: #666; font-size: 12px; text-align: center; }
+    .company-name { color: #007bff; font-weight: bold; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">PropFirm Platform</div>
-        </div>
-        
-        <h1 class="title">Challenge Not Approved</h1>
-        
-        <div class="content">
-            <p>Dear Trader,</p>
-            
-            <p>We regret to inform you that your <strong>{{challengeType}}</strong> challenge has not been approved at this time.</p>
-            
-            <div class="highlight">
-                <p><strong>Challenge Status:</strong> Not Approved</p>
-                <p><strong>Challenge Type:</strong> {{challengeType}}</p>
-                <p><strong>Account Size:</strong> ${{accountSize}}</p>
-                <p><strong>Review Date:</strong> {{reviewDate}}</p>
-            </div>
-            
-            {{#if observation}}
-            <div class="observation">
-                <div class="observation-title">Review Comments:</div>
-                <p>{{observation}}</p>
-            </div>
-            {{/if}}
-            
-            <p>Don't let this discourage you! This is part of the learning process, and we encourage you to:</p>
-            
-            <ul>
-                <li>Review your trading strategy and risk management</li>
-                <li>Analyze your trading performance during the challenge</li>
-                <li>Consider starting a new challenge when you're ready</li>
-                <li>Reach out to our support team if you have any questions</li>
-            </ul>
-            
-            <p>Remember, successful trading requires patience, discipline, and continuous improvement. We believe in your potential and look forward to seeing your progress in future challenges.</p>
-        </div>
-        
-        <div class="actions">
-            <a href="{{landingUrl}}/challenges" class="button">Start New Challenge</a>
-            <a href="{{landingUrl}}/support" class="button">Contact Support</a>
-        </div>
-        
-        <div class="footer">
-            <p>Best regards,<br>The PropFirm Team</p>
-            <p>If you have any questions, please don't hesitate to contact our support team.</p>
-            <p><small>This is an automated message. Please do not reply to this email.</small></p>
-        </div>
+  <div class="email-container">
+    {{#if banner}}
+    <img src="{{banner}}" alt="FundingHero Banner" class="banner" />
+    {{/if}}
+
+    <div class="greeting">Estimado trader,</div>
+    <div class="title">Challenge Not Approved</div>
+    <div class="challenge-type">{{challengeType}} – ${{accountSize}}</div>
+    <div class="description">Lamentamos informarte que tu challenge no ha sido aprobado en esta ocasión.</div>
+    
+    <div class="challenge-info">
+      <div class="info-item"><strong>Status:</strong>
+        <span class="info-value">Not Approved</span></div>
+      <div class="info-item"><strong>Challenge Type:</strong>
+        <span class="info-value">{{challengeType}}</span></div>
+      <div class="info-item"><strong>Account Size:</strong>
+        <span class="info-value">${{accountSize}}</span></div>
+      <div class="info-item"><strong>Review Date:</strong>
+        <span class="info-value">{{reviewDate}}</span></div>
     </div>
+
+    {{#if observation}}
+    <div class="observation">
+      <div class="observation-title">Review Comments:</div>
+      <div class="observation-content">{{observation}}</div>
+    </div>
+    {{/if}}
+
+    <div class="description">
+      No te desanimes! Esto es parte del proceso de aprendizaje. Te recomendamos:
+      <br><br>
+      • Revisar tu estrategia de trading y gestión de riesgo<br>
+      • Analizar tu rendimiento durante el challenge<br>
+      • Considerar iniciar un nuevo challenge cuando estés listo<br>
+      • Contactar a nuestro equipo de soporte si tienes preguntas
+    </div>
+
+    <a href="{{landingUrl}}/challenges" class="action-button" target="_blank">Start New Challenge</a>
+    <a href="{{landingUrl}}/support" class="action-button" target="_blank">Contact Support</a>
+
+    <div class="footer">
+      Best regards,<br />
+      <span class="company-name">FundingHero</span> Team
+    </div>
+  </div>
 </body>
 </html>

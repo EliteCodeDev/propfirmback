@@ -54,11 +54,11 @@
       background:#fff; 
       padding:15px; 
       border-radius:6px; 
-      border:2px solid #E6B800; 
+      border:2px solid #007bff; 
       margin:20px 0; 
     }
     .highlight { 
-      color:#E6B800; 
+      color:#007bff; 
       font-weight:bold; 
     }
     .status-info { 
@@ -67,7 +67,7 @@
       margin-bottom:8px; 
     }
     .amount-highlight { 
-      color:#B8860B; 
+      color:#6c757d; 
       font-weight:bold; 
       font-size:18px; 
     }
@@ -98,8 +98,8 @@
       line-height:1.6; 
     }
     .action-button { 
-      background:#E6B800; 
-      color:#fff; 
+      background:#007bff; 
+      color:#ffffff; 
       padding:12px 20px; 
       border:none; 
       border-radius:6px; 
@@ -114,11 +114,12 @@
       box-sizing:border-box; 
     }
     .action-button:hover { 
-      background:#B8860B; 
+      background:#0056b3; 
+      color:#ffffff; 
     }
     .action-button-secondary { 
-      background:#DAA520; 
-      color:#fff; 
+      background:#6c757d; 
+      color:#ffffff; 
       padding:12px 20px; 
       border:none; 
       border-radius:6px; 
@@ -144,14 +145,16 @@
       text-align:center; 
     }
     .company-name { 
-      color:#E6B800; 
+      color:#007bff; 
       font-weight:bold; 
     }
   </style>
 </head>
 <body>
   <div class="email-container">
-    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+    {{#if banner}}
+    <img src="{{banner}}" alt="FundingHero Banner" class="banner">
+    {{/if}}
     
     <div class="title">Challenge Not Approved</div>
     

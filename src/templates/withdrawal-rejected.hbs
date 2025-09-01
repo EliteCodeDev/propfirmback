@@ -98,7 +98,9 @@
 </head>
 <body>
   <div class="email-container">
-    <img src="{{logoUrl}}" alt="FundingHero Banner" class="banner">
+    {{#if banner}}
+    <img src="{{banner}}" alt="FundingHero Banner" class="banner">
+    {{/if}}
     
     <div class="title">Withdrawal Rejected</div>
     

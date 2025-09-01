@@ -67,29 +67,43 @@
       margin-bottom: 10px;
     }
     .cta-button {
-      display: block;
-      width: 200px;
-      margin: 30px auto;
-      padding: 12px 24px;
       background: #007bff;
-      color: white;
-      text-decoration: none;
+      color: #ffffff;
+      padding: 12px 20px;
+      border: none;
       border-radius: 6px;
-      text-align: center;
+      font-size: 16px;
       font-weight: bold;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      cursor: pointer;
+      box-sizing: border-box;
+      margin: 20px 0;
+    }
+    .cta-button:hover {
+      background: #0056b3;
+      color: #ffffff;
     }
     .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #eee;
-      text-align: center;
-      font-size: 12px;
       color: #666;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .company-name {
+      color: #007bff;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <div class="email-container">
+    {{#if banner}}
+    <img src="{{banner}}" alt="FundingHero Banner" class="banner">
+    {{/if}}
+    
     <div class="title">Verificación Rechazada</div>
     
     <div class="error-icon">❌</div>
@@ -118,8 +132,9 @@
     </div>
     
     <div class="footer">
-      <p>© {{currentYear}} FundingHero. Todos los derechos reservados.</p>
-      <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+      Best regards,<br>
+      <span class="company-name">FundingHero</span> Team<br><br>
+      © 2024 <span class="company-name">FundingHero</span>. Todos los derechos reservados.
     </div>
   </div>
 </body>

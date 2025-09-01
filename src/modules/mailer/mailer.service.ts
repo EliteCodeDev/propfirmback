@@ -29,6 +29,28 @@ export class MailerService {
   }
 
   async sendMail({ to, subject, template, context }) {
+    // Obtener el estilo activo de la base de datos
+    const activeStyle = await this.stylesService.findActiveStyle();
+    
+    // Valores por defecto si no hay estilo activo
+    const defaultStyle = {
+      primaryColor: '#007bff',
+      secondaryColor: '#6c757d',
+      tertiaryColor: '#28a745',
+      banner: this.configService.get<string>('DEFAULT_BANNER_URL') || '',
+      companyName: 'FundingHero',
+      landingURL: 'https://propfirm.com',
+    };
+
+    const styleData = activeStyle || defaultStyle;
+
+    // Combinar el contexto proporcionado con los datos de estilo
+    const enrichedContext = {
+      ...styleData,
+      currentYear: new Date().getFullYear(),
+      ...context, // El contexto proporcionado tiene prioridad
+    };
+
     const templatePath = path.join(
       process.cwd(),
       'src',
@@ -37,7 +59,7 @@ export class MailerService {
     );
     const templateString = fs.readFileSync(templatePath, 'utf-8');
     const compiledTemplate = handlebars.compile(templateString);
-    const html = compiledTemplate(context);
+    const html = compiledTemplate(enrichedContext);
 
     const mailOptions = {
       from: this.configService.get<string>('mailer.from'),

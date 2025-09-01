@@ -12,6 +12,7 @@ import { BrokerAccountsModule } from '../broker-accounts/broker-accounts.module'
 import { MailerModule } from '../mailer/mailer.module';
 import { BufferModule } from 'src/lib/buffer/buffer.module';
 import { ConfigModule } from '@nestjs/config';
+import { StylesModule } from '../styles/styles.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ConfigModule } from '@nestjs/config';
     MailerModule,
     BufferModule,
     ConfigModule,
+    StylesModule,
   ],
   controllers: [ChallengesController],
   providers: [ChallengesService],
