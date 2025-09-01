@@ -39,7 +39,7 @@ import { loggerConfig } from 'src/config/logger.config';
     // ActivateSmtApiJob,
     BufferLoaderJob,
     FlushBufferJob,
-    RulesEvaluationJob,
+    // RulesEvaluationJob,
     BufferDataUpdaterJob,
     UpdateDailyBalanceJob,
     CustomLoggerService,

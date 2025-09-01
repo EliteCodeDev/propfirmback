@@ -17,28 +17,28 @@ export class RulesEvaluationJob {
   @Cron('20,50 * * * * *')
   async evaluate() {
     const startTime = Date.now();
-    
+
     this.customLogger.logJob({
       jobName: 'RulesEvaluationJob',
       operation: 'evaluate_rules',
       status: 'started',
-      details: { trigger: 'scheduled' }
+      details: { trigger: 'scheduled' },
     });
-    
+
     try {
       const stats = this.bufferService.getStats();
       if (stats.bufferSize === 0) {
         this.logger.debug('Buffer vacío, saltando evaluación de reglas');
-        
+
         this.customLogger.logJob({
           jobName: 'RulesEvaluationJob',
           operation: 'evaluate_rules_empty',
           status: 'completed',
-          details: { 
+          details: {
             trigger: 'scheduled',
             buffer_size: 0,
-            duration_ms: Date.now() - startTime
-          }
+            duration_ms: Date.now() - startTime,
+          },
         });
         return;
       }
@@ -46,12 +46,12 @@ export class RulesEvaluationJob {
       this.logger.debug(
         `Iniciando evaluación de reglas para ${stats.bufferSize} cuentas`,
       );
-      
+
       this.customLogger.logJob({
         jobName: 'RulesEvaluationJob',
         operation: 'evaluate_rules_processing',
         status: 'in_progress',
-        details: { buffer_size: stats.bufferSize }
+        details: { buffer_size: stats.bufferSize },
       });
 
       // Obtener todas las entradas del buffer
@@ -104,9 +104,9 @@ export class RulesEvaluationJob {
       this.logger.debug(
         `RulesEvaluationJob completado: procesadas=${processedCount}/${stats.bufferSize}, validaciones_exitosas=${validationCount}`,
       );
-      
+
       const duration = Date.now() - startTime;
-      
+
       this.customLogger.logJob({
         jobName: 'RulesEvaluationJob',
         operation: 'evaluate_rules_success',
@@ -116,14 +116,14 @@ export class RulesEvaluationJob {
           duration_ms: duration,
           total_accounts: stats.bufferSize,
           processed_count: processedCount,
-          validation_count: validationCount
-        }
+          validation_count: validationCount,
+        },
       });
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       this.logger.error(`Error en RulesEvaluationJob:`, error);
-      
+
       this.customLogger.logJob({
         jobName: 'RulesEvaluationJob',
         operation: 'evaluate_rules_error',
@@ -131,8 +131,8 @@ export class RulesEvaluationJob {
         details: {
           trigger: 'scheduled',
           duration_ms: duration,
-          error: error?.message || error.toString()
-        }
+          error: error?.message || error.toString(),
+        },
       });
     }
   }
@@ -150,10 +150,10 @@ export class RulesEvaluationJob {
     try {
       const riskEvaluation = riskFunctions.riskEvaluation(account, riskParams);
 
-      this.logger.debug(
-        `Resultado de evaluación para cuenta ${account.login}:`,
-        riskEvaluation,
-      );
+      // this.logger.debug(
+      //   `Resultado de evaluación para cuenta ${account.login}:`,
+      //   riskEvaluation,
+      // );
       return riskEvaluation;
     } catch (error) {
       this.logger.error(
@@ -207,22 +207,6 @@ export class RulesEvaluationJob {
     }
     return challengeStatus;
   }
-
-  /**
-   * Obtiene los parámetros de riesgo por defecto
-   * TODO: Estos deberían venir de configuración o base de datos
-   */
-  private getDefaultRiskParams(): RiskParams {
-    return {
-      profitTarget: 8, // 8% profit target
-      dailyDrawdown: 5, // 5% daily drawdown
-      maxDrawdown: 10, // 10% max drawdown
-      lossPerTrade: 1, // 1% loss per trade
-      tradingDays: 5, // minimum 5 trading days
-      inactiveDays: 5, // maximum 5 consecutive inactive days
-    };
-  }
-
   /**
    * Mapea el resultado de evaluación de riesgo a RiskValidation
    * @param riskParams Resultado de la evaluación
