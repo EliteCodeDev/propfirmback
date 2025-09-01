@@ -5,16 +5,13 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
-  UseGuards,
+  Delete
 } from '@nestjs/common';
 import {
   ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
+  ApiOperation
 } from '@nestjs/swagger';
-import { ChallengeTemplatesService } from './challenge-templates.service';
+import { ChallengeTemplatesService } from '../services/challenge-templates.service';
 
 // DTOs
 
@@ -39,12 +36,9 @@ import {
   UpdateRelationStageDto,
   UpdateRelationBalanceDto,
   CreateRelationBalancesDto,
-} from './dto';
+} from '../dto';
 
 // Guards & Decorators
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Challenge Templates')
@@ -190,6 +184,11 @@ export class ChallengeTemplatesController {
   @ApiOperation({ summary: 'Get all challenge relations' })
   findAllRelations() {
     return this.challengeTemplatesService.findAllRelations();
+  }
+  @Get('relations-complete')
+  @ApiOperation({ summary: 'Get all challenge relations with complete chain' })
+  findAllRelationsComplete() {
+    return this.challengeTemplatesService.findAllRelationsComplete();
   }
 
   @Get('relations/:id')
@@ -461,8 +460,12 @@ export class ChallengeTemplatesController {
   }
 
   @Delete('relation-balances/by-relation/:relationId')
-  @ApiOperation({ summary: 'Delete all relation balances for a specific relation' })
+  @ApiOperation({
+    summary: 'Delete all relation balances for a specific relation',
+  })
   removeAllRelationBalancesByRelation(@Param('relationId') relationId: string) {
-    return this.challengeTemplatesService.removeAllRelationBalancesByRelation(relationId);
+    return this.challengeTemplatesService.removeAllRelationBalancesByRelation(
+      relationId,
+    );
   }
 }

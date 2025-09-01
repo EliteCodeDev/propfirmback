@@ -1,28 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { ChallengeRelation } from '../challenge-relation.entity';
+import { Entity, Column, OneToMany, ForeignKey, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 import { RelationAddon } from './relation-addon.entity';
+import { Addon } from "./addon.entity"
+import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 
-@Entity('ChallengeAddon')
+@Entity("ChallengeAddon")
 export class ChallengeAddon {
-  @PrimaryGeneratedColumn('uuid')
-  addonID: string;
 
-  @Column({ length: 100 })
-  name: string;
+    @PrimaryColumn('uuid')
+    addonID: string
 
-  @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+    @PrimaryColumn('uuid')
+    challengeID: string
 
-  @Column({ type: 'boolean', default: false })
-  hasDiscount: boolean;
+    @Column({ type: 'float', nullable: true, default: 0 })
+    price: number;
 
-  @Column({ type: 'float', nullable: true })
-  discount: number;
+    @Column({ type: 'boolean', default: true })
+    isActive: boolean;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
-  balance: number;
+    @Column({ type: 'boolean', default: false })
+    hasDiscount: boolean;
 
-  // Relations
-  @OneToMany(() => RelationAddon, (relationAddon) => relationAddon.addon)
-  relationAddons: RelationAddon[];
+    @Column({ type: 'float', nullable: true, default: 0 })
+    discount: number;
+
+    @Column({ type: 'float', nullable: true })
+    wooID: number;
+
+    @ManyToOne(() => Addon, (addon) => addon.challengeAddons)
+    @JoinColumn({name: "addonID"})
+    addon: Addon;
+
+    @ManyToOne(() => Challenge, (challenge) => challenge.addons)
+    @JoinColumn({name: "challengeID"})
+    challenge: Challenge;
+    
 }

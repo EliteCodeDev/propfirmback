@@ -15,6 +15,8 @@ import { Certificate } from '../../certificates/entities/certificate.entity';
 import { CustomerOrder } from '../../orders/entities/customer-order.entity';
 import { Withdrawal } from '../../withdrawals/entities/withdrawal.entity';
 import { ChallengeStatus } from 'src/common/enums/challenge-status.enum';
+import { ChallengeAddon } from 'src/modules/challenge-templates/entities/addons/challenge-addon.entity';
+
 @Entity('Challenge')
 export class Challenge {
   @PrimaryGeneratedColumn('uuid')
@@ -86,4 +88,7 @@ export class Challenge {
 
   @OneToMany(() => Withdrawal, (withdrawal) => withdrawal.challenge)
   withdrawals: Withdrawal[];
+
+  @OneToMany(() => ChallengeAddon, (addon) => addon.challenge)
+  addons: ChallengeAddon[];
 }

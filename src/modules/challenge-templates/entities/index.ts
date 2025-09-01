@@ -1,6 +1,7 @@
 // src/modules/challenge-templates/entities/index.ts
-export * from './challenge-category.entity';
-export * from './challenge-plan.entity';
-export * from './balance';
-export * from './challenge-relation.entity';
-export * from './stage/index';
+export { ChallengeCategory} from './challenge-category.entity';
+export { ChallengePlan } from './challenge-plan.entity';
+export { ChallengeBalance, RelationBalance } from './balance';
+export { ChallengeRelation } from './challenge-relation.entity';
+export * from './stage';
+export * from './addons';

@@ -1,4 +1,4 @@
-export * from './challenge-stage.entity';
-export * from './relation-stage.entity';
-export * from './stage-rule.entity';
-export * from './stage-parameter.entity';
+export { ChallengeStage} from './challenge-stage.entity';
+export { RelationStage } from './relation-stage.entity';
+export { StageRule } from './stage-rule.entity';
+export { StageParameter } from './stage-parameter.entity';
