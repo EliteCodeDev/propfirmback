@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ChallengeTemplatesController } from './challenge-templates.controller';
-import { ChallengeTemplatesService } from './challenge-templates.service';
+import { ChallengeTemplatesController } from './controllers/challenge-templates.controller';
+import { ChallengeTemplatesService } from './services/challenge-templates.service';
 
 // Entities
 import {

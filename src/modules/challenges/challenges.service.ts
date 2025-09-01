@@ -15,7 +15,7 @@ import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { ChallengeQueryDto } from './dto/challenge-query.dto';
 import { CreateChallengeDetailsDto } from './dto/create-challenge-details.dto';
 import { UpdateChallengeDetailsDto } from './dto/update-challenge-details.dto';
-import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
+import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
 import { VerificationService } from '../verification/verification.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { BrokerAccountsService } from '../broker-accounts/broker-accounts.service';
