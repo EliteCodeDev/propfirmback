@@ -13,7 +13,7 @@ import {
   RelationStage,
   StageRule,
   StageParameter,
-} from './entities';
+} from '../entities';
 // DTOs
 import {
   CreateChallengeCategoryDto,
@@ -36,7 +36,7 @@ import {
   UpdateRelationBalanceDto,
   CreateRelationBalancesDto,
   CreateRelationStagesDto,
-} from './dto';
+} from '../dto';
 
 @Injectable()
 export class ChallengeTemplatesService {

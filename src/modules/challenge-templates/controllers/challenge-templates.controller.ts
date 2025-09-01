@@ -5,16 +5,13 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
-  UseGuards,
+  Delete
 } from '@nestjs/common';
 import {
   ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
+  ApiOperation
 } from '@nestjs/swagger';
-import { ChallengeTemplatesService } from './challenge-templates.service';
+import { ChallengeTemplatesService } from '../services/challenge-templates.service';
 
 // DTOs
 
@@ -39,12 +36,9 @@ import {
   UpdateRelationStageDto,
   UpdateRelationBalanceDto,
   CreateRelationBalancesDto,
-} from './dto';
+} from '../dto';
 
 // Guards & Decorators
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Challenge Templates')

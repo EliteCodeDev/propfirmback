@@ -7,7 +7,7 @@ import { CreateCompleteOrderDto } from './dto/create-complete-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { MailerService } from '../mailer/mailer.service';
 import { ChallengesService } from '../challenges/challenges.service';
-import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
+import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
 import {
   createAccountResponse,
   SmtApiClient,
