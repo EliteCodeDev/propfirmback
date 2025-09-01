@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,14 +22,14 @@
     <div class="title">{{ title }}</div>
     <div class="main-message">
       {{#if userFirstName}}
-      Estimado {{userFirstName}},<br><br>
+  Dear {{userFirstName}},<br><br>
       {{else}}
-      Estimado usuario,<br><br>
+  Dear user,<br><br>
       {{/if}}
       {{{body}}}
     </div>
     <div class="footer-text">
-      © 2024 <span class="company-name">OnlyFunds</span>. Todos los derechos reservados.
+  © 2024 <span class="company-name">OnlyFunds</span>. All rights reserved.
     </div>
   </div>
 </body>
