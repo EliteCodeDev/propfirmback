@@ -33,7 +33,7 @@ import {
   mapChallengesToAccounts,
   mapChallengeToAccount,
 } from 'src/common/utils/account-mapper';
-import { ChallengeTemplatesService } from '../challenge-templates/challenge-templates.service';
+import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
 
 @ApiTags('Challenges')
 @ApiBearerAuth()

@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeRelation } from 'src/modules/challenge-templates/entities/challenge-relation.entity';
 import { StageParameter } from 'src/modules/challenge-templates/entities/stage/stage-parameter.entity';
-import { ChallengeTemplatesService } from 'src/modules/challenge-templates/challenge-templates.service';
+import { ChallengeTemplatesService } from 'src/modules/challenge-templates/services/challenge-templates.service';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { mapChallengesToAccounts } from 'src/common/utils/account-mapper';
 import { CustomLoggerService } from 'src/common/services/custom-logger.service';
