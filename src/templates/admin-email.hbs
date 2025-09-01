@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f5f5f5; color:#333; }
+    .email-container { max-width:600px; margin:0 auto; background:#fff; padding:20px; border-radius:8px; }
+    .banner { width:100%; height:auto; border-radius:8px 8px 0 0; margin-bottom:20px; }
+    .title { color:#333; font-size:24px; font-weight:bold; margin-bottom:30px; text-align:center; }
+    .main-message { color:#333; font-size:16px; margin-bottom:20px; white-space: pre-line; }
+    .footer-text { color:#666; font-size:12px; margin-top:20px; text-align:center; }
+    .company-name { color:{{primaryColor}}; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    {{#if banner}}
+    <img src="{{banner}}" alt="Banner" class="banner">
+    {{/if}}
+    <div class="title">{{ title }}</div>
+    <div class="main-message">
+      {{#if userFirstName}}
+      Estimado {{userFirstName}},<br><br>
+      {{else}}
+      Estimado usuario,<br><br>
+      {{/if}}
+      {{{body}}}
+    </div>
+    <div class="footer-text">
+      © {{currentYear}} <span class="company-name">{{companyName}}</span>. Todos los derechos reservados.
+    </div>
+  </div>
+</body>
+</html>
