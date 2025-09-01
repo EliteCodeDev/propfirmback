@@ -208,6 +208,16 @@ export class ChallengeTemplatesService {
     });
   }
 
+  async findAllRelationsComplete(): Promise<ChallengeRelation[]> {
+    const data = await this.challengeRelationRepository.find();
+    let relations = [];
+    for (const item of data) {
+      const relation = await this.findCompleteRelationChain(item.relationID);
+      relations.push(relation);
+    }
+    return relations;
+  }
+
   async findOneRelation(id: string): Promise<ChallengeRelation> {
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID: id },
@@ -402,15 +412,16 @@ export class ChallengeTemplatesService {
     dto: CreateRelationStagesDto,
   ): Promise<RelationStage[]> {
     const relationStages: RelationStage[] = [];
-    
+
     for (const stageDto of dto.stages) {
       // Crear RelationStage
       const relationStage = this.relationStageRepository.create({
         stageID: stageDto.stageID,
         relationID: dto.challengeRelationID,
       });
-      const savedRelationStage = await this.relationStageRepository.save(relationStage);
-      
+      const savedRelationStage =
+        await this.relationStageRepository.save(relationStage);
+
       // Crear StageParameters para cada regla
       for (const ruleDto of stageDto.rules) {
         const parameter = this.stageParameterRepository.create({
@@ -421,21 +432,25 @@ export class ChallengeTemplatesService {
         });
         await this.stageParameterRepository.save(parameter);
       }
-      
+
       relationStages.push(savedRelationStage);
     }
-    
+
     return relationStages;
   }
 
-  async findRelationStagesByRelation(relationID: string): Promise<RelationStage[]> {
+  async findRelationStagesByRelation(
+    relationID: string,
+  ): Promise<RelationStage[]> {
     return this.relationStageRepository.find({
       where: { relationID },
       relations: ['stage', 'relation', 'parameters'],
     });
   }
 
-  async findParametersByRelationStage(relationStageID: string): Promise<StageParameter[]> {
+  async findParametersByRelationStage(
+    relationStageID: string,
+  ): Promise<StageParameter[]> {
     return this.stageParameterRepository.find({
       where: { relationStageID },
       relations: ['rule', 'relationStage'],
@@ -446,7 +461,9 @@ export class ChallengeTemplatesService {
    * Obtiene toda la cadena de relaciones completa a partir de un relationID
    * Incluye RelationStages, stages, RelationParameters y StageRules
    */
-  async findCompleteRelationChain(relationID: string): Promise<ChallengeRelation> {
+  async findCompleteRelationChain(
+    relationID: string,
+  ): Promise<ChallengeRelation> {
     // Buscar la relación principal con todas sus relaciones
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID },
@@ -494,7 +511,7 @@ export class ChallengeTemplatesService {
   ): Promise<RelationBalance[]> {
     // Primero eliminar todos los relation balances existentes para esta relación
     await this.removeAllRelationBalancesByRelation(dtos.challengeRelationID);
-    
+
     // Luego crear los nuevos relation balances
     let relationBalances: RelationBalance[] = [];
     for (const dto of dtos.relationBalances) {
