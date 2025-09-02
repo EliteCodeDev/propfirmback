@@ -37,6 +37,7 @@ import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-acc
 import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
 import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
 import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.client';
+import { getBasicRiskParams } from 'src/common/utils/mappers/account-mapper';
 @Injectable()
 export class ChallengesService {
   private readonly logger = new Logger(ChallengesService.name);
@@ -454,6 +455,19 @@ export class ChallengesService {
             startDate: new Date(),
           });
 
+          // Crear challenge details para el nuevo challenge
+          // Crear un challenge temporal con la relación para obtener los parámetros de riesgo
+          const tempChallenge = {
+            ...newChallenge,
+            relation: relation,
+          } as Challenge;
+          
+          const riskParams = getBasicRiskParams(tempChallenge);
+          await this.createChallengeDetails({
+            challengeID: newChallenge.challengeID,
+            rulesParams: riskParams,
+          });
+
           // Crear certificado para el challenge actual
           await this.certificatesService.create({
             userID: challenge.userID,
@@ -543,6 +557,19 @@ export class ChallengesService {
         parentID: challenge.challengeID,
         brokerAccountID: newBrokerAccount.brokerAccountID,
         startDate: new Date(),
+      });
+
+      // Crear challenge details para el nuevo challenge
+      // Crear un challenge temporal con la relación para obtener los parámetros de riesgo
+      const tempChallenge = {
+        ...newChallenge,
+        relation: relation,
+      } as Challenge;
+      
+      const riskParams = getBasicRiskParams(tempChallenge);
+      await this.createChallengeDetails({
+        challengeID: newChallenge.challengeID,
+        rulesParams: riskParams,
       });
 
       // Enviar email de aprobación con credenciales de la nueva cuenta
