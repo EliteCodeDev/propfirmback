@@ -11,7 +11,7 @@ export class Addon {
   @Column({ length: 100 })
   name: string;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: true, nullable: true })
   isActive: boolean;
 
   @Column({ type: 'boolean', default: false })

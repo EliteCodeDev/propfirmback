@@ -8,7 +8,7 @@ import {
     Delete
 } from '@nestjs/common';
 import { AddonsService } from '../services/addons.service';
-import { Addon } from '../entities/addons/addon.entity';
+import { CreateAddonsDto } from '../dto/create/create-addons.dto';
 
 @Controller('addons')
 export class AddonsController {
@@ -28,12 +28,12 @@ export class AddonsController {
     }
 
     @Post()
-    async create(@Body() addon: Addon){
+    async create(@Body() addon: CreateAddonsDto){
         return await this.addonsService.create(addon);
     }
 
     @Patch(':id')
-    async update(@Param('id') id: string, @Body() addon: Addon){
+    async update(@Param('id') id: string, @Body() addon: CreateAddonsDto){
         return await this.addonsService.update(id, addon);
     }
 

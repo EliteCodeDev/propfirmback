@@ -2,6 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CreateAddonsDto } from '../dto/create/create-addons.dto';
 import { Addon } from '../entities/addons/addon.entity';
 
 @Injectable()
@@ -20,11 +21,11 @@ export class AddonsService {
         return await this.addonsRepository.findOne({ where: { addonID: id } });
     }
 
-    async create(addon: Addon){
+    async create(addon: CreateAddonsDto){
         return await this.addonsRepository.save(addon);
     }
 
-    async update(id: string, addon: Addon){
+    async update(id: string, addon: CreateAddonsDto){
         return await this.addonsRepository.update(id, addon);
     }
 
