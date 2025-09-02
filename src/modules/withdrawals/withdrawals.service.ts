@@ -18,6 +18,7 @@ import { MailerService } from '../mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
 import { ChallengeStatus, CertificateType } from 'src/common/enums';
 import { generateRandomPassword } from 'src/common/utils/randomPassword';
+import { OrdersService } from '../orders/orders.service';
 @Injectable()
 export class WithdrawalsService {
   constructor(
@@ -29,6 +30,7 @@ export class WithdrawalsService {
     private brokerAccountsService: BrokerAccountsService,
     private mailerService: MailerService,
     private configService: ConfigService,
+    private ordersService: OrdersService,
   ) {}
 
   async create(
@@ -177,16 +179,36 @@ export class WithdrawalsService {
       const currentChallenge = currentWithdrawal.challenge;
       const relation = currentChallenge.relation;
 
-      // Crear nueva cuenta de broker para el nuevo challenge
+      // Crear nueva cuenta de broker en Brokeret para el nuevo challenge
+      const createOrderDto = {
+        user: {
+          billing: {
+            first_name: user.firstName || 'Withdrawal',
+            last_name: user.lastName || 'User',
+            phone: user.phone || '+1234567890',
+            country: 'US',
+            city: 'Unknown',
+            address_1: 'Withdrawal Address',
+            address_2: '',
+          },
+        },
+      };
+
+      const brokeretAccountDto = await this.ordersService.createBrokeretApiAccount(
+        user,
+        createOrderDto as any,
+        currentChallenge.dynamicBalance,
+      );
+
       const newBrokerAccount = await this.brokerAccountsService.create({
-        login: `withdrawal_${Date.now()}`,
-        password: generateRandomPassword(),
-        server: 'live_server',
-        platform: 'MT5',
-        serverIp: '192.168.1.100',
+        login: brokeretAccountDto.login,
+        password: brokeretAccountDto.password,
+        server: brokeretAccountDto.server || 'brokeret-server',
+        platform: brokeretAccountDto.platform || 'MT5',
+        serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
         isUsed: true,
-        investorPass: generateRandomPassword(),
-        innitialBalance: currentChallenge.dynamicBalance,
+        investorPass: brokeretAccountDto.investorPass,
+        innitialBalance: brokeretAccountDto.innitialBalance,
       });
 
       // Crear nuevo challenge

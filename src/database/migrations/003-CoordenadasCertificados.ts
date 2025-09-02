@@ -4,6 +4,15 @@ import { MigrationInterface,QueryRunner } from "typeorm";
 export class CoordenadasCertificados1700000000003 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner):Promise<void>{
+        // Create the certificate_coordinates table if it doesn't exist
+        await queryRunner.query(`
+            CREATE TABLE IF NOT EXISTS certificate_coordinates (
+                id SERIAL PRIMARY KEY,
+                type VARCHAR(50) UNIQUE NOT NULL,
+                metadata JSONB NOT NULL
+            )
+        `);
+        
         await queryRunner.query(`
             INSERT INTO certificate_coordinates (type, metadata) VALUES 
             (

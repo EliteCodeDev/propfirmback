@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
@@ -16,7 +16,7 @@ import { BufferModule } from 'src/lib/buffer/buffer.module';
     TypeOrmModule.forFeature([CustomerOrder]),
     MailerModule,
     UsersModule,
-    ChallengesModule,
+    forwardRef(() => ChallengesModule),
     BrokerAccountsModule,
     ChallengeTemplatesModule,
     SmtApiModule,

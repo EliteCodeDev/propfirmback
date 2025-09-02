@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository, DataSource, In } from 'typeorm';
@@ -22,11 +24,13 @@ import { BufferService } from 'src/lib/buffer/buffer.service';
 import { UserAccount } from '../users/entities/user-account.entity';
 import { ConfigService } from '@nestjs/config';
 import { StylesService } from '../styles/styles.service';
+import { OrdersService } from '../orders/orders.service';
 import {
   ChallengeStatus,
   VerificationStatus,
   CertificateType,
 } from 'src/common/enums';
+import { BrokerAccount } from '../broker-accounts/entities/broker-account.entity';
 @Injectable()
 export class ChallengesService {
   private readonly logger = new Logger(ChallengesService.name);
@@ -45,6 +49,8 @@ export class ChallengesService {
     private bufferService: BufferService,
     private configService: ConfigService,
     private stylesService: StylesService,
+    @Inject(forwardRef(() => OrdersService))
+    private ordersService: OrdersService,
     private dataSource: DataSource,
   ) {}
 
@@ -190,6 +196,22 @@ export class ChallengesService {
       const isFinalPhase = challenge.numPhase === totalPhases;
       const isBeforeFinalPhase = challenge.numPhase === totalPhases - 1;
 
+      // Obtener balance para usar en toda la función
+      let challengeBalance;
+      let balance;
+      
+      if (challenge.dynamicBalance && challenge.dynamicBalance > 0) {
+        // Si hay un dynamicBalance válido, buscar el balance correspondiente
+        challengeBalance = relation.balances.find(
+          (b) => Number(b.balance) === Number(challenge.dynamicBalance),
+        );
+        balance = challengeBalance?.balance || challenge.dynamicBalance;
+      } else {
+        // Si no hay dynamicBalance válido, usar el primer balance disponible
+        challengeBalance = relation.balances?.[0];
+        balance = challengeBalance?.balance || 10000; // Fallback por defecto
+      }
+
       // Actualizar el estado del challenge
       challenge.status = ChallengeStatus.APPROVED;
       challenge.endDate = new Date();
@@ -208,9 +230,8 @@ export class ChallengesService {
       // Remover cuenta del buffer si existe
       if (challenge.brokerAccount) {
         try {
-          await this.bufferService.upsertAccount(
+          await this.bufferService.deleteAccount(
             challenge.brokerAccount.login,
-            null,
           );
         } catch (error) {
           console.warn('Error removing account from buffer:', error.message);
@@ -246,14 +267,62 @@ export class ChallengesService {
             },
           });
 
-          // Crear cuenta interna con isUsed = false
+          // Crear cuenta en Brokeret incluso para usuarios no verificados
+          const createOrderDto = {
+            user: {
+              billing: {
+                first_name: user.firstName || 'Challenge',
+                last_name: user.lastName || 'User',
+                phone: user.phone || '+1234567890',
+                country: 'US',
+                city: 'Unknown',
+                address_1: 'Challenge Address',
+                address_2: '',
+              },
+            },
+          };
+
+          this.logger.log(`Creando cuenta Brokeret para usuario no verificado - challenge ${challenge.challengeID}:`, {
+            userId: user.userID,
+            email: user.email,
+            balance: Number(balance),
+            isVerified: user.isVerified,
+          });
+
+          let brokeretAccountDto;
+          try {
+            brokeretAccountDto = await this.ordersService.createBrokeretApiAccount(
+              user,
+              createOrderDto as any,
+              Number(balance),
+            );
+
+            this.logger.log(`Cuenta Brokeret creada para usuario no verificado - challenge ${challenge.challengeID}:`, {
+              login: brokeretAccountDto.login,
+              balance: brokeretAccountDto.innitialBalance,
+            });
+          } catch (brokeretError) {
+            this.logger.error(`Error crítico creando cuenta Brokeret para usuario no verificado - challenge ${challenge.challengeID}:`, {
+              error: brokeretError.message,
+              stack: brokeretError.stack,
+              userId: user.userID,
+              email: user.email,
+              balance: Number(balance),
+            });
+            
+            // Re-lanzar el error para que falle la transacción completa
+            throw new Error(`Failed to create Brokeret account for challenge ${challenge.challengeID}: ${brokeretError.message}`);
+          }
+
           const newBrokerAccount = await this.brokerAccountsService.create({
-            login: `internal_${Date.now()}`,
-            password: 'pending_verification',
-            server: 'internal',
-            platform: 'internal',
-            serverIp: '127.0.0.1',
-            isUsed: false,
+            login: brokeretAccountDto.login,
+            password: brokeretAccountDto.password,
+            server: brokeretAccountDto.server || 'brokeret-server',
+            platform: brokeretAccountDto.platform || 'MT5',
+            serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
+            isUsed: user.isVerified, // true si está verificado, false si no
+            investorPass: brokeretAccountDto.investorPass,
+            innitialBalance: brokeretAccountDto.innitialBalance,
           });
 
           // Crear nuevo challenge para la siguiente fase
@@ -263,7 +332,7 @@ export class ChallengesService {
             numPhase: challenge.numPhase + 1,
             dynamicBalance: challenge.dynamicBalance,
             status: ChallengeStatus.INNITIAL,
-            isActive: false,
+            isActive: user.isVerified, // true si está verificado, false si no
             parentID: challenge.challengeID,
             brokerAccountID: newBrokerAccount.brokerAccountID,
             startDate: new Date(),
@@ -286,14 +355,74 @@ export class ChallengesService {
       }
 
       // Para todas las demás fases o cuando el usuario está verificado
-      // Crear nueva cuenta de broker
+      // Crear nueva cuenta de broker en Brokeret
+      const user = challenge.user;
+
+      // Crear DTO simulado para la creación de cuenta en Brokeret
+      const createOrderDto = {
+        user: {
+          billing: {
+            first_name: user.firstName || 'Challenge',
+            last_name: user.lastName || 'User',
+            phone: user.phone || '+1234567890',
+            country: 'US',
+            city: 'Unknown',
+            address_1: 'Challenge Address',
+            address_2: '',
+          },
+        },
+      };
+
+      // Crear cuenta en Brokeret con el balance del challenge
+      this.logger.log(`Iniciando creación de cuenta Brokeret para challenge ${challenge.challengeID}:`, {
+        userId: user.userID,
+        email: user.email,
+        balance: Number(balance),
+        brokeretConfig: {
+          apiUrl: process.env.BROKERET_API_URL,
+          creationApiUrl: process.env.BROKERET_CREATION_API_URL,
+          hasApiKey: !!process.env.BROKERET_KEY,
+          hasUserCreationApi: !!process.env.BROKERET_USER_CREATION_API,
+          hasPassCreationApi: !!process.env.BROKERET_PASS_CREATION_API,
+        },
+      });
+
+      let brokeretAccountDto;
+       try {
+         brokeretAccountDto = await this.ordersService.createBrokeretApiAccount(
+           user,
+           createOrderDto as any,
+           Number(balance),
+         );
+ 
+         this.logger.log(`Cuenta de Brokeret creada exitosamente para challenge ${challenge.challengeID}:`, {
+           login: brokeretAccountDto.login,
+           balance: brokeretAccountDto.innitialBalance,
+         });
+       } catch (brokeretError) {
+         this.logger.error(`Error crítico creando cuenta Brokeret para challenge ${challenge.challengeID}:`, {
+           error: brokeretError.message,
+           stack: brokeretError.stack,
+           userId: user.userID,
+           email: user.email,
+           balance: Number(balance),
+         });
+         
+         // Re-lanzar el error para que falle la transacción completa
+         throw new Error(`Failed to create Brokeret account for challenge ${challenge.challengeID}: ${brokeretError.message}`);
+       }
+
+      // Crear registro local de la cuenta de broker
+      
       const newBrokerAccount = await this.brokerAccountsService.create({
-        login: `challenge_${Date.now()}`,
-        password: this.generateRandomPassword(),
-        server: 'live_server',
-        platform: 'MT5',
-        serverIp: '192.168.1.100',
-        isUsed: true,
+        login: brokeretAccountDto.login,
+        password: brokeretAccountDto.password,
+        server: brokeretAccountDto.server || 'brokeret-server',
+        platform: brokeretAccountDto.platform || 'MT5',
+        serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
+        isUsed: user.isVerified, // true si está verificado, false si no
+        investorPass: brokeretAccountDto.investorPass,
+        innitialBalance: brokeretAccountDto.innitialBalance,
       });
 
       // Crear nuevo challenge para la siguiente fase
@@ -303,17 +432,13 @@ export class ChallengesService {
         numPhase: challenge.numPhase + 1,
         dynamicBalance: challenge.dynamicBalance,
         status: ChallengeStatus.INNITIAL,
-        isActive: true,
+        isActive: user.isVerified, // true si está verificado, false si no
         parentID: challenge.challengeID,
         brokerAccountID: newBrokerAccount.brokerAccountID,
         startDate: new Date(),
       });
 
       // Enviar email de aprobación con credenciales de la nueva cuenta
-      const user = challenge.user;
-      const challengeBalance = relation.balances.find(
-        (b) => Number(b.balance) === Number(challenge.dynamicBalance),
-      );
 
       await this.mailerService.sendMail({
         to: user.email,
@@ -328,9 +453,8 @@ export class ChallengesService {
           login: newBrokerAccount.login,
           password: newBrokerAccount.password,
           server: newBrokerAccount.server,
-          account_size:
-            challengeBalance?.balance?.balance || challenge.dynamicBalance,
-          profit_target: challengeBalance?.balance?.balance || 'N/A',
+          account_size: balance || challenge.dynamicBalance,
+          profit_target: balance || 'N/A',
           currentYear: new Date().getFullYear(),
           logoUrl: this.configService.get<string>('app.logoUrl') || '',
           landingUrl: this.configService.get<string>('app.clientUrl'),
@@ -386,9 +510,8 @@ export class ChallengesService {
       // Remover cuenta del buffer si existe
       if (challenge.brokerAccount) {
         try {
-          await this.bufferService.upsertAccount(
+          await this.bufferService.deleteAccount(
             challenge.brokerAccount.login,
-            null,
           );
         } catch (error) {
           console.warn('Error removing account from buffer:', error.message);
@@ -400,9 +523,14 @@ export class ChallengesService {
         await this.challengeTemplatesService.findCompleteRelationChain(
           challenge.relationID,
         );
-      const challengeBalance = relation.balances.find(
-        (b) => Number(b.balance) === Number(challenge.dynamicBalance),
-      );
+      let challengeBalance;
+      if (challenge.dynamicBalance && challenge.dynamicBalance > 0) {
+        challengeBalance = relation.balances.find(
+          (b) => Number(b.balance) === Number(challenge.dynamicBalance),
+        );
+      } else {
+        challengeBalance = relation.balances?.[0];
+      }
 
       // Enviar email de notificación de desaprobación
       await this.mailerService.sendMail({
@@ -648,9 +776,14 @@ export class ChallengesService {
       await this.challengeTemplatesService.findCompleteRelationChain(
         challenge.relationID,
       );
-    const challengeBalance = relation.balances.find(
-      (b) => Number(b.balance?.balance) === Number(challenge.dynamicBalance),
-    );
+    let challengeBalance;
+    if (challenge.dynamicBalance && challenge.dynamicBalance > 0) {
+      challengeBalance = relation.balances.find(
+        (b) => Number(b.balance?.balance) === Number(challenge.dynamicBalance),
+      );
+    } else {
+      challengeBalance = relation.balances?.[0];
+    }
 
     // Obtener el estilo activo de la base de datos
     const activeStyle = await this.stylesService.findActiveStyle();
@@ -688,7 +821,7 @@ export class ChallengesService {
         subject: 'Challenge Credentials - Access Information',
         challenge_type: relation.plan.name,
         account_size:
-          challengeBalance?.balance?.balance || challenge.dynamicBalance,
+          challengeBalance?.balance?.balance,
         platform: challenge.brokerAccount.platform,
         login_details: {
           login: challenge.brokerAccount.login,

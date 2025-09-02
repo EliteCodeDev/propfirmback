@@ -67,9 +67,14 @@ export class CreationFazoClient {
   private async getToken(): Promise<string> {
     try {
       const authData: AuthDto = {
-        userName: 'backofficeApi',
-        password: 'Trade@2022',
+        userName: this.cfg.userCreationApi ,
+        password: this.cfg.passCreationApi ,
       };
+
+      this.logger.log('Autenticando con Brokeret usando credenciales del .env:', {
+        userName: authData.userName,
+        creationApiUrl: this.cfg.creationApiUrl,
+      });
 
       const response = await firstValueFrom(
         this.http.post<TokenResponse>(
@@ -198,11 +203,38 @@ export class CreationFazoClient {
   async createAccount(
     accountData: CreateAccountDto,
   ): Promise<CreateAccountResponse> {
-    return this.requestWithAuth<CreateAccountResponse>(
-      'post',
-      'Home/createAccount',
+    this.logger.log('Creating account with data:', {
       accountData,
-    );
+      config: {
+        creationApiUrl: this.cfg.creationApiUrl,
+        hasApiKey: !!this.cfg.apiKey,
+        userCreationApi: this.cfg.userCreationApi,
+        passCreationApi: this.cfg.passCreationApi,
+      },
+    });
+    
+    try {
+      const response = await this.requestWithAuth<CreateAccountResponse>(
+        'post',
+        'Home/createAccount',
+        accountData,
+      );
+      this.logger.log('Account creation response:', response);
+      return response;
+    } catch (error: any) {
+      this.logger.error('Error creating account:', {
+        error: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+        },
+      });
+      throw error;
+    }
   }
 
   // === Endpoints detectados en el flujo n8n (Brokeret) ===

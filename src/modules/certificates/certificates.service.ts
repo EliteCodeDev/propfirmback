@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Certificate } from './entities/certificate.entity';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { ConfigService } from '@nestjs/config';
-import QRCode from 'qrcode';
+import * as QRCode from 'qrcode';
 @Injectable()
 export class CertificatesService {
   constructor(
@@ -17,6 +17,11 @@ export class CertificatesService {
     createCertificateDto: CreateCertificateDto,
   ): Promise<Certificate> {
     const frontendUrl = this.configService.get<string>('app.clientUrl');
+    
+    if (!frontendUrl) {
+      throw new Error('app.clientUrl configuration is missing');
+    }
+    
     const createCertificate = {
       ...createCertificateDto,
       qrLink: await QRCode.toDataURL(

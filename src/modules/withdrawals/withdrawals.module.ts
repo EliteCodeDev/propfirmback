@@ -9,6 +9,7 @@ import { ChallengeTemplatesModule } from '../challenge-templates/challenge-templ
 import { BrokerAccountsModule } from '../broker-accounts/broker-accounts.module';
 import { MailerModule } from '../mailer/mailer.module';
 import { ConfigModule } from '@nestjs/config';
+import { OrdersModule } from '../orders/orders.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ConfigModule } from '@nestjs/config';
     BrokerAccountsModule,
     MailerModule,
     ConfigModule,
+    OrdersModule,
   ],
   controllers: [WithdrawalsController],
   providers: [WithdrawalsService],

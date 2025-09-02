@@ -20,10 +20,10 @@ export class CreateCertificateDto {
   @ApiProperty({ enum: CertificateType })
   type: CertificateType;
 
-  // @ApiProperty({ required: false })
-  // @IsOptional()
-  // @IsString()
-  // qrLink?: string;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  qrLink?: string;
 
   @ApiProperty()
   @IsUUID()

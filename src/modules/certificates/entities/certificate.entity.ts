@@ -19,7 +19,7 @@ export class Certificate {
   @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
   monto: number;
 
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   qrLink: string;
 
   @Column({ type: 'uuid' })

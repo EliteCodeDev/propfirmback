@@ -276,15 +276,36 @@ export class BrokeretApiClient {
 
   // === FINANCIAL OPERATIONS ===
   // POST /financial/deposit
-  makeDeposit(body: {
+  async makeDeposit(body: {
     login: number;
     amount: number;
     comment?: string;
     payment_method: string;
   }): Promise<BrokeretUserResponse> {
-    return this.request<BrokeretUserResponse>('post', 'financial/deposit', {
+    this.logger.log('Making deposit with data:', {
       data: body,
+      config: {
+        apiUrl: this.cfg.url,
+        hasApiKey: !!this.cfg.apiKey,
+      },
     });
+
+    try {
+      const response = await this.request<BrokeretUserResponse>('post', 'financial/deposit', {
+        data: body,
+      });
+      this.logger.log('Deposit response:', response);
+      return response;
+    } catch (error: any) {
+      this.logger.error('Error making deposit:', {
+        error: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        requestData: body,
+      });
+      throw error;
+    }
   }
 
   // POST /financial/withdrawal

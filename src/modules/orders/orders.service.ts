@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CustomerOrder } from './entities/customer-order.entity';
@@ -50,6 +50,7 @@ export class OrdersService {
     private orderRepository: Repository<CustomerOrder>,
     private mailerService: MailerService,
     private configService: ConfigService,
+    @Inject(forwardRef(() => ChallengesService))
     private challengesService: ChallengesService,
     private challengeTemplatesService: ChallengeTemplatesService,
     private brokerAccountsService: BrokerAccountsService,
@@ -621,10 +622,18 @@ export class OrdersService {
     const retryDelay = 1000; // 1 second
 
     try {
-      this.logger.log('Creating Brokeret API account with data:', {
-        user: user.email,
+      this.logger.log('Iniciando creación de cuenta Brokeret:', {
+        userId: user.userID,
+        email: user.email,
         balance,
         attempt: retryCount + 1,
+        brokeretConfig: {
+          apiUrl: process.env.BROKERET_API_URL,
+          creationApiUrl: process.env.BROKERET_CREATION_API_URL,
+          hasApiKey: !!process.env.BROKERET_KEY,
+          hasUserCreationApi: !!process.env.BROKERET_USER_CREATION_API,
+          hasPassCreationApi: !!process.env.BROKERET_PASS_CREATION_API,
+        },
       });
 
       // Generar contraseñas aleatorias para la cuenta
@@ -671,7 +680,7 @@ export class OrdersService {
       // Realizar depósito inicial usando el endpoint financiero correcto
       try {
         const depositData = {
-          login: fazoResponse.user.accountid,
+          login: Number(fazoResponse.user.accountid),
           amount: balance,
           comment: 'Initial deposit for challenge account',
           payment_method: 'internal',
@@ -682,8 +691,7 @@ export class OrdersService {
           amount: balance,
         });
 
-        const depositResult =
-          await this.brokeretApiClient.makeDeposit(depositData);
+        const depositResult = await this.brokeretApiClient.makeDeposit(depositData);
 
         this.logger.log('Initial deposit completed successfully:', {
           result: depositResult,

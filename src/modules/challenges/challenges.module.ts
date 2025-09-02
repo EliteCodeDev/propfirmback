@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChallengesController } from './challenges.controller';
 import { ChallengesService } from './challenges.service';
@@ -13,6 +13,7 @@ import { MailerModule } from '../mailer/mailer.module';
 import { BufferModule } from 'src/lib/buffer/buffer.module';
 import { ConfigModule } from '@nestjs/config';
 import { StylesModule } from '../styles/styles.module';
+import { OrdersModule } from '../orders/orders.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { StylesModule } from '../styles/styles.module';
     BufferModule,
     ConfigModule,
     StylesModule,
+    forwardRef(() => OrdersModule),
   ],
   controllers: [ChallengesController],
   providers: [ChallengesService],

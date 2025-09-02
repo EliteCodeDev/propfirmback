@@ -175,6 +175,12 @@ export class VerificationService {
 
     if (updateVerificationDto.status === VerificationStatus.APPROVED) {
       verification.approvedAt = new Date();
+      
+      // Actualizar el campo isVerified del usuario cuando se aprueba la verificación
+      await this.userAccountRepository.update(
+        { userID: verification.userID },
+        { isVerified: true }
+      );
     } else if (updateVerificationDto.status === VerificationStatus.REJECTED) {
       verification.rejectedAt = new Date();
     }

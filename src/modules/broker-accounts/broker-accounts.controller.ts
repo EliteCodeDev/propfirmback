@@ -25,12 +25,13 @@ import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Broker Accounts')
 @ApiBearerAuth()
-@Public()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('broker-accounts')
 export class BrokerAccountsController {
   constructor(private readonly brokerAccountsService: BrokerAccountsService) {}
 
   @Post()
+  @Roles('admin')
   @ApiOperation({ summary: 'Create a new broker account' })
   create(@Body() createBrokerAccountDto: CreateBrokerAccountDto) {
     return this.brokerAccountsService.create(createBrokerAccountDto);
