@@ -11,7 +11,6 @@ import {
   RiskParams,
 } from 'src/common/utils';
 import { getMoreStats } from 'src/common/functions/more-stats';
-import { riskEvaluation } from 'src/common/functions/risk-evaluation';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
 import {
   OpenPositionsResponse,
@@ -19,6 +18,7 @@ import {
   UserDetailsResponse,
   ProfitabilityAnalyticsResponse,
 } from 'src/modules/data/brokeret-api/types/response.type';
+import { isEmpty } from 'class-validator';
 
 /**
  * Interfaz para las órdenes de usuario (userOrders)
@@ -307,15 +307,23 @@ export class BrokeretDataMapper {
     profitabilityAnalytics: ProfitabilityAnalyticsResponse['data'] | undefined,
     existingAccount: Account,
   ): MetaStats {
-    // Solo usar more-stats para calcular maxMinBalance
+    // Obtener siempre moreStats (contiene fallback calculado localmente)
     const moreStats = getMoreStats(existingAccount);
 
-    // Mapear métricas promedio directamente desde profitabilityAnalytics de Brokeret
+    const metaStats = new MetaStats();
+    metaStats.equity = userDetails?.equity || 0;
+    metaStats.maxMinBalance = moreStats.maxMinBalance; // histórico local
+
+    // Preparar estructura de métricas promedio
     const averageMetrics = new AverageMetrics();
     const analytics = profitabilityAnalytics?.profitability_metrics;
+    const analyticsIsEmpty =
+      !analytics ||
+      isEmpty(analytics) ||
+      (typeof analytics === 'object' && Object.keys(analytics).length === 0);
 
-    if (analytics) {
-      // Usar datos directos de Brokeret API
+    if (!analyticsIsEmpty) {
+      // Datos provenientes de Brokeret API
       averageMetrics.totalTrades = analytics.total_trades;
       averageMetrics.winningTrades = analytics.winning_trades;
       averageMetrics.losingTrades = analytics.losing_trades;
@@ -326,18 +334,36 @@ export class BrokeretDataMapper {
           : 0;
       averageMetrics.averageProfit = analytics.average_win;
       averageMetrics.averageLoss = analytics.average_loss;
+      metaStats.numTrades = analytics.total_trades;
+    } else {
+      // Fallback: calcular con funciones locales (solo campos que proveería analytics)
+      averageMetrics.totalTrades = moreStats.metrics.totalTrades;
+      averageMetrics.winningTrades = moreStats.metrics.winningTrades;
+      averageMetrics.losingTrades = moreStats.metrics.losingTrades;
+      averageMetrics.winRate = moreStats.metrics.winRate;
+      averageMetrics.lossRate = moreStats.metrics.lossRate;
+
+      // Calcular averageProfit y averageLoss manualmente a partir de posiciones cerradas
+      const closedPositions =
+        (existingAccount.closedPositions?.positions as ClosedPosition[]) || [];
+      const winningProfits = closedPositions
+        .filter((p) => p.Profit > 0)
+        .map((p) => p.Profit);
+      const losingProfits = closedPositions
+        .filter((p) => p.Profit < 0)
+        .map((p) => p.Profit);
+      averageMetrics.averageProfit =
+        winningProfits.length > 0
+          ? winningProfits.reduce((a, b) => a + b, 0) / winningProfits.length
+          : 0;
+      averageMetrics.averageLoss =
+        losingProfits.length > 0
+          ? losingProfits.reduce((a, b) => a + b, 0) / losingProfits.length
+          : 0; // normalmente negativo
+      metaStats.numTrades = moreStats.metrics.totalTrades;
     }
 
-    const metaStats = new MetaStats();
-    // Usar equity directamente de userDetails de Brokeret
-    metaStats.equity = userDetails?.equity || 0;
-    // Solo usar more-stats para maxMinBalance (que requiere cálculo histórico)
-    metaStats.maxMinBalance = moreStats.maxMinBalance;
-    // Usar averageMetrics mapeados directamente de Brokeret
     metaStats.averageMetrics = averageMetrics;
-    // Usar numTrades directamente de Brokeret
-    metaStats.numTrades = analytics?.total_trades || 0;
-
     return metaStats;
   }
 
