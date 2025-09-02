@@ -1,5 +1,4 @@
-import { Entity, Column, OneToMany, ForeignKey, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
-import { RelationAddon } from './relation-addon.entity';
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 import { Addon } from "./addon.entity"
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 
