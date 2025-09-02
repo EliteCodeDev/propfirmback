@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CustomerOrder } from './entities/customer-order.entity';
@@ -183,6 +188,7 @@ export class OrdersService {
         user,
         createOrderDto,
         challengeBalance.balance,
+        relation.groupName,
       );
       // Create broker account and challenge using the separated function
       const challengeRes = await this.createBrokerAndChallenge(
@@ -616,6 +622,7 @@ export class OrdersService {
     user: UserAccount,
     createOrderDto: CreateCompleteOrderDto,
     balance: number,
+    groupName: string,
     retryCount: number = 0,
   ): Promise<CreateBrokerAccountDto> {
     const maxRetries = 3;
@@ -653,7 +660,7 @@ export class OrdersService {
       // Crear el DTO para la API de Fazo
       const createAccountData: CreateAccountDto = {
         name: uniqueName,
-        groupName: 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
+        groupName: groupName || 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
         email: user.email,
         phone: billing.phone || user.phone || '+1234567890',
         country: billing.country || 'US',
@@ -691,7 +698,8 @@ export class OrdersService {
           amount: balance,
         });
 
-        const depositResult = await this.brokeretApiClient.makeDeposit(depositData);
+        const depositResult =
+          await this.brokeretApiClient.makeDeposit(depositData);
 
         this.logger.log('Initial deposit completed successfully:', {
           result: depositResult,
@@ -746,6 +754,7 @@ export class OrdersService {
             user,
             createOrderDto,
             balance,
+            groupName,
             retryCount + 1,
           );
         } else {

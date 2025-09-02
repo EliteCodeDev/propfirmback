@@ -14,6 +14,7 @@ import { BufferModule } from 'src/lib/buffer/buffer.module';
 import { ConfigModule } from '@nestjs/config';
 import { StylesModule } from '../styles/styles.module';
 import { OrdersModule } from '../orders/orders.module';
+import { BrokeretApiModule } from '../data/brokeret-api/brokeret-api.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { OrdersModule } from '../orders/orders.module';
     ConfigModule,
     StylesModule,
     forwardRef(() => OrdersModule),
+    BrokeretApiModule,
   ],
   controllers: [ChallengesController],
   providers: [ChallengesService],

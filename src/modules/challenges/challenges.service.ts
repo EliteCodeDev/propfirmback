@@ -31,6 +31,12 @@ import {
   CertificateType,
 } from 'src/common/enums';
 import { BrokerAccount } from '../broker-accounts/entities/broker-account.entity';
+import { use } from 'passport';
+import { generateRandomPassword } from 'src/common/utils/randomPassword';
+import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-account.dto';
+import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
+import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
+import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.client';
 @Injectable()
 export class ChallengesService {
   private readonly logger = new Logger(ChallengesService.name);
@@ -52,7 +58,130 @@ export class ChallengesService {
     @Inject(forwardRef(() => OrdersService))
     private ordersService: OrdersService,
     private dataSource: DataSource,
+    private creationFazoClient: CreationFazoClient,
+    private brokeretApiClient: BrokeretApiClient,
   ) {}
+
+  /**
+   * Función simplificada para crear una cuenta Brokeret
+   * Encapsula la generación de contraseñas y la lógica de creación
+   */
+  async createBrokeretAccount(
+    user: UserAccount,
+    balance: number,
+    groupName: string = 'contest\\PG\\kbst\\contestphase1',
+    retryCount: number = 0,
+  ): Promise<CreateBrokerAccountDto> {
+    const maxRetries = 3;
+    const retryDelay = 1000;
+
+    try {
+      this.logger.log('Creando cuenta Brokeret:', {
+        userId: user.userID,
+        email: user.email,
+        balance,
+        attempt: retryCount + 1,
+      });
+
+      // Generar contraseñas aleatorias
+      const masterPassword = generateRandomPassword(8);
+      const investorPassword = generateRandomPassword(8);
+
+      // Construir nombre único para evitar duplicados
+      const baseName =
+        user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`.trim()
+          : user.username;
+
+      const uniqueName =
+        retryCount > 0 ? `${baseName}_${Date.now()}` : baseName;
+
+      // Crear datos para la API de Fazo
+      const createAccountData: CreateAccountDto = {
+        name: uniqueName,
+        groupName: groupName,
+        email: user.email,
+        phone: user.phone || '+1234567890',
+        country: user.address?.country || 'US',
+        city: user.address?.city || 'Unknown',
+        address: user.address?.addressLine1 || 'Unknown',
+        balance: balance,
+        mPassword: masterPassword,
+        iPassword: investorPassword,
+        leverage: 100,
+      };
+
+      // Crear cuenta en Fazo
+      const fazoResponse =
+        await this.creationFazoClient.createAccount(createAccountData);
+
+      this.logger.log('Cuenta Brokeret creada exitosamente:', {
+        accountId: fazoResponse.user.accountid,
+        balance: fazoResponse.user.balance,
+      });
+
+      // Realizar depósito inicial
+      try {
+        const depositData = {
+          login: Number(fazoResponse.user.accountid),
+          amount: balance,
+          comment: 'Initial deposit for challenge account',
+          payment_method: 'internal',
+        };
+
+        await this.brokeretApiClient.makeDeposit(depositData);
+        this.logger.log('Depósito inicial completado');
+      } catch (balanceError) {
+        this.logger.error('Error en depósito inicial:', balanceError.message);
+        throw new Error(
+          `Failed to deposit initial balance: ${balanceError.message}`,
+        );
+      }
+
+      // Retornar DTO de cuenta broker
+      return {
+        login: fazoResponse.user.accountid.toString(),
+        password: masterPassword,
+        server: process.env.NEXT_PUBLIC_SERVER,
+        serverIp: 'brokeret-server.com',
+        platform: 'MT5',
+        isUsed: false,
+        investorPass: investorPassword,
+        innitialBalance: balance,
+      };
+    } catch (error) {
+      this.logger.error('Error creando cuenta Brokeret:', {
+        error: error.message,
+        attempt: retryCount + 1,
+        maxRetries,
+      });
+
+      // Reintentar en caso de conflicto de login
+      if (
+        (error.message.includes('Login already exists') ||
+          error.message.includes('already exists') ||
+          error.message.includes('duplicate')) &&
+        retryCount < maxRetries
+      ) {
+        this.logger.warn(
+          `Reintentando creación de cuenta. Intento ${retryCount + 2}/${maxRetries + 1}`,
+        );
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryDelay * (retryCount + 1)),
+        );
+
+        return this.createBrokeretAccount(
+          user,
+          balance,
+          groupName,
+          retryCount + 1,
+        );
+      }
+
+      throw new Error(`Failed to create Brokeret account: ${error.message}`);
+    }
+  }
 
   async create(createChallengeDto: CreateChallengeDto): Promise<Challenge> {
     // Validate that the relation exists if relationID is provided
@@ -199,7 +328,7 @@ export class ChallengesService {
       // Obtener balance para usar en toda la función
       let challengeBalance;
       let balance;
-      
+
       if (challenge.dynamicBalance && challenge.dynamicBalance > 0) {
         // Si hay un dynamicBalance válido, buscar el balance correspondiente
         challengeBalance = relation.balances.find(
@@ -212,7 +341,7 @@ export class ChallengesService {
         balance = challengeBalance?.balance || 10000; // Fallback por defecto
       }
 
-      // Actualizar el estado del challenge
+      // Actualizar datos del challenge
       challenge.status = ChallengeStatus.APPROVED;
       challenge.endDate = new Date();
       challenge.isActive = false;
@@ -230,9 +359,7 @@ export class ChallengesService {
       // Remover cuenta del buffer si existe
       if (challenge.brokerAccount) {
         try {
-          await this.bufferService.deleteAccount(
-            challenge.brokerAccount.login,
-          );
+          await this.bufferService.deleteAccount(challenge.brokerAccount.login);
         } catch (error) {
           console.warn('Error removing account from buffer:', error.message);
         }
@@ -240,21 +367,14 @@ export class ChallengesService {
 
       // Si es la fase antes de la final, verificar estado de verificación del usuario
       if (isBeforeFinalPhase) {
+        this.logger.debug(
+          'setApprovedChallenge: Verificando estado de verificación del usuario',
+        );
         const user = await queryRunner.manager.findOne(UserAccount, {
           where: { userID: challenge.userID },
         });
 
         if (!user.isVerified) {
-          // Crear verificación si no existe
-          const existingVerification =
-            await this.verificationService.findByUserId(user.userID, {});
-          if (!existingVerification || existingVerification.data.length === 0) {
-            await this.verificationService.create(user.userID, {
-              documentType: 'passport' as any,
-              numDocument: '',
-            });
-          }
-
           // Enviar email de verificación requerida
           await this.mailerService.sendMail({
             to: user.email,
@@ -268,50 +388,47 @@ export class ChallengesService {
           });
 
           // Crear cuenta en Brokeret incluso para usuarios no verificados
-          const createOrderDto = {
-            user: {
-              billing: {
-                first_name: user.firstName || 'Challenge',
-                last_name: user.lastName || 'User',
-                phone: user.phone || '+1234567890',
-                country: 'US',
-                city: 'Unknown',
-                address_1: 'Challenge Address',
-                address_2: '',
-              },
-            },
-          };
 
-          this.logger.log(`Creando cuenta Brokeret para usuario no verificado - challenge ${challenge.challengeID}:`, {
-            userId: user.userID,
-            email: user.email,
-            balance: Number(balance),
-            isVerified: user.isVerified,
-          });
-
-          let brokeretAccountDto;
-          try {
-            brokeretAccountDto = await this.ordersService.createBrokeretApiAccount(
-              user,
-              createOrderDto as any,
-              Number(balance),
-            );
-
-            this.logger.log(`Cuenta Brokeret creada para usuario no verificado - challenge ${challenge.challengeID}:`, {
-              login: brokeretAccountDto.login,
-              balance: brokeretAccountDto.innitialBalance,
-            });
-          } catch (brokeretError) {
-            this.logger.error(`Error crítico creando cuenta Brokeret para usuario no verificado - challenge ${challenge.challengeID}:`, {
-              error: brokeretError.message,
-              stack: brokeretError.stack,
+          this.logger.log(
+            `Creando cuenta Brokeret para usuario no verificado - challenge ${challenge.challengeID}:`,
+            {
               userId: user.userID,
               email: user.email,
               balance: Number(balance),
-            });
-            
+              isVerified: user.isVerified,
+            },
+          );
+          let brokeretAccountDto;
+          try {
+            brokeretAccountDto = await this.createBrokeretAccount(
+              user,
+              Number(balance),
+              relation.groupName,
+            );
+
+            this.logger.log(
+              `Cuenta Brokeret creada para usuario no verificado - challenge ${challenge.challengeID}:`,
+              {
+                login: brokeretAccountDto.login,
+                balance: brokeretAccountDto.innitialBalance,
+              },
+            );
+          } catch (brokeretError) {
+            this.logger.error(
+              `Error crítico creando cuenta Brokeret para usuario no verificado - challenge ${challenge.challengeID}:`,
+              {
+                error: brokeretError.message,
+                stack: brokeretError.stack,
+                userId: user.userID,
+                email: user.email,
+                balance: Number(balance),
+              },
+            );
+
             // Re-lanzar el error para que falle la transacción completa
-            throw new Error(`Failed to create Brokeret account for challenge ${challenge.challengeID}: ${brokeretError.message}`);
+            throw new Error(
+              `Failed to create Brokeret account for challenge ${challenge.challengeID}: ${brokeretError.message}`,
+            );
           }
 
           const newBrokerAccount = await this.brokerAccountsService.create({
@@ -358,62 +475,53 @@ export class ChallengesService {
       // Crear nueva cuenta de broker en Brokeret
       const user = challenge.user;
 
-      // Crear DTO simulado para la creación de cuenta en Brokeret
-      const createOrderDto = {
-        user: {
-          billing: {
-            first_name: user.firstName || 'Challenge',
-            last_name: user.lastName || 'User',
-            phone: user.phone || '+1234567890',
-            country: 'US',
-            city: 'Unknown',
-            address_1: 'Challenge Address',
-            address_2: '',
-          },
-        },
-      };
-
       // Crear cuenta en Brokeret con el balance del challenge
-      this.logger.log(`Iniciando creación de cuenta Brokeret para challenge ${challenge.challengeID}:`, {
-        userId: user.userID,
-        email: user.email,
-        balance: Number(balance),
-        brokeretConfig: {
-          apiUrl: process.env.BROKERET_API_URL,
-          creationApiUrl: process.env.BROKERET_CREATION_API_URL,
-          hasApiKey: !!process.env.BROKERET_KEY,
-          hasUserCreationApi: !!process.env.BROKERET_USER_CREATION_API,
-          hasPassCreationApi: !!process.env.BROKERET_PASS_CREATION_API,
+      this.logger.log(
+        `Iniciando creación de cuenta Brokeret para challenge ${challenge.challengeID}:`,
+        {
+          userId: user.userID,
+          email: user.email,
+          balance: Number(balance),
+          isVerified: user.isVerified,
         },
-      });
+      );
 
       let brokeretAccountDto;
-       try {
-         brokeretAccountDto = await this.ordersService.createBrokeretApiAccount(
-           user,
-           createOrderDto as any,
-           Number(balance),
-         );
- 
-         this.logger.log(`Cuenta de Brokeret creada exitosamente para challenge ${challenge.challengeID}:`, {
-           login: brokeretAccountDto.login,
-           balance: brokeretAccountDto.innitialBalance,
-         });
-       } catch (brokeretError) {
-         this.logger.error(`Error crítico creando cuenta Brokeret para challenge ${challenge.challengeID}:`, {
-           error: brokeretError.message,
-           stack: brokeretError.stack,
-           userId: user.userID,
-           email: user.email,
-           balance: Number(balance),
-         });
-         
-         // Re-lanzar el error para que falle la transacción completa
-         throw new Error(`Failed to create Brokeret account for challenge ${challenge.challengeID}: ${brokeretError.message}`);
-       }
+      try {
+        brokeretAccountDto = await this.createBrokeretAccount(
+          user,
+          Number(balance),
+          relation.groupName,
+        );
+
+        this.logger.log(
+          `Cuenta de Brokeret creada exitosamente para challenge ${challenge.challengeID}:`,
+          {
+            login: brokeretAccountDto.login,
+            balance: brokeretAccountDto.innitialBalance,
+            groupName: relation.groupName,
+          },
+        );
+      } catch (brokeretError) {
+        this.logger.error(
+          `Error crítico creando cuenta Brokeret para challenge ${challenge.challengeID}:`,
+          {
+            error: brokeretError.message,
+            stack: brokeretError.stack,
+            userId: user.userID,
+            email: user.email,
+            balance: Number(balance),
+          },
+        );
+
+        // Re-lanzar el error para que falle la transacción completa
+        throw new Error(
+          `Failed to create Brokeret account for challenge ${challenge.challengeID}: ${brokeretError.message}`,
+        );
+      }
 
       // Crear registro local de la cuenta de broker
-      
+
       const newBrokerAccount = await this.brokerAccountsService.create({
         login: brokeretAccountDto.login,
         password: brokeretAccountDto.password,
@@ -510,9 +618,7 @@ export class ChallengesService {
       // Remover cuenta del buffer si existe
       if (challenge.brokerAccount) {
         try {
-          await this.bufferService.deleteAccount(
-            challenge.brokerAccount.login,
-          );
+          await this.bufferService.deleteAccount(challenge.brokerAccount.login);
         } catch (error) {
           console.warn('Error removing account from buffer:', error.message);
         }
@@ -563,15 +669,6 @@ export class ChallengesService {
     }
   }
 
-  private generateRandomPassword(): string {
-    const chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < 12; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  }
 
   // Template-related methods
   async getAvailableRelations() {
@@ -820,8 +917,7 @@ export class ChallengesService {
         email: challenge.user.email,
         subject: 'Challenge Credentials - Access Information',
         challenge_type: relation.plan.name,
-        account_size:
-          challengeBalance?.balance?.balance,
+        account_size: challengeBalance?.balance?.balance,
         platform: challenge.brokerAccount.platform,
         login_details: {
           login: challenge.brokerAccount.login,
