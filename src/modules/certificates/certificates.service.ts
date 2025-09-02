@@ -78,7 +78,7 @@ export class CertificatesService {
   async findOne(id: string): Promise<Certificate> {
     const certificate = await this.certificateRepository.findOne({
       where: { certificateID: id },
-      relations: ['user', 'challenge'],
+      relations: ['user', 'challenge','challenge.brokerAccount'],
     });
 
     if (!certificate) {

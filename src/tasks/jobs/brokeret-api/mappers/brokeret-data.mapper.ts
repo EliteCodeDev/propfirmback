@@ -68,9 +68,6 @@ export interface BrokeretAccountData {
 export class BrokeretDataMapper {
   private readonly logger = new Logger(BrokeretDataMapper.name);
 
-  /**
-   * Mapea los datos de Brokeret API al formato del Account del buffer
-   */
   async mapBrokeretDataToAccount(
     existingAccount: Account,
     brokeretData: BrokeretAccountData | null,
@@ -88,36 +85,6 @@ export class BrokeretDataMapper {
         this.logger.debug(
           `BrokeretDataMapper: No hay respuesta de API para cuenta ${existingAccount.login}, realizando operaciones de riesgo con data existente`,
         );
-
-        // // Ejecutar evaluación de riesgo con la data existente
-        // try {
-        //   if (updatedAccount.riskValidation) {
-        //     const riskEvaluationResult: riskEvaluationResult = riskEvaluation(
-        //       updatedAccount,
-        //       updatedAccount.riskValidation,
-        //     );
-
-        //     // Actualizar rulesEvaluation con el resultado de la evaluación
-        //     updatedAccount.rulesEvaluation = riskEvaluationResult;
-
-        //     // También actualizar riskValidation con valores numéricos para compatibilidad
-        //     updatedAccount.riskValidation = this.mapToRiskValidation(riskEvaluationResult);
-
-        //     this.logger.debug(
-        //       `BrokeretDataMapper: Evaluación de riesgo completada para cuenta ${existingAccount.login}`,
-        //     );
-        //   }
-        // } catch (riskError) {
-        //   this.logger.error(
-        //     `BrokeretDataMapper: Error en evaluación de riesgo para cuenta ${existingAccount.login}:`,
-        //     riskError,
-        //   );
-        // }
-
-        // // Marcar como guardada y actualizada
-        // updatedAccount.saved = true;
-        // updatedAccount.updated = true;
-        // updatedAccount.lastUpdate = new Date();
 
         return updatedAccount;
       }
@@ -142,7 +109,9 @@ export class BrokeretDataMapper {
         updatedAccount.openPositions?.positions || [];
       const newClosedPositions =
         brokeretData.closedPositions?.data?.deals || [];
-
+      // this.logger.debug(
+      //   `BrokeretDataMapper: Mapeando posiciones abiertas para cuenta ${brokeretData.login} : ${JSON.stringify(newClosedPositions)}`,
+      // );
       if (newOpenPositions.length === 0) {
         // 2.1.1: Si no había posiciones abiertas en el buffer, seguir con normalidad
         if (existingOpenPositions.length === 0) {
@@ -153,14 +122,19 @@ export class BrokeretDataMapper {
         } else {
           // 2.1.2: Si había posiciones abiertas en el buffer, verificar si están en closed positions
           const existingOrderIds = existingOpenPositions.map(
-            (pos: OpenPosition) => pos.OrderId,
+            (pos: OpenPosition) => parseInt(pos.OrderId),
           );
+          // this.logger.debug(
+          //   `BrokeretDataMapper: Mapeando posiciones existentes para cuenta ${brokeretData.login} : ${JSON.stringify(existingOrderIds)}`,
+          // );
           const closedOrderIds = newClosedPositions.map(
             (pos: any) => pos.order,
           );
-
+          // this.logger.debug(
+          //   `BrokeretDataMapper: Mapeando posiciones cerradas para cuenta ${brokeretData.login} : ${JSON.stringify(closedOrderIds)}`,
+          // );
           const missingPositions = existingOrderIds.filter(
-            (orderId) => !closedOrderIds.includes(orderId),
+            (orderId) => !closedOrderIds.includes(orderId as Number),
           );
 
           if (missingPositions.length > 0) {

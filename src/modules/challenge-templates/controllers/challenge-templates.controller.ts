@@ -185,6 +185,11 @@ export class ChallengeTemplatesController {
   findAllRelations() {
     return this.challengeTemplatesService.findAllRelations();
   }
+  @Get('relations-complete')
+  @ApiOperation({ summary: 'Get all challenge relations with complete chain' })
+  findAllRelationsComplete() {
+    return this.challengeTemplatesService.findAllRelationsComplete();
+  }
 
   @Get('relations/:id')
   @ApiOperation({ summary: 'Get challenge relation by ID' })
@@ -455,8 +460,12 @@ export class ChallengeTemplatesController {
   }
 
   @Delete('relation-balances/by-relation/:relationId')
-  @ApiOperation({ summary: 'Delete all relation balances for a specific relation' })
+  @ApiOperation({
+    summary: 'Delete all relation balances for a specific relation',
+  })
   removeAllRelationBalancesByRelation(@Param('relationId') relationId: string) {
-    return this.challengeTemplatesService.removeAllRelationBalancesByRelation(relationId);
+    return this.challengeTemplatesService.removeAllRelationBalancesByRelation(
+      relationId,
+    );
   }
 }

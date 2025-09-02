@@ -1,4 +1,4 @@
-import { Account, Balance, MetaStats, PositionsClassType } from './account';
+import { Account, Balance, MetaStats, PositionsClassType } from '../account';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-details.entity';
 import { BrokerAccount } from 'src/modules/broker-accounts/entities/broker-account.entity';

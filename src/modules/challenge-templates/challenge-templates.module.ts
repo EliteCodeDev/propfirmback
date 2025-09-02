@@ -1,8 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChallengeTemplatesController } from './controllers/challenge-templates.controller';
-import { ChallengeTemplatesService } from './services/challenge-templates.service';
 
+import {
+  ChallengeRelationsService,
+  ChallengeTemplatesService,
+  ChallengeBalancesService,
+  ChallengeStagesService,
+} from './services';
 // Entities
 import {
   ChallengeCategory,
@@ -36,7 +41,18 @@ import {
     ]),
   ],
   controllers: [ChallengeTemplatesController],
-  providers: [ChallengeTemplatesService],
-  exports: [ChallengeTemplatesService, TypeOrmModule],
+  providers: [
+    ChallengeTemplatesService,
+    ChallengeRelationsService,
+    ChallengeBalancesService,
+    ChallengeStagesService,
+  ],
+  exports: [
+    ChallengeTemplatesService,
+    ChallengeRelationsService,
+    ChallengeBalancesService,
+    ChallengeStagesService,
+    TypeOrmModule,
+  ],
 })
 export class ChallengeTemplatesModule {}

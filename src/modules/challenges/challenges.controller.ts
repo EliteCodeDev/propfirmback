@@ -32,7 +32,7 @@ import {
   mapChallengesToBasicAccounts,
   mapChallengesToAccounts,
   mapChallengeToAccount,
-} from 'src/common/utils/account-mapper';
+} from 'src/common/utils/mappers/account-mapper';
 import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
 
 @ApiTags('Challenges')
@@ -105,7 +105,7 @@ export class ChallengesController {
       await this.challengeTemplatesService.findCompleteRelationChain(
         challenge.relationID,
       );
-      
+
     return mapChallengeToAccount(challenge);
   }
 

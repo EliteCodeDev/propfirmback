@@ -33,29 +33,29 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
    */
   async extractBrokeretDataProcess() {
     const startTime = Date.now();
-    
+
     this.customLogger.logJob({
       jobName: 'BrokeretDataExtractorJob',
       operation: 'extract_data_start',
       status: 'started',
-      details: {}
+      details: {},
     });
-    
+
     try {
       // Obtener estadísticas del buffer para verificar si hay cuentas
       const stats = this.buffer.getStats();
 
       if (stats.bufferSize === 0) {
         this.logger.debug('No hay cuentas en el buffer para procesar');
-        
+
         this.customLogger.logJob({
           jobName: 'BrokeretDataExtractorJob',
           operation: 'extract_data_empty',
           status: 'completed',
-          details: { 
+          details: {
             buffer_size: 0,
-            duration_ms: Date.now() - startTime
-          }
+            duration_ms: Date.now() - startTime,
+          },
         });
         return;
       }
@@ -63,12 +63,12 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
       this.logger.debug(
         `BrokeretDataExtractorJob: Procesando ${stats.bufferSize} cuentas del buffer`,
       );
-      
+
       this.customLogger.logJob({
         jobName: 'BrokeretDataExtractorJob',
         operation: 'extract_data_processing',
         status: 'in_progress',
-        details: { buffer_size: stats.bufferSize }
+        details: { buffer_size: stats.bufferSize },
       });
 
       // Usar processAllParallel para procesamiento thread-safe y paralelo
@@ -99,9 +99,9 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
           this.buffer.getStats(),
         )}`,
       );
-      
+
       const duration = Date.now() - startTime;
-      
+
       this.customLogger.logJob({
         jobName: 'BrokeretDataExtractorJob',
         operation: 'extract_data_success',
@@ -111,28 +111,27 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
           total_accounts: results.length,
           processed_count: processedCount,
           error_count: errorCount,
-          buffer_size: stats.bufferSize
-        }
+          buffer_size: stats.bufferSize,
+        },
       });
-
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       this.logger.error(
         'BrokeretDataExtractorJob: Error en el proceso de extracción:',
         error,
       );
-      
+
       this.customLogger.logJob({
         jobName: 'BrokeretDataExtractorJob',
         operation: 'extract_data_error',
         status: 'failed',
         details: {
           duration_ms: duration,
-          error: error?.message || error.toString()
-        }
+          error: error?.message || error.toString(),
+        },
       });
-      
+
       throw error;
     }
   }
@@ -150,12 +149,12 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
 
     try {
       let brokeretData = null;
-      
+
       try {
         // Extraer datos de Brokeret API para esta cuenta
         brokeretData = await this.extractAccountDataFromBrokeret(login);
         this.logger.debug(
-          `BrokeretDataExtractorJob: Datos extraídos de Brokeret para cuenta ${login}`,
+          `BrokeretDataExtractorJob: Datos extraídos de Brokeret para cuenta ${login}: ${JSON.stringify(brokeretData)}`,
         );
       } catch (apiError) {
         // REGLA 1: Si no hay respuesta de la API, continuar con data existente
@@ -209,7 +208,7 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     try {
       // Obtener fechas para el rango de consulta
       const today = new Date();
-      const startDate = new Date(today.getFullYear(), today.getMonth(), 1); // Primer día del mes
+      const startDate = new Date(today.getTime() - (90 * 24 * 60 * 60 * 1000)); // 90 days before today
       const endDate = today;
 
       // Ejecutar todas las consultas en paralelo para optimizar el rendimiento

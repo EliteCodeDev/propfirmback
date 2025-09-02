@@ -9,8 +9,6 @@ import { riskEvaluationResult } from '../types/risk-results';
 import { ChallengeStatus } from 'src/common/enums';
 import * as crypto from 'crypto';
 
-export type AccountStatus = 'active' | 'completed' | 'failed' | 'pending';
-
 export class PositionsClassType {
   positions: OpenPosition[] | ClosedPosition[];
   resume: ResumePositionClose | ResumenPositionOpen;
@@ -68,7 +66,7 @@ export class Account {
   //fue guardada en base de datos
   saved: boolean;
   updated: boolean;
-  
+
   // Hash for dirty checking - tracks last persisted state
   private lastPersistedHash?: string;
   //
@@ -129,10 +127,13 @@ export class Account {
       rulesEvaluation: this.rulesEvaluation,
       lastUpdate: this.lastUpdate,
       equity: this.equity,
-      balance: this.balance
+      balance: this.balance,
     };
-    
-    const dataString = JSON.stringify(persistableData, Object.keys(persistableData).sort());
+
+    const dataString = JSON.stringify(
+      persistableData,
+      Object.keys(persistableData).sort(),
+    );
     return crypto.createHash('sha256').update(dataString).digest('hex');
   }
 
@@ -144,7 +145,7 @@ export class Account {
     if (!this.lastPersistedHash) {
       return true; // Never been persisted
     }
-    
+
     const currentHash = this.generateDataHash();
     return currentHash !== this.lastPersistedHash;
   }
