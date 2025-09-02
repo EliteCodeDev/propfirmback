@@ -2,12 +2,10 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository, DataSource, In } from 'typeorm';
-import { MetaStats, positionsDetails } from 'src/common/utils';
-import { RiskParams } from 'src/common/utils/risk';
-import { riskEvaluationResult } from 'src/common/types/risk-results';
 import { Challenge } from './entities/challenge.entity';
 import { ChallengeDetails } from './entities/challenge-details.entity';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
@@ -31,6 +29,7 @@ import {
 } from 'src/common/enums';
 @Injectable()
 export class ChallengesService {
+  private readonly logger = new Logger(ChallengesService.name);
   constructor(
     @InjectRepository(Challenge)
     private challengeRepository: Repository<Challenge>,
@@ -101,7 +100,8 @@ export class ChallengesService {
   }
 
   async findByUserIdSimple(userID: string, query: ChallengeQueryDto) {
-    const { page = 1, limit = 10, status, isActive } = query;
+    this.logger.debug('find: ' + JSON.stringify(query.limit) + userID);
+    const { page = 1, limit = 20, status, isActive } = query;
     const skip = (page - 1) * limit;
 
     const whereConditions: any = {
@@ -328,7 +328,8 @@ export class ChallengesService {
           login: newBrokerAccount.login,
           password: newBrokerAccount.password,
           server: newBrokerAccount.server,
-          account_size: challengeBalance?.balance?.balance || challenge.dynamicBalance,
+          account_size:
+            challengeBalance?.balance?.balance || challenge.dynamicBalance,
           profit_target: challengeBalance?.balance?.balance || 'N/A',
           currentYear: new Date().getFullYear(),
           logoUrl: this.configService.get<string>('app.logoUrl') || '',
@@ -653,7 +654,7 @@ export class ChallengesService {
 
     // Obtener el estilo activo de la base de datos
     const activeStyle = await this.stylesService.findActiveStyle();
-    
+
     // Valores por defecto si no hay estilo activo
     const defaultStyle = {
       primaryColor: '#007bff',
@@ -665,7 +666,8 @@ export class ChallengesService {
     // Asegurar que siempre tengamos los valores de color
     const styleData = {
       primaryColor: activeStyle?.primaryColor || defaultStyle.primaryColor,
-      secondaryColor: activeStyle?.secondaryColor || defaultStyle.secondaryColor,
+      secondaryColor:
+        activeStyle?.secondaryColor || defaultStyle.secondaryColor,
       tertiaryColor: activeStyle?.tertiaryColor || defaultStyle.tertiaryColor,
       banner: activeStyle?.banner || defaultStyle.banner,
     };
@@ -685,7 +687,8 @@ export class ChallengesService {
         email: challenge.user.email,
         subject: 'Challenge Credentials - Access Information',
         challenge_type: relation.plan.name,
-        account_size: challengeBalance?.balance?.balance || challenge.dynamicBalance,
+        account_size:
+          challengeBalance?.balance?.balance || challenge.dynamicBalance,
         platform: challenge.brokerAccount.platform,
         login_details: {
           login: challenge.brokerAccount.login,

@@ -1,74 +1,173 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Challenge Not Approved – OnlyFunds</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; color: #333; }
-    .email-container { max-width: 400px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06); }
-    .banner { width: 100%; height: auto; border-radius: 8px 8px 0 0; margin-bottom: 20px; }
-    .greeting { font-size: 16px; margin-bottom: 10px; }
-    .title { color: #dc3545; font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-    .challenge-type { color: #333; font-size: 16px; margin-bottom: 20px; font-weight: bold; }
-    .description { color: #666; font-size: 14px; line-height: 1.4; margin-bottom: 20px; }
-    .challenge-info { background: #fff; padding: 15px; border-radius: 6px; border: 2px solid #dc3545; margin-bottom: 20px; }
-    .info-item { color: #333; font-size: 14px; margin-bottom: 8px; }
-    .info-value { color: #6c757d; font-weight: bold; }
-    .observation { background: #fff; padding: 15px; border-radius: 6px; border: 2px solid #007bff; margin-bottom: 20px; }
-    .observation-title { color: #6c757d; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
-    .observation-content { color: #333; font-size: 12px; line-height: 1.4; }
-    .action-button { background: #007bff; color: #ffffff; padding: 12px 20px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; width: 100%; text-align: center; text-decoration: none; display: block; cursor: pointer; box-sizing: border-box; margin-bottom: 10px; }
-    .action-button:hover { background: #0056b3; color: #ffffff; }
-    .footer { color: #666; font-size: 12px; text-align: center; }
-    .company-name { color: #007bff; font-weight: bold; }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    {{#if banner}}
-    <img src="{{banner}}" alt="OnlyFunds Banner" class="banner" />
-    {{/if}}
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Challenge Not Approved – OnlyFunds</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f5f5;
+        color: #333;
+      }
+      .email-container {
+        max-width: 400px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+      }
+      .banner {
+        width: 100%;
+        height: auto;
+        border-radius: 8px 8px 0 0;
+        margin-bottom: 20px;
+      }
+      .greeting {
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .title {
+        color: #dc3545;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .challenge-type {
+        color: #333;
+        font-size: 16px;
+        margin-bottom: 20px;
+        font-weight: bold;
+      }
+      .description {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.4;
+        margin-bottom: 20px;
+      }
+      .challenge-info {
+        background: #fff;
+        padding: 15px;
+        border-radius: 6px;
+        border: 2px solid #dc3545;
+        margin-bottom: 20px;
+      }
+      .info-item {
+        color: #333;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+      .info-value {
+        color: #6c757d;
+        font-weight: bold;
+      }
+      .observation {
+        background: #fff;
+        padding: 15px;
+        border-radius: 6px;
+        border: 2px solid #007bff;
+        margin-bottom: 20px;
+      }
+      .observation-title {
+        color: #6c757d;
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .observation-content {
+        color: #333;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      .action-button {
+        background: #007bff;
+        color: #ffffff;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: bold;
+        width: 100%;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+        cursor: pointer;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+      }
+      .action-button:hover {
+        background: #0056b3;
+        color: #ffffff;
+      }
+      .footer {
+        color: #666;
+        font-size: 12px;
+        text-align: center;
+      }
+      .company-name {
+        color: #007bff;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='email-container'>
+      {{#if banner}}
+        <img src='{{banner}}' alt='OnlyFunds Banner' class='banner' />
+      {{/if}}
 
-  <div class="greeting">Dear trader,</div>
-    <div class="title">Challenge Not Approved</div>
-    <div class="challenge-type">{{challengeType}} – ${{accountSize}}</div>
-  <div class="description">We regret to inform you that your challenge has not been approved this time.</div>
-    
-    <div class="challenge-info">
-      <div class="info-item"><strong>Status:</strong>
-        <span class="info-value">Not Approved</span></div>
-      <div class="info-item"><strong>Challenge Type:</strong>
-        <span class="info-value">{{challengeType}}</span></div>
-      <div class="info-item"><strong>Account Size:</strong>
-        <span class="info-value">${{accountSize}}</span></div>
-      <div class="info-item"><strong>Review Date:</strong>
-        <span class="info-value">{{reviewDate}}</span></div>
+      <div class='greeting'>Dear trader,</div>
+      <div class='title'>Challenge Not Approved</div>
+      <div class='challenge-type'>{{challengeType}} – ${{accountSize}}</div>
+      <div class='description'>We regret to inform you that your challenge has
+        not been approved this time.</div>
+
+      <div class='challenge-info'>
+        <div class='info-item'><strong>Status:</strong>
+          <span class='info-value'>Not Approved</span></div>
+        <div class='info-item'><strong>Challenge Type:</strong>
+          <span class='info-value'>{{challengeType}}</span></div>
+        <div class='info-item'><strong>Account Size:</strong>
+          <span class='info-value'>${{accountSize}}</span></div>
+        <div class='info-item'><strong>Review Date:</strong>
+          <span class='info-value'>{{reviewDate}}</span></div>
+      </div>
+
+      {{#if observation}}
+        <div class='observation'>
+          <div class='observation-title'>Review Comments:</div>
+          <div class='observation-content'>{{observation}}</div>
+        </div>
+      {{/if}}
+
+      <div class='description'>
+        Don't be discouraged! This is part of the learning process. We
+        recommend:
+        <br /><br />
+        • Reviewing your trading and risk management strategy<br />
+        • Analyzing your performance during the challenge<br />
+        • Considering starting a new challenge when you're ready<br />
+        • Contacting our support team if you have questions
+      </div>
+
+      <a
+        href='{{landingUrl}}/challenges'
+        class='action-button'
+        target='_blank'
+      >Start New Challenge</a>
+      <a
+        href='{{landingUrl}}/support'
+        class='action-button'
+        target='_blank'
+      >Contact Support</a>
+
+      <div class='footer'>
+        Best regards,<br />
+        <span class='company-name'>OnlyFunds</span>
+        Team
+      </div>
     </div>
-
-    {{#if observation}}
-    <div class="observation">
-      <div class="observation-title">Review Comments:</div>
-      <div class="observation-content">{{observation}}</div>
-    </div>
-    {{/if}}
-
-    <div class="description">
-  Don't be discouraged! This is part of the learning process. We recommend:
-  <br><br>
-  • Reviewing your trading and risk management strategy<br>
-  • Analyzing your performance during the challenge<br>
-  • Considering starting a new challenge when you're ready<br>
-  • Contacting our support team if you have questions
-    </div>
-
-    <a href="{{landingUrl}}/challenges" class="action-button" target="_blank">Start New Challenge</a>
-    <a href="{{landingUrl}}/support" class="action-button" target="_blank">Contact Support</a>
-
-    <div class="footer">
-      Best regards,<br />
-      <span class="company-name">OnlyFunds</span> Team
-    </div>
-  </div>
-</body>
+  </body>
 </html>

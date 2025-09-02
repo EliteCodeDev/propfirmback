@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsOptional, IsNumber, IsString, IsUUID, Min, IsArray } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import {
+  IsOptional,
+  IsNumber,
+  IsString,
+  IsUUID,
+  Min,
+  IsArray,
+  IsBoolean,
+} from 'class-validator';
 
 export class ChallengeQueryDto {
   @ApiProperty({ required: false, default: 1 })
@@ -8,16 +16,20 @@ export class ChallengeQueryDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  page?: number = 1;
+  page?: number;
 
   @ApiProperty({ required: false, default: 10 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  limit?: number = 10;
+  limit?: number;
 
-  @ApiProperty({ required: false, type: [String], description: 'Array of status values to filter by' })
+  @ApiProperty({
+    required: false,
+    type: [String],
+    description: 'Array of status values to filter by',
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -30,5 +42,11 @@ export class ChallengeQueryDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   isActive?: boolean;
 }

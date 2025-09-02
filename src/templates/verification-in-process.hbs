@@ -1,98 +1,102 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verification in Process – OnlyFunds</title>
-  <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      margin:0; 
-      padding:20px; 
-      background:#f5f5f5; 
-      color:#333; 
-    }
-    .email-container { 
-      max-width:400px; 
-      margin:0 auto; 
-      background:#fff; 
-      padding:20px; 
-      border-radius:8px; 
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06); 
-    }
-    .banner { 
-      width:100%; 
-      height:auto; 
-      border-radius:8px 8px 0 0; 
-      margin-bottom:20px; 
-    }
-    .title { 
-      color:#007bff; 
-      font-size:24px; 
-      font-weight:bold; 
-      margin-bottom:30px; 
-      text-align:center; 
-    }
-    .user-greeting { 
-      color:#333; 
-      font-size:18px; 
-      font-weight:bold; 
-      margin-bottom:20px; 
-      text-align:center; 
-    }
-    .main-message { 
-      color:#333; 
-      font-size:16px; 
-      font-weight:normal; 
-      margin-bottom:20px; 
-      text-align:center; 
-      line-height:1.6; 
-    }
-    .highlight { 
-      color:#007bff; 
-      font-weight:bold; 
-    }
-    .footer-text { 
-      color:#666; 
-      font-size:12px; 
-      margin-top:20px; 
-      text-align:center; 
-    }
-    .company-name { 
-      color:#007bff; 
-      font-weight:bold; 
-    }
-    .copyright { 
-      color:#999; 
-      font-size:11px; 
-      margin-top:15px; 
-      text-align:center; 
-    }
-  </style>
-</head>
-<body>
-  <div class="email-container">
-    {{#if banner}}
-    <img src="{{banner}}" alt="OnlyFunds Banner" class="banner">
-    {{/if}}
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Verification in Process – OnlyFunds</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f5f5;
+        color: #333;
+      }
+      .email-container {
+        max-width: 400px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+      }
+      .banner {
+        width: 100%;
+        height: auto;
+        border-radius: 8px 8px 0 0;
+        margin-bottom: 20px;
+      }
+      .title {
+        color: #007bff;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+      .user-greeting {
+        color: #333;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .main-message {
+        color: #333;
+        font-size: 16px;
+        font-weight: normal;
+        margin-bottom: 20px;
+        text-align: center;
+        line-height: 1.6;
+      }
+      .highlight {
+        color: #007bff;
+        font-weight: bold;
+      }
+      .footer-text {
+        color: #666;
+        font-size: 12px;
+        margin-top: 20px;
+        text-align: center;
+      }
+      .company-name {
+        color: #007bff;
+        font-weight: bold;
+      }
+      .copyright {
+        color: #999;
+        font-size: 11px;
+        margin-top: 15px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='email-container'>
+      {{#if banner}}
+        <img src='{{banner}}' alt='OnlyFunds Banner' class='banner' />
+      {{/if}}
 
-  <div class="title">Verification in Process</div>
-  <div class="user-greeting">Hello {{firstName}} {{lastName}}</div>
-    <div class="main-message">
-  We have received your documents and started the <span class="highlight">verification process</span>.<br><br>
-  This process may take <span class="highlight">1 to 2 business days</span>.<br><br>
-  We will notify you as soon as it's completed.<br><br>
-  Thank you for your trust.
-    </div>
+      <div class='title'>Verification in Process</div>
+      <div class='user-greeting'>Hello {{firstName}} {{lastName}}</div>
+      <div class='main-message'>
+        We have received your documents and started the
+        <span class='highlight'>verification process</span>.<br /><br />
+        This process may take
+        <span class='highlight'>1 to 2 business days</span>.<br /><br />
+        We will notify you as soon as it's completed.<br /><br />
+        Thank you for your trust.
+      </div>
 
-    <div class="footer-text">
-  Kind regards,<br><br>
-  The <span class="company-name">OnlyFunds</span> Team
-    </div>
+      <div class='footer-text'>
+        Kind regards,<br /><br />
+        The
+        <span class='company-name'>OnlyFunds</span>
+        Team
+      </div>
 
-    <div class="copyright">
-  © 2024 <span class="company-name">OnlyFunds</span>. All rights reserved.
+      <div class='copyright'>
+        © 2024
+        <span class='company-name'>OnlyFunds</span>. All rights reserved.
+      </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>
