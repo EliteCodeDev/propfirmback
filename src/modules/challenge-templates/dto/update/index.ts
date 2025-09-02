@@ -3,6 +3,7 @@ export * from './update-challenge-category.dto';
 export * from './update-challenge-plan.dto';
 export * from './update-challenge-relation.dto';
 export * from './update-challenge-stage.dto';
+export * from './update-relation-addon.dto';
 export * from './update-relation-balance.dto';
 export * from './update-relation-stage.dto';
 export * from './update-stage-parameter.dto';

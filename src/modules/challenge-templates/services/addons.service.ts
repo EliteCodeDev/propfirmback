@@ -2,6 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CreateAddonsDto } from '../dto/create/create-addons.dto';
 import { Addon } from '../entities/addons/addon.entity';
 
 @Injectable()
@@ -13,23 +14,23 @@ export class AddonsService {
     ){}
 
     async findAll(){
-        return this.addonsRepository.find();
+        return await this.addonsRepository.find();
     }
 
     async findOne(id: string){
-        // return this.addonsRepository.findOne(id);
+        return await this.addonsRepository.findOne({ where: { addonID: id } });
     }
 
-    async create(addon: Addon){
-        return this.addonsRepository.save(addon);
+    async create(addon: CreateAddonsDto){
+        return await this.addonsRepository.save(addon);
     }
 
-    async update(id: number, addon: Addon){
-        return this.addonsRepository.update(id, addon);
+    async update(id: string, addon: CreateAddonsDto){
+        return await this.addonsRepository.update(id, addon);
     }
 
-    async remove(id: number){
-        // return this.addonsRepository.remove();
+    async remove(id: string){
+        return await this.addonsRepository.delete(id);
     }
 
 }
