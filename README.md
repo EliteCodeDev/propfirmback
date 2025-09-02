@@ -94,6 +94,27 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 - Website - [https://nestjs.com](https://nestjs.com/)
 - Twitter - [@nestframework](https://twitter.com/nestframework)
 
+## Database seeding orchestration
+
+Two orchestration scripts are available for database seeding:
+
+- scripts/orchestrate-seed.ps1: Full seeding flow for development environments.
+- scripts/orchestrate-seed-firstuser.ps1: Minimal flow to reset the DB and create the initial "elitecode" super admin user (no full dataset).
+
+How to run (PowerShell):
+
+```powershell
+pwsh -File .\scripts\orchestrate-seed-firstuser.ps1
+```
+
+What orchestrate-seed-firstuser.ps1 does:
+
+1) Reset DB without seeding: sets DB_DROP_SCHEMA=true, DB_SYNCHRONIZE=true, SEED_ON_BOOT=false, FIRST_USER_SUPERADMIN=false and runs seed:db-sync.
+2) Create the first super admin user: sets DB_DROP_SCHEMA=false, DB_SYNCHRONIZE=true, SEED_ON_BOOT=true, FIRST_USER_SUPERADMIN=true, runs seed:db-sync and then seed:user:specific (creates the "elitecode" user from the seed script).
+3) Restore final flags in .env: DB_DROP_SCHEMA=false, DB_SYNCHRONIZE=true, SEED_ON_BOOT=false, FIRST_USER_SUPERADMIN=false.
+
+For more details, see docs/Guia_Implementacion_Modulos_Backend.md.
+
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
