@@ -38,18 +38,6 @@ export class RelationAddonController {
     return await this.relationAddonService.findAll();
   }
 
-  @Get('addon/:addonID')
-  @ApiOperation({ summary: 'Get all relation addons by addon ID' })
-  @ApiParam({ name: 'addonID', description: 'Addon ID', type: 'string' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of relation addons for the specified addon retrieved successfully',
-    type: [RelationAddonResponseDto],
-  })
-  async findByAddonId(@Param('addonID') addonID: string): Promise<RelationAddonResponseDto[]> {
-    return await this.relationAddonService.findByAddonId(addonID);
-  }
-
   @Get('relation/:relationID')
   @ApiOperation({ summary: 'Get all relation addons by relation ID' })
   @ApiParam({ name: 'relationID', description: 'Relation ID', type: 'string' })
