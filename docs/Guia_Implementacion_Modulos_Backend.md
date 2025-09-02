@@ -56,3 +56,24 @@ Alcance: esta guía aplica a nuevos módulos en propfirmback (NestJS + TypeORM).
 
 Actualiza DoD
 - Agrega a Definition of Done: "lint sin errores (y sin warnings, si `--max-warnings=0`)" y "el build debe estar protegido por el paso de lint en CI (o prebuild local)".
+
+
+## Scripts de orquestación de seeds
+
+Además del script general de orquestación, existe un script mínimo para reiniciar la base de datos y crear el primer usuario sin ejecutar todos los seeders.
+
+- scripts/orchestrate-seed.ps1
+  - Orquesta el reseteo de BD, seedings base y carga de datos de ejemplo completos.
+
+- scripts/orchestrate-seed-firstuser.ps1
+  - Flujo mínimo: reinicia BD sin seeds, habilita SEED_ON_BOOT y FIRST_USER_SUPERADMIN, crea el primer usuario (mismo usuario/credenciales definidos en el seeder original) y deja el .env final en:
+    - DB_DROP_SCHEMA=false
+    - DB_SYNCHRONIZE=true
+    - SEED_ON_BOOT=false
+    - FIRST_USER_SUPERADMIN=false
+  - Uso (PowerShell):
+    - powershell -NoProfile -ExecutionPolicy Bypass -File c:\ELITE\prop\propfirmback\scripts\orchestrate-seed-firstuser.ps1
+
+Notas
+- Ambos scripts actualizan .env automáticamente y usan los npm scripts de seeding definidos en package.json.
+- El script mínimo no ejecuta los seeders masivos (usuarios de ejemplo, templates, challenges, cuentas de broker); sólo prepara la BD y garantiza el primer usuario.
