@@ -142,10 +142,9 @@ export class ChallengesService {
       return {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
-        server: process.env.NEXT_PUBLIC_SERVER,
-        serverIp: 'brokeret-server.com',
+        server: process.env.MT_SERVER || 'FazoLiquidity',
         platform: 'MT5',
-        isUsed: false,
+        isUsed: true,
         investorPass: investorPassword,
         innitialBalance: balance,
       };
@@ -434,9 +433,9 @@ export class ChallengesService {
           const newBrokerAccount = await this.brokerAccountsService.create({
             login: brokeretAccountDto.login,
             password: brokeretAccountDto.password,
-            server: brokeretAccountDto.server || 'brokeret-server',
+            server: brokeretAccountDto.server,
             platform: brokeretAccountDto.platform || 'MT5',
-            serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
+            serverIp: brokeretAccountDto.serverIp || '',
             isUsed: user.isVerified, // true si está verificado, false si no
             investorPass: brokeretAccountDto.investorPass,
             innitialBalance: brokeretAccountDto.innitialBalance,
@@ -668,7 +667,6 @@ export class ChallengesService {
       await queryRunner.release();
     }
   }
-
 
   // Template-related methods
   async getAvailableRelations() {
