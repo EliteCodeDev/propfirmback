@@ -9,6 +9,8 @@ import { BalanceAccountDto } from '../dto/balance.dto';
 import { AuthDto } from '../dto/auth.dto';
 import { CreateAccountDto } from '../dto/create-account.dto';
 import { TokenResponse, CreateAccountResponse } from '../types/response.type';
+import { DepositDto } from '../dto/deposit.dto';
+import { string } from 'joi';
 
 export interface TradingActivityBody {
   login: string | number;
@@ -67,14 +69,17 @@ export class CreationFazoClient {
   private async getToken(): Promise<string> {
     try {
       const authData: AuthDto = {
-        userName: this.cfg.userCreationApi ,
-        password: this.cfg.passCreationApi ,
+        userName: this.cfg.userCreationApi,
+        password: this.cfg.passCreationApi,
       };
 
-      this.logger.log('Autenticando con Brokeret usando credenciales del .env:', {
-        userName: authData.userName,
-        creationApiUrl: this.cfg.creationApiUrl,
-      });
+      this.logger.log(
+        'Autenticando con Brokeret usando credenciales del .env:',
+        {
+          userName: authData.userName,
+          creationApiUrl: this.cfg.creationApiUrl,
+        },
+      );
 
       const response = await firstValueFrom(
         this.http.post<TokenResponse>(
@@ -212,7 +217,7 @@ export class CreationFazoClient {
         passCreationApi: this.cfg.passCreationApi,
       },
     });
-    
+
     try {
       const response = await this.requestWithAuth<CreateAccountResponse>(
         'post',
@@ -236,7 +241,12 @@ export class CreationFazoClient {
       throw error;
     }
   }
-
+  async makeDeposit(depositData: DepositDto): Promise<{
+    message: string;
+    result: string;
+  }> {
+    return this.requestWithAuth('post', 'Home/makeDeposit', depositData);
+  }
   // === Endpoints detectados en el flujo n8n (Brokeret) ===
 
   // === Nuevos endpoints del flujo n8n ===

@@ -20,7 +20,7 @@ import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateCompleteOrderDto } from './dto/create-complete-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { JwtAuthGuard, GenericApiKeyGuard } from 'src/common/guards';
+import { JwtAuthGuard, GenericApiKeyGuard, ApiKeyOrAdminGuard } from 'src/common/guards';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { ApiKeyService, Public } from 'src/common/decorators';
@@ -39,7 +39,7 @@ export class OrdersController {
     return this.ordersService.create(createOrderDto);
   }
   @Post('create-complete')
-  @UseGuards(GenericApiKeyGuard)
+  @UseGuards(ApiKeyOrAdminGuard)
   @ApiKeyService('n8n')
   @ApiOperation({ summary: 'Create a complete order' })
   createCompleteOrder(@Body() createOrderDto: CreateCompleteOrderDto) {

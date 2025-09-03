@@ -121,7 +121,7 @@ export class ChallengesService {
         balance: fazoResponse.user.balance,
       });
 
-      // Realizar depósito inicial
+      // Realizar depósito inicial con fallback
       try {
         const depositData = {
           login: Number(fazoResponse.user.accountid),
@@ -130,13 +130,37 @@ export class ChallengesService {
           payment_method: 'internal',
         };
 
-        await this.brokeretApiClient.makeDeposit(depositData);
-        this.logger.log('Depósito inicial completado');
+        // Intentar primero con brokeretApiClient
+        try {
+          await this.brokeretApiClient.makeDeposit(depositData);
+          this.logger.log('Depósito inicial completado con brokeretApiClient');
+        } catch (brokeretError) {
+          this.logger.warn(
+            'Error con brokeretApiClient, intentando con fazoClient:',
+            brokeretError.message,
+          );
+
+          // Si falla brokeretApiClient, intentar con fazoClient
+          const fazoDepositData = {
+            accountId: Number(fazoResponse.user.accountid),
+            amount: balance,
+            description: 'Initial deposit for challenge account',
+            comment: 'Initial deposit for challenge account',
+            txnType: 0,
+          };
+
+          await this.creationFazoClient.makeDeposit(fazoDepositData);
+          this.logger.log(
+            'Depósito inicial completado con fazoClient como fallback',
+          );
+        }
       } catch (balanceError) {
-        this.logger.error('Error en depósito inicial:', balanceError.message);
-        throw new Error(
-          `Failed to deposit initial balance: ${balanceError.message}`,
+        this.logger.error(
+          'Error en depósito inicial (ambos clientes fallaron):',
+          balanceError.message,
         );
+        // No lanzar error, continuar con la creación de la cuenta sin balance
+        // this.logger.warn('Continuando sin depósito inicial - el balance será manejado por separado');
       }
 
       // Retornar DTO de cuenta broker
@@ -461,7 +485,7 @@ export class ChallengesService {
             ...newChallenge,
             relation: relation,
           } as Challenge;
-          
+
           const riskParams = getBasicRiskParams(tempChallenge);
           await this.createChallengeDetails({
             challengeID: newChallenge.challengeID,
@@ -565,7 +589,7 @@ export class ChallengesService {
         ...newChallenge,
         relation: relation,
       } as Challenge;
-      
+
       const riskParams = getBasicRiskParams(tempChallenge);
       await this.createChallengeDetails({
         challengeID: newChallenge.challengeID,

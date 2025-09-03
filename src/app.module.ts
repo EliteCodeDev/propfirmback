@@ -76,9 +76,8 @@ import { BufferModule } from './lib/buffer/buffer.module';
     // Winston Logger
     WinstonModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => 
-        configService.get('logger'),
-      inject: [ConfigService]
+      useFactory: (configService: ConfigService) => configService.get('logger'),
+      inject: [ConfigService],
     }),
     // base de datos
     TypeOrmModule.forRootAsync(databaseConfig),
@@ -111,7 +110,7 @@ import { BufferModule } from './lib/buffer/buffer.module';
     SmtApiModule,
     // BrokeretApiModule,
     SeedOnBootModule,
-    TasksModule,
+    // TasksModule,
     N8nModule,
     StylesModule,
   ],
