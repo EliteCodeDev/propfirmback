@@ -49,6 +49,7 @@ import {
   N8nModule,
   StylesModule,
 } from 'src/modules';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 // Seed on boot support
 import { SeedOnBootModule } from './seeds/seed-on-boot.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -110,6 +111,7 @@ import { BufferModule } from './lib/buffer/buffer.module';
     RbacModule,
     SmtApiModule,
     // BrokeretApiModule,
+    DashboardModule,
     SeedOnBootModule,
     TasksModule,
     N8nModule,
