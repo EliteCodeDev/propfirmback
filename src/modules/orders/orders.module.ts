@@ -11,6 +11,7 @@ import { ChallengeTemplatesModule } from '../challenge-templates/challenge-templ
 import { SmtApiModule } from 'src/modules/data/smt-api/smt-api.module';
 import { BrokeretApiModule } from '../data/brokeret-api/brokeret-api.module';
 import { BufferModule } from 'src/lib/buffer/buffer.module';
+import { UserAccount } from '../users/entities';
 @Module({
   imports: [
     TypeOrmModule.forFeature([CustomerOrder]),

@@ -183,7 +183,7 @@ export class OrdersService {
       //   relation,
       // );
       // for brokeret-api
-
+      
       const credentials = await this.createBrokeretApiAccount(
         user,
         createOrderDto,
@@ -684,7 +684,7 @@ export class OrdersService {
         balance: fazoResponse.user.balance,
       });
 
-      // Realizar depósito inicial usando el endpoint financiero correcto
+      // Realizar depósito inicial con fallback
       try {
         const depositData = {
           login: Number(fazoResponse.user.accountid),
@@ -693,7 +693,7 @@ export class OrdersService {
           payment_method: 'internal',
         };
 
-        this.logger.log('Making initial deposit:', {
+        this.logger.log('Making initial deposit with brokeretApiClient:', {
           login: fazoResponse.user.accountid,
           amount: balance,
         });
@@ -701,17 +701,59 @@ export class OrdersService {
         const depositResult =
           await this.brokeretApiClient.makeDeposit(depositData);
 
-        this.logger.log('Initial deposit completed successfully:', {
-          result: depositResult,
-        });
-      } catch (balanceError) {
-        this.logger.error(
-          'Error making balance operation for initial deposit:',
-          balanceError.message,
+        this.logger.log(
+          'Initial deposit completed successfully with brokeretApiClient:',
+          {
+            result: depositResult,
+          },
         );
-        throw new Error(
-          `Failed to deposit initial balance: ${balanceError.message}`,
+      } catch (brokeretError) {
+        this.logger.warn(
+          'brokeretApiClient.makeDeposit failed, trying fallback with creationFazoClient:',
+          brokeretError.message,
         );
+
+        try {
+          // Adaptar los datos para el cliente Fazo
+          const fazoDepositData = {
+            accountId: fazoResponse.user.accountid,
+            amount: balance,
+            txnType: 0,
+            description: 'Initial deposit for challenge account',
+            comment: 'Fallback deposit via creationFazoClient',
+          };
+
+          this.logger.log(
+            'Making initial deposit with creationFazoClient fallback:',
+            {
+              accountId: fazoResponse.user.accountid,
+              amount: balance,
+            },
+          );
+
+          const fazoDepositResult =
+            await this.creationFazoClient.makeDeposit(fazoDepositData);
+
+          this.logger.log(
+            'Initial deposit completed successfully with creationFazoClient fallback:',
+            {
+              result: fazoDepositResult,
+            },
+          );
+        } catch (fazoError) {
+          this.logger.error(
+            'Both brokeretApiClient and creationFazoClient makeDeposit failed:',
+            {
+              brokeretError: brokeretError.message,
+              fazoError: fazoError.message,
+            },
+          );
+          // this.logger.warn(
+          //   'Continuing without initial deposit - balance will be handled separately',
+          // );
+          // No lanzamos error, continuamos con la creación de la cuenta
+          // El balance se manejará por separado
+        }
       }
 
       // Mapear la respuesta de Fazo a CreateBrokerAccountDto
@@ -719,7 +761,7 @@ export class OrdersService {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
         server: process.env.NEXT_PUBLIC_SERVER,
-        serverIp: 'brokeret-server.com', // IP del servidor por defecto
+        serverIp: 'server.com', // IP del servidor por defecto
         platform: 'MT5',
         isUsed: false,
         investorPass: investorPassword,
