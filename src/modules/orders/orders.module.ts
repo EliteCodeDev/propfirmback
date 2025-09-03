@@ -12,11 +12,14 @@ import { SmtApiModule } from 'src/modules/data/smt-api/smt-api.module';
 import { BrokeretApiModule } from '../data/brokeret-api/brokeret-api.module';
 import { BufferModule } from 'src/lib/buffer/buffer.module';
 import { UserAccount } from '../users/entities';
+import { JwtModule } from '@nestjs/jwt';
+import { jwtConfig } from 'src/config';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CustomerOrder]),
+    TypeOrmModule.forFeature([CustomerOrder, UserAccount]),
     MailerModule,
     UsersModule,
+    JwtModule.registerAsync(jwtConfig),
     forwardRef(() => ChallengesModule),
     BrokerAccountsModule,
     ChallengeTemplatesModule,

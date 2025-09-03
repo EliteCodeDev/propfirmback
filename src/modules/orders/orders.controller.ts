@@ -28,7 +28,7 @@ import { ApiKeyService, Public } from 'src/common/decorators';
 // @ApiBearerAuth()
 // @Public()
 
-@UseGuards(GenericApiKeyGuard)
+// @UseGuards(GenericApiKeyGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -38,9 +38,11 @@ export class OrdersController {
   create(@Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(createOrderDto);
   }
+
   @Post('create-complete')
-  @UseGuards(GenericApiKeyGuard)
-  @ApiKeyService('n8n')
+  @Public()
+  // @UseGuards(ApiKeyOrAdminGuard)
+  // @ApiKeyService('n8n')
   @ApiOperation({ summary: 'Create a complete order' })
   createCompleteOrder(@Body() createOrderDto: CreateCompleteOrderDto) {
     return this.ordersService.createCompleteOrder(createOrderDto);
