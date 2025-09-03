@@ -62,14 +62,7 @@ npm run -s seed:user:specific
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:user:specific failed" }
 Pop-Location
 
-# Step 4: Create 30 test users (role: user)
-Write-Host "Step 4: Create 30 test users (role: user)" -ForegroundColor Cyan
-Push-Location $repoRoot
-npm run -s seed:users
-if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:users failed" }
-Pop-Location
-
-# Step 5: Restore final env flags (no further seed on next boots)
+# Step 4: Restore final env flags (no further seed on next boots)
 Set-EnvFlag -Path $EnvPath -Pairs @{
   'DB_DROP_SCHEMA'      = 'false';
   'DB_SYNCHRONIZE'      = 'true';
