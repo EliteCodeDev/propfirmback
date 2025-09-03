@@ -79,3 +79,24 @@ Set-EnvFlag -Path $EnvPath -Pairs @{
 
 Write-Host "✅ Minimal orchestration finished (DB reset + base seed-on-boot + first user)" -ForegroundColor Green
 Write-Host "Final .env flags set to: DB_DROP_SCHEMA=false, DB_SYNCHRONIZE=true, SEED_ON_BOOT=false, FIRST_USER_SUPERADMIN=false" -ForegroundColor Yellow
+
+# Step 6: Seed challenge templates
+Write-Host "Step 6: Seed challenge templates" -ForegroundColor Cyan
+Push-Location $repoRoot
+npm run -s seed:challenge-templates
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:challenge-templates failed" }
+Pop-Location
+
+# Step 7: Seed real challenges
+Write-Host "Step 7: Seed real challenges" -ForegroundColor Cyan
+Push-Location $repoRoot
+npm run -s seed:challenges:real
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:challenges:real failed" }
+Pop-Location
+
+# Step 8: Seed real broker accounts
+Write-Host "Step 8: Seed real broker accounts" -ForegroundColor Cyan
+Push-Location $repoRoot
+npm run -s seed:broker-accounts:real
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:broker-accounts:real failed" }
+Pop-Location
