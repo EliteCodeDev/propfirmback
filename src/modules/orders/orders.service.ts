@@ -412,6 +412,7 @@ export class OrdersService {
         lastName: user.billing.last_name,
         phone: user.billing.phone ? user.billing.phone : '',
         password,
+        isConfirmed: true, 
       };
       const newUser = await this.usersService.create(userPayload);
       return {
