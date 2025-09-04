@@ -182,9 +182,10 @@ export function mapChallengeToAccount(challenge: Challenge): Account {
   if (!account.riskValidation) {
     account.riskValidation = new RiskParams();
   }
-  if (challenge.details.rulesParams) {
+  const rulesParams = challenge.details?.rulesParams;
+  if (rulesParams) {
     account.riskValidation = {
-      ...challenge.details.rulesParams,
+      ...rulesParams,
     };
   } else {
     account.riskValidation.profitTarget = getParameterValueBySlug(
