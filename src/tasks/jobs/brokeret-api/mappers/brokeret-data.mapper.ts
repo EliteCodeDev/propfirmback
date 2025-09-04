@@ -83,7 +83,7 @@ export class BrokeretDataMapper {
       // REGLA 1: Si no hay respuesta de la API, realizar operaciones de riesgo y guardado
       if (!brokeretData) {
         this.logger.debug(
-          `BrokeretDataMapper: No hay respuesta de API para cuenta ${existingAccount.login}, realizando operaciones de riesgo con data existente`,
+          `BrokeretDataMapper: No hay respuesta de API para cuenta ${existingAccount.login}, no se actualizará la cuenta`,
         );
 
         return updatedAccount;
