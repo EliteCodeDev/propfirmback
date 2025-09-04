@@ -14,7 +14,7 @@ export class DepositDto {
   })
   @IsNumber()
   @IsPositive()
-  accountId: number;
+  loginid: number;
 
   @ApiProperty({
     description: 'Monto a depositar',

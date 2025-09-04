@@ -245,7 +245,7 @@ export class CreationFazoClient {
     message: string;
     result: string;
   }> {
-    return this.requestWithAuth('post', 'Home/makeDeposit', depositData);
+    return this.requestWithAuth('post', 'Home/balanceOP', depositData);
   }
   // === Endpoints detectados en el flujo n8n (Brokeret) ===
 

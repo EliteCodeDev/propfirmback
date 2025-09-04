@@ -16,6 +16,7 @@ import { ChallengeQueryDto } from './dto/challenge-query.dto';
 import { CreateChallengeDetailsDto } from './dto/create-challenge-details.dto';
 import { UpdateChallengeDetailsDto } from './dto/update-challenge-details.dto';
 import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
+import { AddonRulesService } from '../challenge-templates/services/addon-rules.service';
 import { VerificationService } from '../verification/verification.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { BrokerAccountsService } from '../broker-accounts/broker-accounts.service';
@@ -33,11 +34,11 @@ import {
 import { BrokerAccount } from '../broker-accounts/entities/broker-account.entity';
 import { use } from 'passport';
 import { generateRandomPassword } from 'src/common/utils/randomPassword';
+import { getBasicRiskParams, calculateRiskParamsWithAddons } from 'src/common/utils/mappers/account-mapper';
 import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-account.dto';
 import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
 import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
 import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.client';
-import { getBasicRiskParams } from 'src/common/utils/mappers/account-mapper';
 @Injectable()
 export class ChallengesService {
   private readonly logger = new Logger(ChallengesService.name);
@@ -49,6 +50,7 @@ export class ChallengesService {
     @InjectRepository(UserAccount)
     private userAccountRepository: Repository<UserAccount>,
     private challengeTemplatesService: ChallengeTemplatesService,
+    private addonRulesService: AddonRulesService,
     private verificationService: VerificationService,
     private certificatesService: CertificatesService,
     private brokerAccountsService: BrokerAccountsService,
@@ -142,7 +144,7 @@ export class ChallengesService {
 
           // Si falla brokeretApiClient, intentar con fazoClient
           const fazoDepositData = {
-            accountId: Number(fazoResponse.user.accountid),
+            loginid: Number(fazoResponse.user.accountid),
             amount: balance,
             description: 'Initial deposit for challenge account',
             comment: 'Initial deposit for challenge account',
@@ -486,7 +488,10 @@ export class ChallengesService {
             relation: relation,
           } as Challenge;
 
-          const riskParams = getBasicRiskParams(tempChallenge);
+          const addons = await this.addonRulesService.getActiveAddonsFromRelation(relation);
+          tempChallenge.addons = addons;
+          const baseRiskParams = getBasicRiskParams(tempChallenge);
+          const riskParams = await calculateRiskParamsWithAddons(tempChallenge, baseRiskParams, this.addonRulesService);
           await this.createChallengeDetails({
             challengeID: newChallenge.challengeID,
             rulesParams: riskParams,
@@ -590,7 +595,10 @@ export class ChallengesService {
         relation: relation,
       } as Challenge;
 
-      const riskParams = getBasicRiskParams(tempChallenge);
+      const addons = await this.addonRulesService.getActiveAddonsFromRelation(relation);
+      tempChallenge.addons = addons;
+      const baseRiskParams = getBasicRiskParams(tempChallenge);
+      const riskParams = await calculateRiskParamsWithAddons(tempChallenge, baseRiskParams, this.addonRulesService);
       await this.createChallengeDetails({
         challengeID: newChallenge.challengeID,
         rulesParams: riskParams,
