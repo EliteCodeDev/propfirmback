@@ -199,6 +199,7 @@ export class WithdrawalsService {
         createOrderDto as any,
         currentChallenge.dynamicBalance,
         'contest\\PG\\kbst\\contestphase1', // groupName por defecto
+        relation,
       );
 
       const newBrokerAccount = await this.brokerAccountsService.create({

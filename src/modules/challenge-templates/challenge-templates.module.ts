@@ -10,6 +10,7 @@ import {
 } from './services';
 import { AddonsService } from './services/addons.service';
 import { RelationAddonService } from './services/relation-addon.service';
+import { AddonRulesService } from './services/addon-rules.service';
 import { AddonsController } from './controllers/addons.controller';
 import { RelationAddonController } from './controllers/relation-addon.controller';
 // Entities
@@ -56,6 +57,7 @@ import {
     ChallengeStagesService,
     AddonsService,
     RelationAddonService,
+    AddonRulesService,
   ],
   exports: [
     ChallengeTemplatesService,
@@ -64,6 +66,7 @@ import {
     ChallengeStagesService,
     AddonsService,
     RelationAddonService,
+    AddonRulesService,
     TypeOrmModule,
   ],
 })
