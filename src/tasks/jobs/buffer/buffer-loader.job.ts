@@ -9,6 +9,7 @@ import { ChallengeTemplatesService } from 'src/modules/challenge-templates/servi
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { mapChallengesToAccounts } from 'src/common/utils/mappers/account-mapper';
 import { CustomLoggerService } from 'src/common/services/custom-logger.service';
+import { ConfigService } from '@nestjs/config';
 
 /**
  * Job genérico responsable de cargar cuentas desde la base de datos al buffer
@@ -28,12 +29,30 @@ export class BufferLoaderJob implements OnModuleInit {
     private readonly challengeTemplatesService: ChallengeTemplatesService,
     private readonly buffer: BufferService,
     private readonly customLogger: CustomLoggerService,
+    private readonly config: ConfigService,
   ) {}
+
+  /**
+   * Determina si los jobs de buffer deben estar deshabilitados (por seeding o flags de entorno)
+   */
+  private isDisabled(): boolean {
+    const flags = [
+      process.env.DISABLE_TASKS,
+      process.env.DISABLE_JOBS,
+      process.env.DISABLE_BUFFER_JOBS,
+      process.env.SEEDING,
+    ];
+    return flags.some((v) => String(v).toLowerCase() === 'true' || v === '1');
+  }
 
   /**
    * Ejecuta al iniciar el backend para cargar las cuentas iniciales
    */
   onModuleInit() {
+    if (this.isDisabled()) {
+      this.logger.debug('BufferLoaderJob: deshabilitado por variables de entorno (no se ejecuta en seeding)');
+      return;
+    }
     this.logger.debug('BufferLoaderJob: Iniciando carga inicial del buffer');
     // Ejecutar y capturar errores al inicio
     this.loadAccountsToBuffer().catch((err) => {
@@ -50,6 +69,10 @@ export class BufferLoaderJob implements OnModuleInit {
    */
   @Cron('0 0 * * * *', { timeZone: 'America/Lima' })
   async scheduledBufferReload() {
+    if (this.isDisabled()) {
+      this.logger.debug('BufferLoaderJob: recarga programada deshabilitada por entorno');
+      return;
+    }
     const startTime = Date.now();
     this.logger.debug('BufferLoaderJob: Recarga programada del buffer');
 
@@ -100,6 +123,16 @@ export class BufferLoaderJob implements OnModuleInit {
    * Proceso principal para cargar cuentas desde la base de datos al buffer
    */
   async loadAccountsToBuffer() {
+    if (this.isDisabled()) {
+      this.logger.debug('BufferLoaderJob: carga de cuentas deshabilitada por entorno');
+      return {
+        totalChallenges: 0,
+        accountsMapped: 0,
+        accountsInjected: 0,
+        accountsUpdated: 0,
+        bufferStats: this.buffer.getStats(),
+      };
+    }
     const startTime = Date.now();
 
     try {
@@ -248,9 +281,9 @@ export class BufferLoaderJob implements OnModuleInit {
         {
           action: 'load_accounts_error',
           duration: duration,
-          error: error.message,
+          error: (error as any)?.message || String(error),
         },
-        'Failed to load accounts to buffer',
+        'Accounts load to buffer failed',
       );
 
       throw error;
