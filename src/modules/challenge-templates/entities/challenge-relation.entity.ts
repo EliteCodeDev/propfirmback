@@ -12,6 +12,7 @@ import { RelationBalance } from './balance';
 import { RelationStage } from './stage';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { RelationAddon } from './addons/relation-addon.entity';
+import { RulesWithdrawal } from './rules/rules-withdrawal.entity';
 
 @Entity('ChallengeRelation')
 export class ChallengeRelation {
@@ -52,4 +53,7 @@ export class ChallengeRelation {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   groupName?: string;
+
+  @OneToMany(() => RulesWithdrawal, (rulesWithdrawal) => rulesWithdrawal.relationID)
+  rulesWithdrawal: RulesWithdrawal[];
 }

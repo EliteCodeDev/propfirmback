@@ -1,5 +1,5 @@
 
-import { Controller,Get,Post,Body,Patch,Param,Delete,HttpCode,HttpStatus, Query } from '@nestjs/common';
+import { Controller,Get,Post,Body,Patch,Param,Delete } from '@nestjs/common';
 import { AddonChallengService } from '../services/addon-challenge.service';
 import { CreateChallegeAddonDto } from '../dto/create/create-challenge-addo.dto';
 
@@ -13,6 +13,11 @@ export class AddonChallengController {
     @Get()
     async findAll(){
         return await this.addonChallengService.findAll();
+    }
+
+    @Get(':id')
+    async findByIdChallenge(@Param('id') id: string){
+        return await this.addonChallengService.findByChallengeId(id);
     }
 
     @Post()
