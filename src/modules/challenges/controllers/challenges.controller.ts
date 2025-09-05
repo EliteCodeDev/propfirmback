@@ -36,8 +36,8 @@ import { ChallengeTemplatesService } from 'src/modules/challenge-templates/servi
 
 @ApiTags('Challenges')
 @ApiBearerAuth()
-@Public()
-// @UseGuards(JwtAuthGuard)
+// @Public()
+@UseGuards(JwtAuthGuard)
 @Controller('challenges')
 export class ChallengesController {
   constructor(
