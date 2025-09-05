@@ -23,4 +23,8 @@ export default registerAs('apiKeys', () => ({
   brokeret: {
     apiKey: process.env.BROKERET_API_KEY || 'BROKERET-API-KEY-DEFAULT',
   },
+  // API Key para servicios de test
+  test: {
+    apiKey: process.env.TEST_API_KEY || 'TEST-API-KEY-DEFAULT',
+  },
 }));

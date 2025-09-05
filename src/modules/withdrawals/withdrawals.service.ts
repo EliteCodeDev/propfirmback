@@ -10,7 +10,7 @@ import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
 import { UpdateWithdrawalStatusDto } from './dto/update-withdrawal-status.dto';
 import { WithdrawalStatus } from 'src/common/enums/withdrawal-status.enum';
-import { ChallengesService } from '../challenges/challenges.service';
+import { ChallengesService } from '../challenges/services/challenges.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
 import { BrokerAccountsService } from '../broker-accounts/broker-accounts.service';
