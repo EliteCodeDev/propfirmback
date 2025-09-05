@@ -151,6 +151,27 @@ export class WithdrawalsService {
       await this.handleWithdrawalApproval(withdrawal);
     }
 
+    // Si es rechazado, enviar correo de rechazo
+    if (updateWithdrawalStatusDto.status === WithdrawalStatus.REJECTED) {
+      const w = await this.withdrawalRepository.findOne({
+        where: { withdrawalID: withdrawal.withdrawalID },
+        relations: ['user'],
+      });
+      await this.mailerService.sendMail({
+        to: w.user.email,
+        subject: 'Withdrawal Rejected',
+        template: 'withdrawal-rejected',
+        context: {
+          status: 'rejected',
+          amount: withdrawal.amount,
+          wallet: withdrawal.wallet,
+          correo: w.user.email,
+          observation: withdrawal.observation || '',
+          landingUrl: this.configService.get<string>('app.clientUrl'),
+        },
+      });
+    }
+
     return this.withdrawalRepository.save(withdrawal);
   }
 
@@ -166,6 +187,7 @@ export class WithdrawalsService {
           'challenge',
           'challenge.relation',
           'challenge.relation.balances',
+          'challenge.relation.plan',
         ],
       });
 
@@ -179,7 +201,7 @@ export class WithdrawalsService {
       const currentChallenge = currentWithdrawal.challenge;
       const relation = currentChallenge.relation;
 
-      // Crear nueva cuenta de broker en Brokeret para el nuevo challenge
+      // Crear nueva cuenta de broker para el nuevo challenge (reutilizando OrdersService helper)
       const createOrderDto = {
         user: {
           billing: {
@@ -192,13 +214,13 @@ export class WithdrawalsService {
             address_2: '',
           },
         },
-      };
+      } as any;
 
       const brokeretAccountDto = await this.ordersService.createBrokeretApiAccount(
         user,
-        createOrderDto as any,
+        createOrderDto,
         currentChallenge.dynamicBalance,
-        'contest\\PG\\kbst\\contestphase1', // groupName por defecto
+        'contest\\PG\\kbst\\contestphase1',
         relation,
       );
 
@@ -219,7 +241,7 @@ export class WithdrawalsService {
         relationID: relation.relationID,
         brokerAccountID: newBrokerAccount.brokerAccountID,
         startDate: new Date(),
-        numPhase: 1, // Nuevo challenge comienza en fase 1
+        numPhase: 1,
         isActive: true,
         status: ChallengeStatus.INNITIAL,
         parentID: currentChallenge.challengeID,
@@ -233,21 +255,22 @@ export class WithdrawalsService {
         amount: withdrawal.amount,
       });
 
-      // Enviar email con credenciales del nuevo challenge
+      // Enviar email con credenciales del nuevo challenge (usar misma estructura que orders)
       const challengeBalance = relation.balances?.find(
         (b) => Number(b.balance) === Number(currentChallenge.dynamicBalance),
       );
 
       await this.mailerService.sendMail({
         to: user.email,
-        subject: 'Withdrawal Approved - New Challenge Credentials',
-        template: 'withdrawal-approved-credentials',
+        subject: 'Challenge is ready to use!',
+        template: 'challenge-credentials',
         context: {
           email: user.email,
-          withdrawal_amount: withdrawal.amount,
+          subject: 'Challenge is ready to use!',
           challenge_type: relation.plan?.name || 'Challenge',
-          Account_size:
-            challengeBalance?.balance || currentChallenge.dynamicBalance,
+          account_size:
+            (challengeBalance as any)?.balance || currentChallenge.dynamicBalance,
+          platform: newBrokerAccount.platform,
           login_details: {
             login: newBrokerAccount.login,
             password: newBrokerAccount.password,
@@ -258,8 +281,22 @@ export class WithdrawalsService {
         },
       });
 
-      // Actualizar el withdrawal con el nuevo challengeID
-      withdrawal.challengeID = newChallenge.challengeID;
+      // Enviar email de aprobación del retiro
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Withdrawal Approved',
+        template: 'withdrawal-approved',
+        context: {
+          status: 'approved',
+          amount: withdrawal.amount,
+          wallet: withdrawal.wallet,
+          correo: user.email,
+          landingUrl: this.configService.get<string>('app.clientUrl'),
+        },
+      });
+
+      // Importante: NO reasignar el withdrawal al nuevo challenge
+      // withdrawal.challengeID = newChallenge.challengeID; // removido a propósito
     } catch (error) {
       throw new BadRequestException(
         `Failed to process withdrawal approval: ${error.message}`,
