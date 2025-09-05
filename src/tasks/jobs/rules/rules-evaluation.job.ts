@@ -58,14 +58,27 @@ export class RulesEvaluationJob {
       const entries = await this.bufferService.listEntries();
       let processedCount = 0;
       let validationCount = 0;
+      let skippedCount = 0;
 
       // Procesar cada cuenta individualmente usando upsertAccount
       for (const [login, account] of entries) {
         try {
-          // Evaluar reglas de riesgo
+          // Recrear instancia de Account para restaurar métodos de clase
+          const accountInstance = this.recreateAccountInstance(account);
+          
+          // ✅ OPTIMIZACIÓN: Saltar evaluación si la cuenta no ha cambiado
+          if (!accountInstance.isDirty()) {
+            this.logger.debug(
+              `RulesEvaluationJob: Saltando evaluación para ${login} - sin cambios detectados`
+            );
+            skippedCount++;
+            continue;
+          }
+
+          // Evaluar reglas de riesgo solo si hay cambios
           const riskEvaluation = await this.evaluateAccountRules(
-            account,
-            account.riskValidation,
+            accountInstance,
+            accountInstance.riskValidation,
             // this.getDefaultRiskParams(), // Usar parámetros por defecto o desde configuración
           );
 
@@ -73,9 +86,9 @@ export class RulesEvaluationJob {
 
           const challengeStatus = await this.evaluateRiskStatus(
             riskEvaluation,
-            account.status,
+            accountInstance.status,
           );
-          account.status = challengeStatus;
+          accountInstance.status = challengeStatus;
 
           // Actualizar la cuenta con los resultados de validación
           await this.bufferService.upsertAccount(login, (prev) => {
@@ -102,7 +115,7 @@ export class RulesEvaluationJob {
       }
 
       this.logger.debug(
-        `RulesEvaluationJob completado: procesadas=${processedCount}/${stats.bufferSize}, validaciones_exitosas=${validationCount}`,
+        `RulesEvaluationJob completado: procesadas=${processedCount}/${stats.bufferSize}, saltadas=${skippedCount}, validaciones_exitosas=${validationCount}`,
       );
 
       const duration = Date.now() - startTime;
@@ -116,6 +129,7 @@ export class RulesEvaluationJob {
           duration_ms: duration,
           total_accounts: stats.bufferSize,
           processed_count: processedCount,
+          skipped_count: skippedCount,
           validation_count: validationCount,
         },
       });
@@ -221,5 +235,26 @@ export class RulesEvaluationJob {
     validation.tradingDays = riskEvaluation.tradingDays.numDays;
     validation.inactiveDays = riskEvaluation.inactiveDays.inactiveDays;
     return validation;
+  }
+
+  /**
+   * Recrea una instancia de Account desde un objeto plano para restaurar métodos de clase
+   */
+  private recreateAccountInstance(accountData: any): Account {
+    // Crear nueva instancia de Account
+    const account = new Account(accountData.accountID, accountData.login);
+    
+    // Copiar todas las propiedades del objeto plano
+    Object.assign(account, accountData);
+    
+    // Asegurar que las fechas sean objetos Date apropiados
+    if (accountData.createDateTime) {
+      account.createDateTime = new Date(accountData.createDateTime);
+    }
+    if (accountData.lastUpdate) {
+      account.lastUpdate = new Date(accountData.lastUpdate);
+    }
+    
+    return account;
   }
 }

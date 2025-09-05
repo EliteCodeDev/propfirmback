@@ -49,10 +49,14 @@ import {
   N8nModule,
   StylesModule,
 } from 'src/modules';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 // Seed on boot support
 import { SeedOnBootModule } from './seeds/seed-on-boot.module';
 import { TasksModule } from './tasks/tasks.module';
 import { BufferModule } from './lib/buffer/buffer.module';
+
+// Flag para deshabilitar tareas/cron por entorno
+const disableTasks = String(process.env.DISABLE_TASKS || '').toLowerCase() === 'true';
 
 @Module({
   imports: [
@@ -76,9 +80,8 @@ import { BufferModule } from './lib/buffer/buffer.module';
     // Winston Logger
     WinstonModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => 
-        configService.get('logger'),
-      inject: [ConfigService]
+      useFactory: (configService: ConfigService) => configService.get('logger'),
+      inject: [ConfigService],
     }),
     // base de datos
     TypeOrmModule.forRootAsync(databaseConfig),
@@ -90,7 +93,8 @@ import { BufferModule } from './lib/buffer/buffer.module';
         { ttl: 60000, limit: 100 }, // configurar mediante appConfig si se desea
       ],
     }),
-    ScheduleModule.forRoot(),
+    // Schedule/Tasks condicionales por entorno
+    ...(!disableTasks ? [ScheduleModule.forRoot()] : []),
     // Application modules
     BusinessRequirementModule,
     BufferModule,
@@ -110,8 +114,9 @@ import { BufferModule } from './lib/buffer/buffer.module';
     RbacModule,
     SmtApiModule,
     // BrokeretApiModule,
+    DashboardModule,
     SeedOnBootModule,
-    TasksModule,
+    ...(!disableTasks ? [TasksModule] : []),
     N8nModule,
     StylesModule,
   ],

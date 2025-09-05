@@ -45,20 +45,21 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
       // Obtener estadísticas del buffer para verificar si hay cuentas
       const stats = this.buffer.getStats();
 
-      if (stats.bufferSize === 0) {
-        this.logger.debug('No hay cuentas en el buffer para procesar');
+      //si se llama a la función, naturalemte hay cuentas en el buffer
+      // if (stats.bufferSize === 0) {
+      //   this.logger.debug('No hay cuentas en el buffer para procesar');
 
-        this.customLogger.logJob({
-          jobName: 'BrokeretDataExtractorJob',
-          operation: 'extract_data_empty',
-          status: 'completed',
-          details: {
-            buffer_size: 0,
-            duration_ms: Date.now() - startTime,
-          },
-        });
-        return;
-      }
+      //   this.customLogger.logJob({
+      //     jobName: 'BrokeretDataExtractorJob',
+      //     operation: 'extract_data_empty',
+      //     status: 'completed',
+      //     details: {
+      //       buffer_size: 0,
+      //       duration_ms: Date.now() - startTime,
+      //     },
+      //   });
+      //   return;
+      // }
 
       this.logger.debug(
         `BrokeretDataExtractorJob: Procesando ${stats.bufferSize} cuentas del buffer`,
@@ -208,7 +209,7 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     try {
       // Obtener fechas para el rango de consulta
       const today = new Date();
-      const startDate = new Date(today.getTime() - (90 * 24 * 60 * 60 * 1000)); // 90 days before today
+      const startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000); // 90 days before today
       const endDate = today;
 
       // Ejecutar todas las consultas en paralelo para optimizar el rendimiento

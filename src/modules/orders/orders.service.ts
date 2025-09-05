@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CustomerOrder } from './entities/customer-order.entity';
@@ -6,7 +11,8 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateCompleteOrderDto } from './dto/create-complete-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { MailerService } from '../mailer/mailer.service';
-import { ChallengesService } from '../challenges/challenges.service';
+import { ChallengesService } from '../challenges/services/challenges.service';
+import { ChallengeDetailsService } from '../challenges/services/challenge-details.service';
 import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
 import {
   createAccountResponse,
@@ -31,9 +37,13 @@ import {
 } from '../challenge-templates/entities';
 import {
   createSmtApiResponseToBrokerAccount,
-  getBasicRiskParams,
   getParameterValueBySlug,
+  getLeverageFromChallenge,
+  getLeverageFromRelation,
+  getBasicRiskParams,
+  calculateRiskParamsWithAddons,
 } from 'src/common/utils/mappers/account-mapper';
+import { AddonRulesService } from '../challenge-templates/services/addon-rules.service';
 import { UserAccount } from '../users/entities';
 import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-account.dto';
 import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
@@ -52,6 +62,7 @@ export class OrdersService {
     private configService: ConfigService,
     @Inject(forwardRef(() => ChallengesService))
     private challengesService: ChallengesService,
+    private challengeDetailsService: ChallengeDetailsService,
     private challengeTemplatesService: ChallengeTemplatesService,
     private brokerAccountsService: BrokerAccountsService,
     private usersService: UsersService,
@@ -59,6 +70,7 @@ export class OrdersService {
     private creationFazoClient: CreationFazoClient,
     private brokeretApiClient: BrokeretApiClient,
     private bufferService: BufferService,
+    private addonRulesService: AddonRulesService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<CustomerOrder> {
@@ -154,6 +166,7 @@ export class OrdersService {
       const relationBalance = relation.balances?.find(
         (bal) => bal.wooID === createOrderDto.product.variationID,
       );
+
       this.logger.log(
         'Matched relation balance:',
         JSON.stringify(relationBalance),
@@ -183,6 +196,8 @@ export class OrdersService {
         user,
         createOrderDto,
         challengeBalance.balance,
+        relation.groupName,
+        relation,
       );
       // Create broker account and challenge using the separated function
       const challengeRes = await this.createBrokerAndChallenge(
@@ -406,6 +421,7 @@ export class OrdersService {
         lastName: user.billing.last_name,
         phone: user.billing.phone ? user.billing.phone : '',
         password,
+        isConfirmed: true,
       };
       const newUser = await this.usersService.create(userPayload);
       return {
@@ -495,10 +511,19 @@ export class OrdersService {
         // challenge.relation.balances
         challenge.relation = relation;
 
-        const riskParams = getBasicRiskParams(challenge);
+        // Cargar addons de la relación para el challenge
+        const addons =
+          await this.addonRulesService.getActiveAddonsFromRelation(relation);
+        challenge.addons = addons;
+        const baseRiskParams = getBasicRiskParams(challenge);
+        const riskParams = await calculateRiskParamsWithAddons(
+          challenge,
+          baseRiskParams,
+          this.addonRulesService,
+        );
         this.logger.debug('CreateBrokerAndChallenge: riskParams', riskParams);
         const challengeDetails =
-          await this.challengesService.createChallengeDetails({
+          await this.challengeDetailsService.createChallengeDetails({
             challengeID: challenge.challengeID,
             rulesParams: riskParams,
           });
@@ -581,9 +606,11 @@ export class OrdersService {
     user: UserAccount,
     createOrderDto: CreateCompleteOrderDto,
     balance: number,
+    relation: ChallengeRelation,
   ): Promise<any> {
     const url = 'https://access.metatrader5.com/terminal';
-    const leverage = '100';
+    const dynamicLeverage = getLeverageFromRelation(relation);
+    const leverage = dynamicLeverage.toString(); // SMT API espera string
     const platform = 'mt5';
     this.logger.log('Creating SMT API challenge with data:', {
       user,
@@ -610,12 +637,19 @@ export class OrdersService {
     const credentials = createSmtApiResponseToBrokerAccount(smtRes.data);
     credentials.serverIp = url;
     credentials.platform = platform;
+    // Usar MT_SERVER como fallback si no se especifica server
+    if (!credentials.server) {
+      credentials.server =
+        this.configService.get<string>('MT_SERVER') || 'DefaultServer';
+    }
     return credentials;
   }
   async createBrokeretApiAccount(
     user: UserAccount,
     createOrderDto: CreateCompleteOrderDto,
     balance: number,
+    groupName: string,
+    relation: ChallengeRelation,
     retryCount: number = 0,
   ): Promise<CreateBrokerAccountDto> {
     const maxRetries = 3;
@@ -650,10 +684,13 @@ export class OrdersService {
           ? `${fullName || user.username}_${Date.now()}`
           : fullName || user.username;
 
+      // Extraer leverage dinámico de las reglas del challenge
+      const dynamicLeverage = getLeverageFromRelation(relation);
+
       // Crear el DTO para la API de Fazo
       const createAccountData: CreateAccountDto = {
         name: uniqueName,
-        groupName: 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
+        groupName: groupName || 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
         email: user.email,
         phone: billing.phone || user.phone || '+1234567890',
         country: billing.country || 'US',
@@ -663,7 +700,7 @@ export class OrdersService {
         balance: balance,
         mPassword: masterPassword,
         iPassword: investorPassword,
-        leverage: 100, // Apalancamiento por defecto
+        leverage: dynamicLeverage, // Leverage dinámico extraído de reglas
       };
 
       // Llamar al cliente de creación Fazo
@@ -677,7 +714,7 @@ export class OrdersService {
         balance: fazoResponse.user.balance,
       });
 
-      // Realizar depósito inicial usando el endpoint financiero correcto
+      // Realizar depósito inicial con fallback
       try {
         const depositData = {
           login: Number(fazoResponse.user.accountid),
@@ -686,32 +723,74 @@ export class OrdersService {
           payment_method: 'internal',
         };
 
-        this.logger.log('Making initial deposit:', {
+        this.logger.log('Making initial deposit with brokeretApiClient:', {
           login: fazoResponse.user.accountid,
           amount: balance,
         });
 
-        const depositResult = await this.brokeretApiClient.makeDeposit(depositData);
+        const depositResult =
+          await this.brokeretApiClient.makeDeposit(depositData);
 
-        this.logger.log('Initial deposit completed successfully:', {
-          result: depositResult,
-        });
-      } catch (balanceError) {
-        this.logger.error(
-          'Error making balance operation for initial deposit:',
-          balanceError.message,
+        this.logger.log(
+          'Initial deposit completed successfully with brokeretApiClient:',
+          {
+            result: depositResult,
+          },
         );
-        throw new Error(
-          `Failed to deposit initial balance: ${balanceError.message}`,
+      } catch (brokeretError) {
+        this.logger.warn(
+          'brokeretApiClient.makeDeposit failed, trying fallback with creationFazoClient:',
+          brokeretError.message,
         );
+
+        try {
+          // Adaptar los datos para el cliente Fazo
+          const fazoDepositData = {
+            loginid: fazoResponse.user.accountid,
+            amount: balance,
+            txnType: 0,
+            description: 'Initial deposit for challenge account',
+            comment: 'Fallback deposit via creationFazoClient',
+          };
+
+          this.logger.log(
+            'Making initial deposit with creationFazoClient fallback:',
+            {
+              fazoDepositData,
+            },
+          );
+
+          const fazoDepositResult =
+            await this.creationFazoClient.makeDeposit(fazoDepositData);
+
+          this.logger.log(
+            'Initial deposit completed successfully with creationFazoClient fallback:',
+            {
+              result: fazoDepositResult,
+            },
+          );
+        } catch (fazoError) {
+          this.logger.error(
+            'Both brokeretApiClient and creationFazoClient makeDeposit failed:',
+            {
+              brokeretError: brokeretError.message,
+              fazoError: fazoError.message,
+            },
+          );
+          // this.logger.warn(
+          //   'Continuing without initial deposit - balance will be handled separately',
+          // );
+          // No lanzamos error, continuamos con la creación de la cuenta
+          // El balance se manejará por separado
+        }
       }
 
       // Mapear la respuesta de Fazo a CreateBrokerAccountDto
       const brokerAccountDto: CreateBrokerAccountDto = {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
-        server: process.env.NEXT_PUBLIC_SERVER,
-        serverIp: 'brokeret-server.com', // IP del servidor por defecto
+        server: this.configService.get<string>('MT_SERVER') || 'FazoLiquidity',
+        serverIp: 'server.com', // IP del servidor por defecto
         platform: 'MT5',
         isUsed: false,
         investorPass: investorPassword,
@@ -746,6 +825,8 @@ export class OrdersService {
             user,
             createOrderDto,
             balance,
+            groupName,
+            relation,
             retryCount + 1,
           );
         } else {

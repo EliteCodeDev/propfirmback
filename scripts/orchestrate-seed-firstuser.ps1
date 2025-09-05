@@ -62,14 +62,16 @@ npm run -s seed:user:specific
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:user:specific failed" }
 Pop-Location
 
-# Step 4: Create 30 test users (role: user)
-Write-Host "Step 4: Create 30 test users (role: user)" -ForegroundColor Cyan
+# Step 4: Seed users (admin, demo y user01..user30)
+# Desactiva tareas/cron para evitar mapper/pedidos externos durante el seed
+$env:DISABLE_TASKS = "true"
+Write-Host "Step 4: Seed users (admin, demo y user01..user30)" -ForegroundColor Cyan
 Push-Location $repoRoot
 npm run -s seed:users
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:users failed" }
 Pop-Location
 
-# Step 5: Restore final env flags (no further seed on next boots)
+# Step 4: Restore final env flags (no further seed on next boots)
 Set-EnvFlag -Path $EnvPath -Pairs @{
   'DB_DROP_SCHEMA'      = 'false';
   'DB_SYNCHRONIZE'      = 'true';
@@ -79,3 +81,32 @@ Set-EnvFlag -Path $EnvPath -Pairs @{
 
 Write-Host "✅ Minimal orchestration finished (DB reset + base seed-on-boot + first user)" -ForegroundColor Green
 Write-Host "Final .env flags set to: DB_DROP_SCHEMA=false, DB_SYNCHRONIZE=true, SEED_ON_BOOT=false, FIRST_USER_SUPERADMIN=false" -ForegroundColor Yellow
+
+# Step 6: Seed challenge templates
+Write-Host "Step 6: Seed challenge templates" -ForegroundColor Cyan
+Push-Location $repoRoot
+npm run -s seed:challenge-templates
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:challenge-templates failed" }
+Pop-Location
+
+# Step 7: Seed real challenges
+Write-Host "Step 7: Seed real challenges" -ForegroundColor Cyan
+Push-Location $repoRoot
+npm run -s seed:challenges:real
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:challenges:real failed" }
+Pop-Location
+
+# Step 8: Seed real broker accounts
+Write-Host "Step 8: Seed real broker accounts" -ForegroundColor Cyan
+Push-Location $repoRoot
+npm run -s seed:broker-accounts:real
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:broker-accounts:real failed" }
+Pop-Location
+
+# Step 9: Seed withdrawals (al final, tras brokers)
+$env:DISABLE_TASKS = "true"
+Write-Host "Step 9: Seed withdrawals (wipe + 30 MIXED, requireChallenge)" -ForegroundColor Cyan
+Push-Location $repoRoot
+npm run -s seed:withdrawals -- --wipe --count=30 --status=MIXED --requireChallenge
+if ($LASTEXITCODE -ne 0) { Pop-Location; throw "seed:withdrawals failed" }
+Pop-Location

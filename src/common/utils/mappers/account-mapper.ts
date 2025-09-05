@@ -5,6 +5,7 @@ import { BrokerAccount } from 'src/modules/broker-accounts/entities/broker-accou
 import { RiskParams } from 'src/common/utils';
 import { createAccountResponse } from 'src/modules/data/smt-api/client/smt-api.client';
 import { CreateBrokerAccountDto } from 'src/modules/broker-accounts/dto/create-broker-account.dto';
+import { ChallengeRelation } from 'src/modules/challenge-templates/entities/challenge-relation.entity';
 
 /**
  * Función utilitaria para obtener valores de parámetros por slug desde un challenge
@@ -55,6 +56,79 @@ export function getBasicRiskParams(challenge: Challenge): RiskParams {
     lossPerTrade: getParameterValueBySlug(challenge, 'loss-per-trade'),
     inactiveDays: getParameterValueBySlug(challenge, 'inactive-days'),
   };
+}
+
+/**
+ * Obtiene el leverage desde las reglas de fase del challenge
+ * @param challenge - El challenge que contiene la relación con los parámetros
+ * @returns El valor de leverage o 100 como valor por defecto
+ */
+export function getLeverageFromChallenge(challenge: Challenge): number {
+  const leverage = getParameterValueBySlug(challenge, 'leverage');
+  return leverage > 0 ? leverage : 100; // Valor por defecto si no se encuentra
+}
+
+/**
+ * Obtiene el leverage desde las reglas de fase de una relación de challenge
+ * @param relation - La relación que contiene los parámetros de las fases
+ * @param phaseIndex - Índice de la fase (por defecto 0 para la primera fase)
+ * @returns El valor de leverage o 100 como valor por defecto
+ */
+export function getLeverageFromRelation(relation: ChallengeRelation, phaseIndex: number = 0): number {
+  if (!relation?.stages || relation.stages.length === 0) {
+    return 100; // Valor por defecto
+  }
+
+  const stage = relation.stages[phaseIndex];
+  if (!stage?.parameters) {
+    return 100; // Valor por defecto
+  }
+
+  const parameter = stage.parameters.find(
+    (param) => param.rule?.ruleSlug === 'leverage',
+  );
+
+  const leverage = Number(parameter?.ruleValue || 0);
+  return leverage > 0 ? leverage : 100; // Valor por defecto si no se encuentra
+}
+
+/**
+ * Calcula los parámetros de reglas considerando modificaciones por addons
+ * Esta función ahora actúa como un wrapper que delega al AddonRulesService
+ * @param challenge - El challenge con addons cargados
+ * @param baseRiskParams - Parámetros base extraídos de las reglas de fase
+ * @param addonRulesService - Servicio para aplicar modificaciones de addons
+ * @returns RiskParams modificados por addons
+ */
+export async function calculateRiskParamsWithAddons(
+  challenge: Challenge,
+  baseRiskParams: RiskParams,
+  addonRulesService?: any, // AddonRulesService - usando any para evitar dependencia circular
+): Promise<RiskParams> {
+  if (!challenge.addons || challenge.addons.length === 0) {
+    return baseRiskParams;
+  }
+
+  // Si se proporciona el servicio, usarlo para calcular las modificaciones
+  if (addonRulesService) {
+    return await addonRulesService.calculateRiskParamsWithAddons(challenge, baseRiskParams);
+  }
+
+  // Fallback: lógica básica sin servicio (para compatibilidad)
+  const modifiedParams = { ...baseRiskParams };
+  
+  challenge.addons
+    .filter(addon => addon.isActive && addon.addon)
+    .forEach(challengeAddon => {
+      const addonName = challengeAddon.addon.name.toLowerCase();
+      
+      // Lógica básica de modificación
+      if (addonName.includes('news trading')) {
+        // News trading addon - lógica básica
+      }
+    });
+
+  return modifiedParams;
 }
 /**
  * Mapea los datos de Challenge, ChallengeDetails y BrokerAccount a la estructura Account del buffer
@@ -108,9 +182,10 @@ export function mapChallengeToAccount(challenge: Challenge): Account {
   if (!account.riskValidation) {
     account.riskValidation = new RiskParams();
   }
-  if (challenge.details.rulesParams) {
+  const rulesParams = challenge.details?.rulesParams;
+  if (rulesParams) {
     account.riskValidation = {
-      ...challenge.details.rulesParams,
+      ...rulesParams,
     };
   } else {
     account.riskValidation.profitTarget = getParameterValueBySlug(
