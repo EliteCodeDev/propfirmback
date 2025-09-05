@@ -54,7 +54,15 @@ export class ChallengeRelationsService {
     }
     return relations;
   }
-
+  // async findAllRelationsCompleteOg(): Promise<ChallengeRelation[]> {
+  //   const data = await this.challengeRelationRepository.find();
+  //   let relations = [];
+  //   for (const item of data) {
+  //     const relation = await this.findCompleteRelationChainOg(item.relationID);
+  //     relations.push(relation);
+  //   }
+  //   return relations;
+  // }
   async findOneRelation(id: string): Promise<ChallengeRelation> {
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID: id },
@@ -176,39 +184,76 @@ export class ChallengeRelationsService {
    * Obtiene toda la cadena de relaciones completa a partir de un relationID
    * Incluye RelationStages, stages, RelationParameters y StageRules
    */
+  // async findCompleteRelationChainOg(
+  //   relationID: string,
+  // ): Promise<ChallengeRelation> {
+  //   // Buscar la relación principal con todas sus relaciones
+  //   const relation = await this.challengeRelationRepository.findOne({
+  //     where: { relationID },
+  //     relations: [
+  //       'category',
+  //       'plan',
+  //       'balances',
+  //       'stages',
+  //       'withdrawalRules',
+  //       'addons',
+  //       'withdrawalRules.rule',
+  //     ],
+  //     // 'withdrawalRules'
+  //   });
+
+  //   if (!relation) {
+  //     throw new NotFoundException('Challenge relation not found');
+  //   }
+
+  //   // Ordenar los stages por numPhase y cargar sus parámetros
+  //   if (relation.stages && relation.stages.length > 0) {
+  //     // Ordenar stages por numPhase
+  //     relation.stages.sort((a, b) => a.numPhase - b.numPhase);
+
+  //     // Para cada RelationStage, cargar sus parámetros con las reglas
+  //     for (const relationStage of relation.stages) {
+  //       relationStage.parameters = await this.stageParameterRepository.find({
+  //         where: { relationStageID: relationStage.relationStageID },
+  //         relations: ['rule'],
+  //       });
+
+  //       // También cargar la información del stage asociado
+  //       if (relationStage.stageID) {
+  //         relationStage.stage = await this.challengeStageRepository.findOne({
+  //           where: { stageID: relationStage.stageID },
+  //         });
+  //       }
+  //     }
+  //   }
+
+  //   return relation;
+  // }
   async findCompleteRelationChain(
     relationID: string,
   ): Promise<ChallengeRelation> {
-    // Buscar la relación principal con todas sus relaciones
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID },
-      relations: ['category', 'plan', 'balances', 'stages'],
-      // 'withdrawalRules'
+      relations: {
+        category: true,
+        plan: true,
+        balances: true,
+        addons: {
+          addon: true,
+        },
+        stages: {
+          parameters: { rule: true }, // ← carga parámetros + su rule
+          stage: true, // ← carga la entidad stage asociada
+        },
+        withdrawalRules: { rule: true }, // ← carga reglas de retiro + su rule
+      },
+      order: {
+        stages: { numPhase: 'ASC' }, // ← ordena los stages en DB
+      },
     });
 
     if (!relation) {
       throw new NotFoundException('Challenge relation not found');
-    }
-
-    // Ordenar los stages por numPhase y cargar sus parámetros
-    if (relation.stages && relation.stages.length > 0) {
-      // Ordenar stages por numPhase
-      relation.stages.sort((a, b) => a.numPhase - b.numPhase);
-
-      // Para cada RelationStage, cargar sus parámetros con las reglas
-      for (const relationStage of relation.stages) {
-        relationStage.parameters = await this.stageParameterRepository.find({
-          where: { relationStageID: relationStage.relationStageID },
-          relations: ['rule'],
-        });
-
-        // También cargar la información del stage asociado
-        if (relationStage.stageID) {
-          relationStage.stage = await this.challengeStageRepository.findOne({
-            where: { stageID: relationStage.stageID },
-          });
-        }
-      }
     }
 
     return relation;

@@ -56,7 +56,7 @@ export class ChallengeRelation {
 
   @OneToMany(
     () => RelationRules,
-    (rulesWithdrawal) => rulesWithdrawal.relationID,
+    (rulesWithdrawal) => rulesWithdrawal.relation,
   )
   withdrawalRules: RelationRules[];
 }

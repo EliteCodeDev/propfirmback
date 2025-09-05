@@ -12,9 +12,11 @@ import { AddonsService } from './services/addons.service';
 import { RelationAddonService } from './services/relation-addon.service';
 import { RulesWithdrawalService } from './services/rules-withdrawal.service';
 import { AddonRulesService } from './services/addon-rules.service';
+import { RulesService } from './services/rules.service';
 import { AddonsController } from './controllers/addons.controller';
 import { RelationAddonController } from './controllers/relation-addon.controller';
 import { RulesWithdrawalController } from './controllers/rules-withdrawal.controller';
+import { RulesController } from './controllers/rules.controller';
 // Entities
 import {
   ChallengeCategory,
@@ -56,6 +58,7 @@ import {
     AddonsController,
     RelationAddonController,
     RulesWithdrawalController,
+    RulesController,
   ],
   providers: [
     ChallengeTemplatesService,
@@ -66,6 +69,7 @@ import {
     RelationAddonService,
     RulesWithdrawalService,
     AddonRulesService,
+    RulesService,
   ],
   exports: [
     ChallengeTemplatesService,
@@ -76,6 +80,7 @@ import {
     RelationAddonService,
     RulesWithdrawalService,
     AddonRulesService,
+    RulesService,
     TypeOrmModule,
   ],
 })

@@ -25,7 +25,7 @@ export class RulesWithdrawalService {
 
   async findAll(): Promise<RulesWithdrawalResponseDto[]> {
     const rulesWithdrawals = await this.rulesWithdrawalRepository.find({
-      relations: ['rules', 'relation'],
+      relations: ['rule', 'relation'],
     });
     return rulesWithdrawals.map(this.mapToResponseDto);
   }
@@ -33,7 +33,7 @@ export class RulesWithdrawalService {
   async findByRuleId(ruleID: string): Promise<RulesWithdrawalResponseDto[]> {
     const rulesWithdrawals = await this.rulesWithdrawalRepository.find({
       where: { ruleID },
-      relations: ['rules', 'relation'],
+      relations: ['rule', 'relation'],
     });
     return rulesWithdrawals.map(this.mapToResponseDto);
   }
@@ -43,9 +43,19 @@ export class RulesWithdrawalService {
   ): Promise<RulesWithdrawalResponseDto[]> {
     const rulesWithdrawals = await this.rulesWithdrawalRepository.find({
       where: { relationID },
-      relations: ['rules', 'relation'],
+      relations: ['rule', 'relation'],
     });
     return rulesWithdrawals.map(this.mapToResponseDto);
+  }
+
+  async findRulesByRelationId(
+    relationID: string,
+  ): Promise<RelationRules[]> {
+    const rulesWithdrawals = await this.rulesWithdrawalRepository.find({
+      where: { relationID },
+      relations: ['rule', 'relation'],
+    });
+    return rulesWithdrawals;
   }
 
   async findOne(
@@ -54,7 +64,7 @@ export class RulesWithdrawalService {
   ): Promise<RulesWithdrawalResponseDto> {
     const rulesWithdrawal = await this.rulesWithdrawalRepository.findOne({
       where: { ruleID, relationID },
-      relations: ['rules', 'relation'],
+      relations: ['rule', 'relation'],
     });
 
     if (!rulesWithdrawal) {
@@ -151,7 +161,7 @@ export class RulesWithdrawalService {
       ruleID: rulesWithdrawal.ruleID,
       relationID: rulesWithdrawal.relationID,
       value: rulesWithdrawal.value,
-      rules: rulesWithdrawal.rule,
+      rule: rulesWithdrawal.rule,
       relation: rulesWithdrawal.relation,
     };
   }

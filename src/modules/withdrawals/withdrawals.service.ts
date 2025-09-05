@@ -19,6 +19,8 @@ import { ConfigService } from '@nestjs/config';
 import { ChallengeStatus, CertificateType } from 'src/common/enums';
 import { generateRandomPassword } from 'src/common/utils/randomPassword';
 import { OrdersService } from '../orders/orders.service';
+import { getWithdrawalRuleValueBySlug } from 'src/common/utils/mappers/account-mapper';
+import { RulesWithdrawalService } from '../challenge-templates/services/rules-withdrawal.service';
 @Injectable()
 export class WithdrawalsService {
   constructor(
@@ -31,6 +33,7 @@ export class WithdrawalsService {
     private mailerService: MailerService,
     private configService: ConfigService,
     private ordersService: OrdersService,
+    private rulesWithdrawalService: RulesWithdrawalService,
   ) {}
 
   async create(
@@ -49,29 +52,83 @@ export class WithdrawalsService {
     userID: string,
     createWithdrawalDto: CreateWithdrawalDto,
   ): Promise<Withdrawal> {
-    //realizar validaciones según las reglas de retiro de la relation del challenge
+    // Obtener el challenge y validar que existe
     const challenge = await this.challengesService.findOne(
       createWithdrawalDto.challengeID,
     );
     if (!challenge) {
       throw new NotFoundException('Challenge not found');
     }
-    const rules = await this.challengesService.getWithdrawalConditions(
-      challenge.challengeID,
-    );
-    //buscar el 1er plazo de retiro
-    //verificar si tiene más plazos de retiro 
 
-    // if (!rules) {
-    //   throw new NotFoundException('Rules not found');
-    // }
+    // Obtener las reglas de retiro para la relación del challenge
+    const withdrawalRules = await this.rulesWithdrawalService.findRulesByRelationId(
+      challenge.relationID,
+    );
+
+    if (!withdrawalRules || withdrawalRules.length === 0) {
+      throw new NotFoundException('Withdrawal rules not found for this challenge');
+    }
+
+    // Extraer las reglas de retiro de la respuesta
+    const rules = withdrawalRules;
+
+    // Contar retiros existentes para este challenge
+    const existingWithdrawals = await this.withdrawalRepository.count({
+      where: {
+        challengeID: createWithdrawalDto.challengeID,
+        status: WithdrawalStatus.APPROVED,
+      },
+    });
+
+    // Validar según el número de retiro y los splits
+    const withdrawalNumber = existingWithdrawals + 1; // El próximo número de retiro
+
+    // Buscar el split específico para este número de retiro (split-n)
+    const splitSlug = `split-${withdrawalNumber}`;
+    const splitValue = getWithdrawalRuleValueBySlug(rules, splitSlug);
+    
+    // Si no existe un split específico para este número, buscar valores por defecto
+    let expectedSplit: number;
+    if (splitValue && splitValue !== '0') {
+      // Existe un split específico para este número de retiro
+      expectedSplit = parseFloat(splitValue);
+    } else {
+      // No existe split específico, usar valores por defecto
+      const firstPayoutValue = getWithdrawalRuleValueBySlug(rules, 'first-payout');
+      const payoutPerValue = getWithdrawalRuleValueBySlug(rules, 'payout-per');
+      
+      if (withdrawalNumber === 1) {
+        expectedSplit = parseFloat(firstPayoutValue);
+      } else {
+        expectedSplit = parseFloat(payoutPerValue);
+      }
+    }
+
+    // Validar que el split sea válido
+    if (expectedSplit <= 0) {
+      throw new BadRequestException(
+        `No withdrawal split configuration found for withdrawal number ${withdrawalNumber}`,
+      );
+    }
+
+    // Calcular el monto máximo permitido para este retiro (% del profit total)
+    const maxWithdrawalAmount = (challenge.dynamicBalance * expectedSplit) / 100;
+
+    // Validar que el monto solicitado no exceda el máximo permitido
+    if (createWithdrawalDto.amount > maxWithdrawalAmount) {
+      throw new BadRequestException(
+        `Withdrawal amount ${createWithdrawalDto.amount} exceeds maximum allowed ${maxWithdrawalAmount.toFixed(2)} (${expectedSplit}% of profit) for withdrawal number ${withdrawalNumber}`,
+      );
+    }
+
+    // Crear el withdrawal request
     const withdrawal = this.withdrawalRepository.create({
       ...createWithdrawalDto,
       userID,
       status: WithdrawalStatus.PENDING,
     });
 
-    return this.withdrawalRepository.save(withdrawal);
+    return await this.withdrawalRepository.save(withdrawal);
   }
 
   async findAll(query: any) {

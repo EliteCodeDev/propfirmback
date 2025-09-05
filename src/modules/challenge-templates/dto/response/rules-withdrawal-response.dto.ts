@@ -29,7 +29,7 @@ export class RulesWithdrawalResponseDto {
     type: () => WithdrawalRule,
     required: false,
   })
-  rules?: WithdrawalRule;
+  rule?: WithdrawalRule;
 
   @ApiProperty({
     description: 'Información de la relación de challenge asociada',

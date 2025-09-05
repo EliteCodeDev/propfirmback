@@ -152,6 +152,9 @@ export class ChallengeTemplatesService {
   async findAllRelationsComplete() {
     return this.challengeRelationsService.findAllRelationsComplete();
   }
+  // async findAllRelationsCompleteOg() {
+  //   return this.challengeRelationsService.findAllRelationsCompleteOg();
+  // }
 
   async findOneRelation(id: string) {
     return this.challengeRelationsService.findOneRelation(id);
@@ -168,6 +171,11 @@ export class ChallengeTemplatesService {
   async findCompleteRelationChain(relationID: string) {
     return this.challengeRelationsService.findCompleteRelationChain(relationID);
   }
+  // async findCompleteRelationChainOg(relationID: string) {
+  //   return this.challengeRelationsService.findCompleteRelationChainOg(
+  //     relationID,
+  //   );
+  // }
 
   // Delegated methods for stages
   async createStage(dto: any) {
@@ -308,6 +316,5 @@ export class ChallengeTemplatesService {
   }
   async findWithdrawalrules(relationID: string) {
     // return this.challengeRelationsService.findWithdrawalrules(relationID);
-    
   }
 }

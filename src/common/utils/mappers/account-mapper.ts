@@ -6,6 +6,7 @@ import { RiskParams } from 'src/common/utils';
 import { createAccountResponse } from 'src/modules/data/smt-api/client/smt-api.client';
 import { CreateBrokerAccountDto } from 'src/modules/broker-accounts/dto/create-broker-account.dto';
 import { ChallengeRelation } from 'src/modules/challenge-templates/entities/challenge-relation.entity';
+import { RelationRules } from 'src/modules/challenge-templates/entities/rules/relation-rule.entity';
 
 /**
  * Función utilitaria para obtener valores de parámetros por slug desde un challenge
@@ -36,6 +37,27 @@ export function getParameterValueBySlug(
   );
 
   return Number(parameter?.ruleValue || 0);
+}
+
+/**
+ * Función utilitaria para obtener valores de reglas de retiro por slug desde un challenge
+ * @param withdrawalRules - Las reglas de retiro de la relación del challenge
+ * @param slug - El slug de la regla de retiro a buscar
+ * @returns El valor de la regla de retiro o '0' si no se encuentra
+ */
+export function getWithdrawalRuleValueBySlug(
+  withdrawalRules: RelationRules[],
+  slug: string,
+): string {
+  if (!withdrawalRules || withdrawalRules.length === 0) {
+    return '0';
+  }
+
+  const rule = withdrawalRules.find(
+    (withdrawalRule) => withdrawalRule.rule?.slugRule === slug,
+  );
+
+  return rule?.value || '0';
 }
 export function getRiskParamsFromChallenge(
   challenge: Challenge,

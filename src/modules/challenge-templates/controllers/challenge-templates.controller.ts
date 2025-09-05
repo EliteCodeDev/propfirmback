@@ -5,13 +5,12 @@ import {
   Body,
   Patch,
   Param,
-  Delete
+  Delete,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ChallengeTemplatesService } from '../services/challenge-templates.service';
+import { RulesService } from '../services/rules.service';
+import { RulesWithdrawalService } from '../services/rules-withdrawal.service';
 
 // DTOs
 
@@ -37,6 +36,9 @@ import {
   UpdateRelationBalanceDto,
   CreateRelationBalancesDto,
 } from '../dto';
+import { RuleDto } from '../dto/create/create-rule.dto';
+import { CreateRulesWithdrawalDto } from '../dto/create/create-rules-withdrawal.dto';
+import { UpdateRulesWithdrawalDto } from '../dto/update/update-rules-withdrawal.dto';
 
 // Guards & Decorators
 import { Public } from 'src/common/decorators/public.decorator';
@@ -50,6 +52,8 @@ import { Public } from 'src/common/decorators/public.decorator';
 export class ChallengeTemplatesController {
   constructor(
     private readonly challengeTemplatesService: ChallengeTemplatesService,
+    private readonly rulesService: RulesService,
+    private readonly rulesWithdrawalService: RulesWithdrawalService,
   ) {}
 
   // Challenge Categories
@@ -190,6 +194,13 @@ export class ChallengeTemplatesController {
   findAllRelationsComplete() {
     return this.challengeTemplatesService.findAllRelationsComplete();
   }
+  // @Get('relations-complete-og')
+  // @ApiOperation({
+  //   summary: 'Get all challenge relations with complete chain (OG)',
+  // })
+  // findAllRelationsCompleteOg() {
+  //   return this.challengeTemplatesService.findAllRelationsCompleteOg();
+  // }
 
   @Get('relations/:id')
   @ApiOperation({ summary: 'Get challenge relation by ID' })
@@ -467,5 +478,89 @@ export class ChallengeTemplatesController {
     return this.challengeTemplatesService.removeAllRelationBalancesByRelation(
       relationId,
     );
+  }
+
+  // Withdrawal Rules (Main Table)
+  @Post('withdrawal-rules')
+  @ApiOperation({ summary: 'Create a new withdrawal rule' })
+  createWithdrawalRule(@Body() ruleDto: RuleDto) {
+    return this.rulesService.create(ruleDto);
+  }
+
+  @Get('withdrawal-rules')
+  @ApiOperation({ summary: 'Get all withdrawal rules' })
+  findAllWithdrawalRules() {
+    return this.rulesService.findAll();
+  }
+
+  @Get('withdrawal-rules/:id')
+  @ApiOperation({ summary: 'Get withdrawal rule by ID' })
+  findOneWithdrawalRule(@Param('id') id: string) {
+    return this.rulesService.findById(id);
+  }
+
+  @Patch('withdrawal-rules/:id')
+  @ApiOperation({ summary: 'Update withdrawal rule' })
+  updateWithdrawalRule(@Param('id') id: string, @Body() ruleDto: RuleDto) {
+    return this.rulesService.update(id, ruleDto);
+  }
+
+  @Delete('withdrawal-rules/:id')
+  @ApiOperation({ summary: 'Delete withdrawal rule' })
+  removeWithdrawalRule(@Param('id') id: string) {
+    return this.rulesService.remove(id);
+  }
+
+  // Withdrawal Rules Relations (Intermediate Table)
+  @Post('withdrawal-rules-relations')
+  @ApiOperation({ summary: 'Create a new withdrawal rule relation' })
+  createWithdrawalRuleRelation(@Body() createRulesWithdrawalDto: CreateRulesWithdrawalDto) {
+    return this.rulesWithdrawalService.create(createRulesWithdrawalDto);
+  }
+
+  @Get('withdrawal-rules-relations')
+  @ApiOperation({ summary: 'Get all withdrawal rule relations' })
+  findAllWithdrawalRuleRelations() {
+    return this.rulesWithdrawalService.findAll();
+  }
+
+  @Get('withdrawal-rules-relations/by-rule/:ruleId')
+  @ApiOperation({ summary: 'Get withdrawal rule relations by rule ID' })
+  findWithdrawalRuleRelationsByRule(@Param('ruleId') ruleId: string) {
+    return this.rulesWithdrawalService.findByRuleId(ruleId);
+  }
+
+  @Get('withdrawal-rules-relations/by-relation/:relationId')
+  @ApiOperation({ summary: 'Get withdrawal rule relations by relation ID' })
+  findWithdrawalRuleRelationsByRelation(@Param('relationId') relationId: string) {
+    return this.rulesWithdrawalService.findByRelationId(relationId);
+  }
+
+  @Get('withdrawal-rules-relations/:ruleId/:relationId')
+  @ApiOperation({ summary: 'Get withdrawal rule relation by composite ID' })
+  findOneWithdrawalRuleRelation(
+    @Param('ruleId') ruleId: string,
+    @Param('relationId') relationId: string,
+  ) {
+    return this.rulesWithdrawalService.findOne(ruleId, relationId);
+  }
+
+  @Patch('withdrawal-rules-relations/:ruleId/:relationId')
+  @ApiOperation({ summary: 'Update withdrawal rule relation' })
+  updateWithdrawalRuleRelation(
+    @Param('ruleId') ruleId: string,
+    @Param('relationId') relationId: string,
+    @Body() updateRulesWithdrawalDto: UpdateRulesWithdrawalDto,
+  ) {
+    return this.rulesWithdrawalService.update(ruleId, relationId, updateRulesWithdrawalDto);
+  }
+
+  @Delete('withdrawal-rules-relations/:ruleId/:relationId')
+  @ApiOperation({ summary: 'Delete withdrawal rule relation' })
+  removeWithdrawalRuleRelation(
+    @Param('ruleId') ruleId: string,
+    @Param('relationId') relationId: string,
+  ) {
+    return this.rulesWithdrawalService.remove(ruleId, relationId);
   }
 }
