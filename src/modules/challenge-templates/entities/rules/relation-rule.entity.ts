@@ -14,7 +14,7 @@ export class RelationRules {
   value: string;
 
   @ManyToOne(() => WithdrawalRule, (rules) => rules.relationRules)
-  @JoinColumn({ name: 'idRule' })
+  @JoinColumn({ name: 'ruleID' })
   rule: WithdrawalRule;
 
   @ManyToOne(() => ChallengeRelation, (relation) => relation.withdrawalRules)

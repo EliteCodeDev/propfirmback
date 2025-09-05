@@ -29,6 +29,8 @@ import {
   Addon,
   ChallengeAddon,
   RelationAddon,
+  WithdrawalRule,
+  RelationRules,
 } from './entities';
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import {
       Addon,
       ChallengeAddon,
       RelationAddon,
+      WithdrawalRule,
+      RelationRules,
     ]),
   ],
   controllers: [

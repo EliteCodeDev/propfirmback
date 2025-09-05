@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { RelationRules } from './relation-rule.entity';
 
-@Entity('withdrawalRule')
+@Entity('WithdrawalRule')
 export class WithdrawalRule {
   @PrimaryGeneratedColumn('uuid')
   ruleID: string;
