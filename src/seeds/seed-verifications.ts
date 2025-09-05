@@ -210,6 +210,27 @@ async function bootstrap() {
       });
     }
 
+    // Asegurar una verificación PENDING para el usuario 30 del seeder (username: user30)
+    const user30 = await userRepo.findOne({ where: { username: 'user30' } });
+    if (user30) {
+      const existingPending = await ds.getRepository(Verification).findOne({
+        where: { userID: user30.userID, status: VerificationStatus.PENDING },
+      });
+      if (!existingPending) {
+        await ensureVerification(ds, {
+          userID: user30.userID,
+          status: VerificationStatus.PENDING,
+          documentType: DocumentType.OTHER,
+          numDocument: 'USR30PEND1',
+          submittedAt: new Date(),
+        });
+      } else {
+        console.log('↺ Usuario user30 ya tiene una verificación en estado PENDING');
+      }
+    } else {
+      console.log('⚠️ No se encontró el usuario user30 para crear verificación PENDING');
+    }
+
     console.log('🎉 Seed de verifications completado.');
   } catch (err) {
     console.error('❌ Error durante el seed de verifications:', err);

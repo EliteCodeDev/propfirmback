@@ -59,6 +59,15 @@ export class VerificationController {
     return this.verificationService.findAll(query);
   }
 
+  // ADMIN: Get verifications by user ID
+  @Get('user/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get verification requests by user ID' })
+  findByUser(@Param('id') id: string, @Query() query: any) {
+    return this.verificationService.findByUserId(id, query);
+  }
+
   @Get('my-verifications')
   @ApiOperation({ summary: 'Get current user verifications' })
   findMyVerifications(@Request() req, @Query() query: any) {
