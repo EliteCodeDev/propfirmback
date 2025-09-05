@@ -6,5 +6,6 @@ export * from './update-challenge-stage.dto';
 export * from './update-relation-addon.dto';
 export * from './update-relation-balance.dto';
 export * from './update-relation-stage.dto';
+export * from './update-rules-withdrawal.dto';
 export * from './update-stage-parameter.dto';
 export * from './update-stage-rule.dto';

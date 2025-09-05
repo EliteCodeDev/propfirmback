@@ -3,10 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 // Entities
-import {
-  ChallengeCategory,
-  ChallengePlan,
-} from '../entities';
+import { ChallengeCategory, ChallengePlan } from '../entities';
 // DTOs
 import {
   CreateChallengeCategoryDto,
@@ -224,11 +221,18 @@ export class ChallengeTemplatesService {
   }
 
   async findOneParameter(ruleID: string, relationStageID: string) {
-    return this.challengeStagesService.findOneParameter(ruleID, relationStageID);
+    return this.challengeStagesService.findOneParameter(
+      ruleID,
+      relationStageID,
+    );
   }
 
   async updateParameter(ruleID: string, relationStageID: string, dto: any) {
-    return this.challengeStagesService.updateParameter(ruleID, relationStageID, dto);
+    return this.challengeStagesService.updateParameter(
+      ruleID,
+      relationStageID,
+      dto,
+    );
   }
 
   async removeParameter(ruleID: string, relationStageID: string) {
@@ -261,11 +265,15 @@ export class ChallengeTemplatesService {
   }
 
   async findRelationStagesByRelation(relationID: string) {
-    return this.challengeRelationsService.findRelationStagesByRelation(relationID);
+    return this.challengeRelationsService.findRelationStagesByRelation(
+      relationID,
+    );
   }
 
   async findParametersByRelationStage(relationStageID: string) {
-    return this.challengeRelationsService.findParametersByRelationStage(relationStageID);
+    return this.challengeRelationsService.findParametersByRelationStage(
+      relationStageID,
+    );
   }
 
   // Delegated methods for relation balances
@@ -294,6 +302,12 @@ export class ChallengeTemplatesService {
   }
 
   async removeAllRelationBalancesByRelation(relationId: string) {
-    return this.challengeBalancesService.removeAllRelationBalancesByRelation(relationId);
+    return this.challengeBalancesService.removeAllRelationBalancesByRelation(
+      relationId,
+    );
+  }
+  async findWithdrawalrules(relationID: string) {
+    // return this.challengeRelationsService.findWithdrawalrules(relationID);
+    
   }
 }

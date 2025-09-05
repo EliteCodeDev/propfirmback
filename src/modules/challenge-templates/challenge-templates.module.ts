@@ -10,9 +10,11 @@ import {
 } from './services';
 import { AddonsService } from './services/addons.service';
 import { RelationAddonService } from './services/relation-addon.service';
+import { RulesWithdrawalService } from './services/rules-withdrawal.service';
 import { AddonRulesService } from './services/addon-rules.service';
 import { AddonsController } from './controllers/addons.controller';
 import { RelationAddonController } from './controllers/relation-addon.controller';
+import { RulesWithdrawalController } from './controllers/rules-withdrawal.controller';
 // Entities
 import {
   ChallengeCategory,
@@ -27,6 +29,8 @@ import {
   Addon,
   ChallengeAddon,
   RelationAddon,
+  WithdrawalRule,
+  RelationRules,
 } from './entities';
 @Module({
   imports: [
@@ -43,12 +47,15 @@ import {
       Addon,
       ChallengeAddon,
       RelationAddon,
+      WithdrawalRule,
+      RelationRules,
     ]),
   ],
   controllers: [
     ChallengeTemplatesController,
     AddonsController,
     RelationAddonController,
+    RulesWithdrawalController,
   ],
   providers: [
     ChallengeTemplatesService,
@@ -57,6 +64,7 @@ import {
     ChallengeStagesService,
     AddonsService,
     RelationAddonService,
+    RulesWithdrawalService,
     AddonRulesService,
   ],
   exports: [
@@ -66,6 +74,7 @@ import {
     ChallengeStagesService,
     AddonsService,
     RelationAddonService,
+    RulesWithdrawalService,
     AddonRulesService,
     TypeOrmModule,
   ],

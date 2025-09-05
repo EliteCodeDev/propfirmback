@@ -1,7 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ChallengesController } from './challenges.controller';
-import { ChallengesService } from './challenges.service';
+import { ChallengesController } from './controllers/challenges.controller';
+import { ChallengesService } from './services/challenges.service';
+import { ChallengeDetailsController } from './controllers/challenge-details.controller';
+import { ChallengeDetailsService } from './services/challenge-details.service';
 import { Challenge } from './entities/challenge.entity';
 import { ChallengeDetails } from './entities/challenge-details.entity';
 import { UserAccount } from '../users/entities/user-account.entity';
@@ -30,8 +32,8 @@ import { BrokeretApiModule } from '../data/brokeret-api/brokeret-api.module';
     forwardRef(() => OrdersModule),
     BrokeretApiModule,
   ],
-  controllers: [ChallengesController],
-  providers: [ChallengesService],
-  exports: [ChallengesService, TypeOrmModule],
+  controllers: [ChallengesController, ChallengeDetailsController],
+  providers: [ChallengesService, ChallengeDetailsService],
+  exports: [ChallengesService, ChallengeDetailsService, TypeOrmModule],
 })
 export class ChallengesModule {}

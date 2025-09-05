@@ -16,6 +16,10 @@ export class AddonChallengService {
         return await this.addonChallengRepository.find();
     }
 
+    async findByChallengeId(id: string){
+        return await this.addonChallengRepository.find({where: {challengeID: id}});
+    }
+
     async create(addonChalleng: CreateChallegeAddonDto){
         return await this.addonChallengRepository.save(addonChalleng);
     }

@@ -183,6 +183,7 @@ export class ChallengeRelationsService {
     const relation = await this.challengeRelationRepository.findOne({
       where: { relationID },
       relations: ['category', 'plan', 'balances', 'stages'],
+      // 'withdrawalRules'
     });
 
     if (!relation) {

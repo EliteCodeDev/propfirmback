@@ -8,50 +8,46 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeepPartial, Repository, DataSource, In } from 'typeorm';
-import { Challenge } from './entities/challenge.entity';
-import { ChallengeDetails } from './entities/challenge-details.entity';
-import { CreateChallengeDto } from './dto/create-challenge.dto';
-import { UpdateChallengeDto } from './dto/update-challenge.dto';
-import { ChallengeQueryDto } from './dto/challenge-query.dto';
-import { CreateChallengeDetailsDto } from './dto/create-challenge-details.dto';
-import { UpdateChallengeDetailsDto } from './dto/update-challenge-details.dto';
-import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
-import { AddonRulesService } from '../challenge-templates/services/addon-rules.service';
-import { VerificationService } from '../verification/verification.service';
-import { CertificatesService } from '../certificates/certificates.service';
-import { BrokerAccountsService } from '../broker-accounts/broker-accounts.service';
-import { MailerService } from '../mailer/mailer.service';
+import { Challenge } from '../entities/challenge.entity';
+import { CreateChallengeDto } from '../dto/create-challenge.dto';
+import { UpdateChallengeDto } from '../dto/update-challenge.dto';
+import { ChallengeQueryDto } from '../dto/challenge-query.dto';
+import { ChallengeTemplatesService } from '../../challenge-templates/services/challenge-templates.service';
+import { AddonRulesService } from '../../challenge-templates/services/addon-rules.service';
+import { ChallengeDetailsService } from './challenge-details.service';
+import { VerificationService } from '../../verification/verification.service';
+import { CertificatesService } from '../../certificates/certificates.service';
+import { BrokerAccountsService } from '../../broker-accounts/broker-accounts.service';
+import { MailerService } from '../../mailer/mailer.service';
 import { BufferService } from 'src/lib/buffer/buffer.service';
-import { UserAccount } from '../users/entities/user-account.entity';
+import { UserAccount } from '../../users/entities/user-account.entity';
 import { ConfigService } from '@nestjs/config';
-import { StylesService } from '../styles/styles.service';
-import { OrdersService } from '../orders/orders.service';
+import { StylesService } from '../../styles/styles.service';
+import { OrdersService } from '../../orders/orders.service';
 import {
   ChallengeStatus,
   VerificationStatus,
   CertificateType,
 } from 'src/common/enums';
-import { BrokerAccount } from '../broker-accounts/entities/broker-account.entity';
-import { use } from 'passport';
 import { generateRandomPassword } from 'src/common/utils/randomPassword';
-import { getBasicRiskParams, calculateRiskParamsWithAddons } from 'src/common/utils/mappers/account-mapper';
-import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-account.dto';
-import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
-import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
-import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.client';
+import {
+  getBasicRiskParams,
+  calculateRiskParamsWithAddons,
+} from 'src/common/utils/mappers/account-mapper';
+import { CreateBrokerAccountDto } from '../../broker-accounts/dto/create-broker-account.dto';
+import { CreateAccountDto } from '../../data/brokeret-api/dto/create-account.dto';
+import { CreationFazoClient } from '../../data/brokeret-api/client/creation-fazo.client';
+import { BrokeretApiClient } from '../../data/brokeret-api/client/brokeret-api.client';
 @Injectable()
 export class ChallengesService {
   private readonly logger = new Logger(ChallengesService.name);
   constructor(
     @InjectRepository(Challenge)
     private challengeRepository: Repository<Challenge>,
-    @InjectRepository(ChallengeDetails)
-    private challengeDetailsRepository: Repository<ChallengeDetails>,
     @InjectRepository(UserAccount)
-    private userAccountRepository: Repository<UserAccount>,
     private challengeTemplatesService: ChallengeTemplatesService,
+    private challengeDetailsService: ChallengeDetailsService,
     private addonRulesService: AddonRulesService,
-    private verificationService: VerificationService,
     private certificatesService: CertificatesService,
     private brokerAccountsService: BrokerAccountsService,
     private mailerService: MailerService,
@@ -59,7 +55,6 @@ export class ChallengesService {
     private configService: ConfigService,
     private stylesService: StylesService,
     @Inject(forwardRef(() => OrdersService))
-    private ordersService: OrdersService,
     private dataSource: DataSource,
     private creationFazoClient: CreationFazoClient,
     private brokeretApiClient: BrokeretApiClient,
@@ -308,7 +303,14 @@ export class ChallengesService {
 
     return challenge;
   }
-
+  async getWithdrawalConditions(id: string) {
+    const challenge = await this.findOne(id);
+    const relation = await this.challengeTemplatesService.findWithdrawalrules(
+      challenge.relationID,
+    );
+    // return relation.
+    // return this.challengeTemplatesService.getWithdrawalConditions(id);
+  }
   async update(
     id: string,
     updateChallengeDto: UpdateChallengeDto,
@@ -488,11 +490,16 @@ export class ChallengesService {
             relation: relation,
           } as Challenge;
 
-          const addons = await this.addonRulesService.getActiveAddonsFromRelation(relation);
+          const addons =
+            await this.addonRulesService.getActiveAddonsFromRelation(relation);
           tempChallenge.addons = addons;
           const baseRiskParams = getBasicRiskParams(tempChallenge);
-          const riskParams = await calculateRiskParamsWithAddons(tempChallenge, baseRiskParams, this.addonRulesService);
-          await this.createChallengeDetails({
+          const riskParams = await calculateRiskParamsWithAddons(
+            tempChallenge,
+            baseRiskParams,
+            this.addonRulesService,
+          );
+          await this.challengeDetailsService.createChallengeDetails({
             challengeID: newChallenge.challengeID,
             rulesParams: riskParams,
           });
@@ -567,7 +574,10 @@ export class ChallengesService {
       const newBrokerAccount = await this.brokerAccountsService.create({
         login: brokeretAccountDto.login,
         password: brokeretAccountDto.password,
-        server: brokeretAccountDto.server || this.configService.get<string>('MT_SERVER') || 'brokeret-server',
+        server:
+          brokeretAccountDto.server ||
+          this.configService.get<string>('MT_SERVER') ||
+          'brokeret-server',
         platform: brokeretAccountDto.platform || 'MT5',
         serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
         isUsed: user.isVerified, // true si está verificado, false si no
@@ -595,11 +605,16 @@ export class ChallengesService {
         relation: relation,
       } as Challenge;
 
-      const addons = await this.addonRulesService.getActiveAddonsFromRelation(relation);
+      const addons =
+        await this.addonRulesService.getActiveAddonsFromRelation(relation);
       tempChallenge.addons = addons;
       const baseRiskParams = getBasicRiskParams(tempChallenge);
-      const riskParams = await calculateRiskParamsWithAddons(tempChallenge, baseRiskParams, this.addonRulesService);
-      await this.createChallengeDetails({
+      const riskParams = await calculateRiskParamsWithAddons(
+        tempChallenge,
+        baseRiskParams,
+        this.addonRulesService,
+      );
+      await this.challengeDetailsService.createChallengeDetails({
         challengeID: newChallenge.challengeID,
         rulesParams: riskParams,
       });
@@ -738,176 +753,6 @@ export class ChallengesService {
 
   async getAvailablePlans() {
     return this.challengeTemplatesService.findAllPlans();
-  }
-
-  // Challenge Details methods
-  async createChallengeDetails(
-    createChallengeDetailsDto: CreateChallengeDetailsDto,
-  ): Promise<ChallengeDetails> {
-    // Verify that the challenge exists
-    const challenge = await this.findOne(createChallengeDetailsDto.challengeID);
-    if (!challenge) {
-      throw new NotFoundException('Challenge not found');
-    }
-
-    // Check if details already exist for this challenge
-    const existingDetails = await this.challengeDetailsRepository.findOne({
-      where: { challengeID: createChallengeDetailsDto.challengeID },
-    });
-
-    if (existingDetails) {
-      throw new ForbiddenException(
-        'Challenge details already exist for this challenge',
-      );
-    }
-
-    const payloadCreate: DeepPartial<ChallengeDetails> = {
-      challengeID: createChallengeDetailsDto.challengeID,
-      metaStats: createChallengeDetailsDto.metaStats || null,
-      positions: createChallengeDetailsDto.positions || null,
-      rulesValidation: createChallengeDetailsDto.rulesValidation || null,
-      rulesParams: createChallengeDetailsDto.rulesParams || null,
-      lastUpdate: createChallengeDetailsDto.lastUpdate ?? new Date(),
-    };
-    const challengeDetails =
-      this.challengeDetailsRepository.create(payloadCreate);
-
-    return this.challengeDetailsRepository.save(challengeDetails);
-  }
-
-  async findAllChallengeDetails(): Promise<ChallengeDetails[]> {
-    return this.challengeDetailsRepository.find({
-      relations: ['challenge'],
-    });
-  }
-
-  async findChallengeDetails(challengeID: string): Promise<ChallengeDetails> {
-    const challengeDetails = await this.challengeDetailsRepository.findOne({
-      where: { challengeID },
-      relations: ['challenge'],
-    });
-
-    if (!challengeDetails) {
-      throw new NotFoundException('Challenge details not found');
-    }
-
-    return challengeDetails;
-  }
-
-  async updateChallengeDetails(
-    challengeID: string,
-    updateChallengeDetailsDto: UpdateChallengeDetailsDto,
-  ): Promise<ChallengeDetails> {
-    const challengeDetails = await this.findChallengeDetails(challengeID);
-
-    const updates: DeepPartial<ChallengeDetails> = {
-      lastUpdate: new Date(),
-    };
-    if (
-      Object.prototype.hasOwnProperty.call(
-        updateChallengeDetailsDto,
-        'metaStats',
-      )
-    ) {
-      updates.metaStats = updateChallengeDetailsDto.metaStats || null;
-    }
-    if (
-      Object.prototype.hasOwnProperty.call(
-        updateChallengeDetailsDto,
-        'positions',
-      )
-    ) {
-      updates.positions = updateChallengeDetailsDto.positions || null;
-    }
-    if (
-      Object.prototype.hasOwnProperty.call(
-        updateChallengeDetailsDto,
-        'rulesValidation',
-      )
-    ) {
-      updates.rulesValidation =
-        updateChallengeDetailsDto.rulesValidation || null;
-    }
-    if (
-      Object.prototype.hasOwnProperty.call(
-        updateChallengeDetailsDto,
-        'rulesParams',
-      )
-    ) {
-      updates.rulesParams = updateChallengeDetailsDto.rulesParams || null;
-    }
-
-    Object.assign(challengeDetails, updates);
-
-    return this.challengeDetailsRepository.save(challengeDetails);
-  }
-
-  async upsertChallengeDetails(
-    challengeID: string,
-    challengeDetailsData: Omit<CreateChallengeDetailsDto, 'challengeID'>,
-  ): Promise<ChallengeDetails> {
-    // Verify that the challenge exists
-    const challenge = await this.findOne(challengeID);
-    if (!challenge) {
-      throw new NotFoundException('Challenge not found');
-    }
-
-    const existingDetails = await this.challengeDetailsRepository.findOne({
-      where: { challengeID },
-    });
-
-    if (existingDetails) {
-      // Update existing details
-      const updates: DeepPartial<ChallengeDetails> = {
-        lastUpdate: new Date(),
-      };
-      if (
-        Object.prototype.hasOwnProperty.call(challengeDetailsData, 'metaStats')
-      ) {
-        updates.metaStats = challengeDetailsData.metaStats || null;
-      }
-      if (
-        Object.prototype.hasOwnProperty.call(challengeDetailsData, 'positions')
-      ) {
-        updates.positions = challengeDetailsData.positions || null;
-      }
-      if (
-        Object.prototype.hasOwnProperty.call(
-          challengeDetailsData,
-          'rulesValidation',
-        )
-      ) {
-        updates.rulesValidation = challengeDetailsData.rulesValidation || null;
-      }
-      if (
-        Object.prototype.hasOwnProperty.call(
-          challengeDetailsData,
-          'rulesParams',
-        )
-      ) {
-        updates.rulesParams = challengeDetailsData.rulesParams || null;
-      }
-      Object.assign(existingDetails, updates);
-      return this.challengeDetailsRepository.save(existingDetails);
-    } else {
-      // Create new details
-      const payloadNew: DeepPartial<ChallengeDetails> = {
-        challengeID,
-        metaStats: challengeDetailsData.metaStats || null,
-        positions: challengeDetailsData.positions || null,
-        rulesValidation: challengeDetailsData.rulesValidation || null,
-        rulesParams: challengeDetailsData.rulesParams || null,
-        lastUpdate: new Date(),
-      };
-      const challengeDetails =
-        this.challengeDetailsRepository.create(payloadNew);
-      return this.challengeDetailsRepository.save(challengeDetails);
-    }
-  }
-
-  async removeChallengeDetails(challengeID: string): Promise<void> {
-    const challengeDetails = await this.findChallengeDetails(challengeID);
-    await this.challengeDetailsRepository.remove(challengeDetails);
   }
 
   async sendChallengeCredentials(id: string): Promise<{ message: string }> {

@@ -32,9 +32,20 @@ export class WithdrawalsController {
   constructor(private readonly withdrawalsService: WithdrawalsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create withdrawal request' })
+  @ApiOperation({ summary: 'Create withdrawal' })
   create(@Request() req, @Body() createWithdrawalDto: CreateWithdrawalDto) {
     return this.withdrawalsService.create(req.user.userID, createWithdrawalDto);
+  }
+  @Post('request')
+  @ApiOperation({ summary: 'Create withdrawal request' })
+  createRequest(
+    @Request() req,
+    @Body() createWithdrawalDto: CreateWithdrawalDto,
+  ) {
+    return this.withdrawalsService.createRequest(
+      req.user.userID,
+      createWithdrawalDto,
+    );
   }
 
   @Get()
@@ -72,8 +83,14 @@ export class WithdrawalsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Update withdrawal status' })
-  updateStatus(@Param('id') id: string, @Body() updateWithdrawalStatusDto: UpdateWithdrawalStatusDto) {
-    return this.withdrawalsService.updateWithdrawalStatus(id, updateWithdrawalStatusDto);
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateWithdrawalStatusDto: UpdateWithdrawalStatusDto,
+  ) {
+    return this.withdrawalsService.updateWithdrawalStatus(
+      id,
+      updateWithdrawalStatusDto,
+    );
   }
 
   @Delete(':id')

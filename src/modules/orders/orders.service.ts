@@ -11,7 +11,8 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateCompleteOrderDto } from './dto/create-complete-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { MailerService } from '../mailer/mailer.service';
-import { ChallengesService } from '../challenges/challenges.service';
+import { ChallengesService } from '../challenges/services/challenges.service';
+import { ChallengeDetailsService } from '../challenges/services/challenge-details.service';
 import { ChallengeTemplatesService } from '../challenge-templates/services/challenge-templates.service';
 import {
   createAccountResponse,
@@ -61,6 +62,7 @@ export class OrdersService {
     private configService: ConfigService,
     @Inject(forwardRef(() => ChallengesService))
     private challengesService: ChallengesService,
+    private challengeDetailsService: ChallengeDetailsService,
     private challengeTemplatesService: ChallengeTemplatesService,
     private brokerAccountsService: BrokerAccountsService,
     private usersService: UsersService,
@@ -521,7 +523,7 @@ export class OrdersService {
         );
         this.logger.debug('CreateBrokerAndChallenge: riskParams', riskParams);
         const challengeDetails =
-          await this.challengesService.createChallengeDetails({
+          await this.challengeDetailsService.createChallengeDetails({
             challengeID: challenge.challengeID,
             rulesParams: riskParams,
           });
@@ -637,7 +639,8 @@ export class OrdersService {
     credentials.platform = platform;
     // Usar MT_SERVER como fallback si no se especifica server
     if (!credentials.server) {
-      credentials.server = this.configService.get<string>('MT_SERVER') || 'DefaultServer';
+      credentials.server =
+        this.configService.get<string>('MT_SERVER') || 'DefaultServer';
     }
     return credentials;
   }
