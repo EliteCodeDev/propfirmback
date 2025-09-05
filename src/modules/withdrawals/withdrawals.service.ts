@@ -45,6 +45,34 @@ export class WithdrawalsService {
 
     return this.withdrawalRepository.save(withdrawal);
   }
+  async createRequest(
+    userID: string,
+    createWithdrawalDto: CreateWithdrawalDto,
+  ): Promise<Withdrawal> {
+    //realizar validaciones según las reglas de retiro de la relation del challenge
+    const challenge = await this.challengesService.findOne(
+      createWithdrawalDto.challengeID,
+    );
+    if (!challenge) {
+      throw new NotFoundException('Challenge not found');
+    }
+    const rules = await this.challengesService.getWithdrawalConditions(
+      challenge.challengeID,
+    );
+    //buscar el 1er plazo de retiro
+    //verificar si tiene más plazos de retiro 
+
+    // if (!rules) {
+    //   throw new NotFoundException('Rules not found');
+    // }
+    const withdrawal = this.withdrawalRepository.create({
+      ...createWithdrawalDto,
+      userID,
+      status: WithdrawalStatus.PENDING,
+    });
+
+    return this.withdrawalRepository.save(withdrawal);
+  }
 
   async findAll(query: any) {
     const { page = 1, limit = 10, status, email } = query;
@@ -216,18 +244,22 @@ export class WithdrawalsService {
         },
       } as any;
 
-      const brokeretAccountDto = await this.ordersService.createBrokeretApiAccount(
-        user,
-        createOrderDto,
-        currentChallenge.dynamicBalance,
-        'contest\\PG\\kbst\\contestphase1',
-        relation,
-      );
+      const brokeretAccountDto =
+        await this.ordersService.createBrokeretApiAccount(
+          user,
+          createOrderDto,
+          currentChallenge.dynamicBalance,
+          'contest\\PG\\kbst\\contestphase1',
+          relation,
+        );
 
       const newBrokerAccount = await this.brokerAccountsService.create({
         login: brokeretAccountDto.login,
         password: brokeretAccountDto.password,
-        server: brokeretAccountDto.server || this.configService.get<string>('MT_SERVER') || 'brokeret-server',
+        server:
+          brokeretAccountDto.server ||
+          this.configService.get<string>('MT_SERVER') ||
+          'brokeret-server',
         platform: brokeretAccountDto.platform || 'MT5',
         serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
         isUsed: true,
@@ -269,7 +301,8 @@ export class WithdrawalsService {
           subject: 'Challenge is ready to use!',
           challenge_type: relation.plan?.name || 'Challenge',
           account_size:
-            (challengeBalance as any)?.balance || currentChallenge.dynamicBalance,
+            (challengeBalance as any)?.balance ||
+            currentChallenge.dynamicBalance,
           platform: newBrokerAccount.platform,
           login_details: {
             login: newBrokerAccount.login,

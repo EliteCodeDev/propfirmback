@@ -303,7 +303,14 @@ export class ChallengesService {
 
     return challenge;
   }
-
+  async getWithdrawalConditions(id: string) {
+    const challenge = await this.findOne(id);
+    const relation = await this.challengeTemplatesService.findWithdrawalrules(
+      challenge.relationID,
+    );
+    // return relation.
+    // return this.challengeTemplatesService.getWithdrawalConditions(id);
+  }
   async update(
     id: string,
     updateChallengeDto: UpdateChallengeDto,

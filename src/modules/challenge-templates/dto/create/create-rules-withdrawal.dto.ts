@@ -9,7 +9,7 @@ export class CreateRulesWithdrawalDto {
   })
   @IsUUID(4, { message: 'idRule debe ser un UUID válido' })
   @IsNotEmpty({ message: 'idRule es requerido' })
-  idRule: string;
+  ruleID: string;
 
   @ApiProperty({
     description: 'ID de la relación de challenge asociada',

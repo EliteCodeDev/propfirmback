@@ -1,35 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Rules } from '../entities/rules/rules.entity';
+import { WithdrawalRule } from '../entities/rules/withdrawal-rule.entity';
 import { Repository } from 'typeorm';
 import { RuleDto } from '../dto/create/create-rule.dto';
 
 @Injectable()
 export class RulesService {
+  constructor(
+    @InjectRepository(WithdrawalRule)
+    private readonly rulesRepository: Repository<WithdrawalRule>,
+  ) {}
 
-    constructor(
-        @InjectRepository(Rules)
-        private readonly rulesRepository: Repository<Rules>
-    ){}
+  async findAll() {
+    return await this.rulesRepository.find();
+  }
 
-    async findAll(){
-        return await this.rulesRepository.find();
-    }
+  async findById(id: string) {
+    return await this.rulesRepository.findOne({ where: { ruleID: id } });
+  }
 
-    async findById(id: string){
-        return await this.rulesRepository.findOne({ where: { idRule: id } });
-    }
+  async create(rules: RuleDto) {
+    return await this.rulesRepository.save(rules);
+  }
 
-    async create(rules: RuleDto){
-        return await this.rulesRepository.save(rules);
-    }
+  async update(id: string, rules: RuleDto) {
+    return await this.rulesRepository.update(id, rules);
+  }
 
-    async update(id: string, rules: RuleDto){
-        return await this.rulesRepository.update(id, rules);
-    }    
-
-    async remove(id: string){
-        return await this.rulesRepository.delete(id);
-    }
-
+  async remove(id: string) {
+    return await this.rulesRepository.delete(id);
+  }
 }

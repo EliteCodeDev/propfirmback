@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Rules } from '../../entities/rules/rules.entity';
+import { WithdrawalRule } from '../../entities/rules/withdrawal-rule.entity';
 import { ChallengeRelation } from '../../entities/challenge-relation.entity';
 
 export class RulesWithdrawalResponseDto {
@@ -8,7 +8,7 @@ export class RulesWithdrawalResponseDto {
     example: '550e8400-e29b-41d4-a716-446655440000',
     format: 'uuid',
   })
-  idRule: string;
+  ruleID: string;
 
   @ApiProperty({
     description: 'ID de la relación de challenge asociada',
@@ -26,10 +26,10 @@ export class RulesWithdrawalResponseDto {
 
   @ApiProperty({
     description: 'Información de la regla asociada',
-    type: () => Rules,
+    type: () => WithdrawalRule,
     required: false,
   })
-  rules?: Rules;
+  rules?: WithdrawalRule;
 
   @ApiProperty({
     description: 'Información de la relación de challenge asociada',

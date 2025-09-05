@@ -108,6 +108,9 @@ export class ChallengesController {
 
     return mapChallengeToAccount(challenge);
   }
+  async getWithdrawalConditions(@Param('challengeID') challengeID: string) {
+    return this.challengesService.getWithdrawalConditions(challengeID);
+  }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get challenge by ID' })
