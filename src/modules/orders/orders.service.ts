@@ -635,6 +635,10 @@ export class OrdersService {
     const credentials = createSmtApiResponseToBrokerAccount(smtRes.data);
     credentials.serverIp = url;
     credentials.platform = platform;
+    // Usar MT_SERVER como fallback si no se especifica server
+    if (!credentials.server) {
+      credentials.server = this.configService.get<string>('MT_SERVER') || 'DefaultServer';
+    }
     return credentials;
   }
   async createBrokeretApiAccount(
@@ -782,7 +786,7 @@ export class OrdersService {
       const brokerAccountDto: CreateBrokerAccountDto = {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
-        server: process.env.NEXT_PUBLIC_SERVER,
+        server: this.configService.get<string>('MT_SERVER') || 'FazoLiquidity',
         serverIp: 'server.com', // IP del servidor por defecto
         platform: 'MT5',
         isUsed: false,

@@ -18,6 +18,11 @@ export class BrokerAccountsService {
       throw new ConflictException('Login already exists');
     }
 
+    // Usar MT_SERVER como fallback si no se especifica server
+    if (!createBrokerAccountDto.server) {
+      createBrokerAccountDto.server = process.env.MT_SERVER || 'DefaultServer';
+    }
+
     const brokerAccount = this.brokerAccountRepository.create(createBrokerAccountDto);
     return this.brokerAccountRepository.save(brokerAccount);
   }

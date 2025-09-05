@@ -169,7 +169,7 @@ export class ChallengesService {
       return {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
-        server: process.env.MT_SERVER || 'FazoLiquidity',
+        server: this.configService.get<string>('MT_SERVER') || 'FazoLiquidity',
         platform: 'MT5',
         isUsed: true,
         investorPass: investorPassword,
@@ -567,7 +567,7 @@ export class ChallengesService {
       const newBrokerAccount = await this.brokerAccountsService.create({
         login: brokeretAccountDto.login,
         password: brokeretAccountDto.password,
-        server: brokeretAccountDto.server || 'brokeret-server',
+        server: brokeretAccountDto.server || this.configService.get<string>('MT_SERVER') || 'brokeret-server',
         platform: brokeretAccountDto.platform || 'MT5',
         serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
         isUsed: user.isVerified, // true si está verificado, false si no

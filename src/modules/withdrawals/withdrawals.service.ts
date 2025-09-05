@@ -205,7 +205,7 @@ export class WithdrawalsService {
       const newBrokerAccount = await this.brokerAccountsService.create({
         login: brokeretAccountDto.login,
         password: brokeretAccountDto.password,
-        server: brokeretAccountDto.server || 'brokeret-server',
+        server: brokeretAccountDto.server || this.configService.get<string>('MT_SERVER') || 'brokeret-server',
         platform: brokeretAccountDto.platform || 'MT5',
         serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
         isUsed: true,

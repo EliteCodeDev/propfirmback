@@ -112,7 +112,7 @@ import { BufferModule } from './lib/buffer/buffer.module';
     // BrokeretApiModule,
     DashboardModule,
     SeedOnBootModule,
-    TasksModule,
+    // TasksModule,
     N8nModule,
     StylesModule,
   ],
