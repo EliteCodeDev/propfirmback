@@ -14,10 +14,12 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { BrokerAccountsService } from './broker-accounts.service';
 import { CreateBrokerAccountDto } from './dto/create-broker-account.dto';
 import { UpdateBrokerAccountDto } from './dto/update-broker-account.dto';
+import { FindAllBrokerAccountsDto } from './dto/find-all-broker-accounts.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -38,8 +40,29 @@ export class BrokerAccountsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all broker accounts' })
-  findAll(@Query() query: any) {
+  @ApiOperation({ summary: 'Get all broker accounts with filtering and pagination' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Returns paginated broker accounts with optional filters',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/BrokerAccount' }
+        },
+        total: { type: 'number', description: 'Total number of accounts' },
+        page: { type: 'number', description: 'Current page number' },
+        limit: { type: 'number', description: 'Items per page' },
+        totalPages: { type: 'number', description: 'Total number of pages' }
+      }
+    }
+  })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 10 })
+  @ApiQuery({ name: 'isUsed', required: false, description: 'Filter by usage status', enum: ['true', 'false'] })
+  @ApiQuery({ name: 'login', required: false, description: 'Search by login (partial match)', example: 'MT5_123' })
+  findAll(@Query() query: FindAllBrokerAccountsDto) {
     return this.brokerAccountsService.findAll(query);
   }
 

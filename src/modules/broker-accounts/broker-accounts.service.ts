@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { BrokerAccount } from './entities/broker-account.entity';
 import { CreateBrokerAccountDto } from './dto/create-broker-account.dto';
 import { UpdateBrokerAccountDto } from './dto/update-broker-account.dto';
@@ -28,27 +28,34 @@ export class BrokerAccountsService {
   }
 
   async findAll(query: any) {
-    const { page = 1, limit = 10, isUsed } = query;
+    const { page = 1, limit = 10, isUsed, login } = query;
     const skip = (page - 1) * limit;
 
     const whereConditions: any = {};
+    
+    // Filter by usage status
     if (isUsed !== undefined) {
-      whereConditions.isUsed = isUsed;
+      whereConditions.isUsed = isUsed === 'true';
+    }
+    
+    // Filter by login (partial match)
+    if (login && login.trim()) {
+      whereConditions.login = Like(`%${login.trim()}%`);
     }
 
     const [accounts, total] = await this.brokerAccountRepository.findAndCount({
       where: whereConditions,
       skip,
-      take: limit,
+      take: parseInt(limit),
       order: { login: 'ASC' },
     });
 
     return {
       data: accounts,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(total / parseInt(limit)),
     };
   }
 
