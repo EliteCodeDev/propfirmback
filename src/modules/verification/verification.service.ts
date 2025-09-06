@@ -208,12 +208,12 @@ export class VerificationService {
     try {
       const user = verification.user;
       const clientUrl = this.configService.get<string>('app.clientUrl');
-      const dashboardUrl = `${clientUrl}/en/dashboard`;
+      const dashboardUrl = `${clientUrl}/dashboard`;
 
       if (newStatus === VerificationStatus.APPROVED) {
         await this.mailerService.sendMail({
           to: user.email,
-          subject: '¡Verificación Aprobada!',
+          subject: 'Verification Approved',
           template: 'verification-approved',
           context: {
             firstName: user.firstName,
@@ -226,7 +226,7 @@ export class VerificationService {
       } else if (newStatus === VerificationStatus.REJECTED) {
         await this.mailerService.sendMail({
           to: user.email,
-          subject: 'Verificación Rechazada',
+          subject: 'Verification Rejected',
           template: 'verification-rejected',
           context: {
             firstName: user.firstName,
