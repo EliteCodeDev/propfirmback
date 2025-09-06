@@ -17,15 +17,15 @@ export class CertificatesService {
     createCertificateDto: CreateCertificateDto,
   ): Promise<Certificate> {
     const frontendUrl = this.configService.get<string>('app.clientUrl');
-    
+
     if (!frontendUrl) {
       throw new Error('app.clientUrl configuration is missing');
     }
-    
+
     const createCertificate = {
       ...createCertificateDto,
       qrLink: await QRCode.toDataURL(
-        `${frontendUrl}/certificates/${createCertificateDto.challengeID}`,
+        `${frontendUrl}/certificate/${createCertificateDto.challengeID}`,
       ),
       certificateDate: createCertificateDto.certificateDate
         ? new Date(createCertificateDto.certificateDate)
@@ -83,7 +83,7 @@ export class CertificatesService {
   async findOne(id: string): Promise<Certificate> {
     const certificate = await this.certificateRepository.findOne({
       where: { certificateID: id },
-      relations: ['user', 'challenge','challenge.brokerAccount'],
+      relations: ['user', 'challenge', 'challenge.brokerAccount'],
     });
 
     if (!certificate) {
