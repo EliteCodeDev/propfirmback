@@ -44,7 +44,6 @@ export class ChallengesService {
   constructor(
     @InjectRepository(Challenge)
     private challengeRepository: Repository<Challenge>,
-    @InjectRepository(UserAccount)
     private challengeTemplatesService: ChallengeTemplatesService,
     private challengeDetailsService: ChallengeDetailsService,
     private addonRulesService: AddonRulesService,
