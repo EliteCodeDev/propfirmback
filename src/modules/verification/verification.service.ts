@@ -10,6 +10,7 @@ import { MediaType } from 'src/common/enums/media-type.enum';
 import { MinioService } from 'src/modules/storage/minio/minio.service';
 import { MailerService } from 'src/modules/mailer/mailer.service';
 import { UserAccount } from '../users/entities';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class VerificationService {
@@ -22,6 +23,7 @@ export class VerificationService {
     private mailerService: MailerService,
     @InjectRepository(UserAccount)
     private userAccountRepository: Repository<UserAccount>,
+    private configService: ConfigService,
   ) {}
 
   async createVerification(
@@ -201,6 +203,8 @@ export class VerificationService {
   ): Promise<void> {
     try {
       const user = verification.user;
+      const clientUrl = this.configService.get<string>('app.clientUrl');
+      const dashboardUrl = `${clientUrl}/en/dashboard`;
       
       if (newStatus === VerificationStatus.APPROVED) {
         await this.mailerService.sendMail({
@@ -212,6 +216,7 @@ export class VerificationService {
             lastName: user.lastName,
             verificationID: verification.verificationID,
             currentYear: new Date().getFullYear(),
+            dashboardUrl,
           },
         });
       } else if (newStatus === VerificationStatus.REJECTED) {

@@ -55,7 +55,7 @@
       }
       .cta-button {
         display: block;
-        width: 200px;
+        width: 220px;
         margin: 30px auto;
         padding: 12px 24px;
         background: #007bff;
@@ -96,7 +96,9 @@
         restrictions.
       </div>
 
-      <a href='#' class='cta-button'>Access my account</a>
+      {{#if dashboardUrl}}
+        <a href='{{dashboardUrl}}' class='cta-button' target='_blank' rel='noopener noreferrer'>Access my account</a>
+      {{/if}}
 
       <div class='main-message'>
         If you have any questions, feel free to contact our support team.
