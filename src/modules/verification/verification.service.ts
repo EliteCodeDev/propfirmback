@@ -177,21 +177,25 @@ export class VerificationService {
 
     if (updateVerificationDto.status === VerificationStatus.APPROVED) {
       verification.approvedAt = new Date();
-      
+
       // Actualizar el campo isVerified del usuario cuando se aprueba la verificación
       await this.userAccountRepository.update(
         { userID: verification.userID },
-        { isVerified: true }
+        { isVerified: true },
       );
     } else if (updateVerificationDto.status === VerificationStatus.REJECTED) {
       verification.rejectedAt = new Date();
     }
 
-    const updatedVerification = await this.verificationRepository.save(verification);
+    const updatedVerification =
+      await this.verificationRepository.save(verification);
 
     // Enviar correo solo si el estado cambió
     if (previousStatus !== updateVerificationDto.status) {
-      await this.sendVerificationStatusEmail(updatedVerification, updateVerificationDto.status);
+      await this.sendVerificationStatusEmail(
+        updatedVerification,
+        updateVerificationDto.status,
+      );
     }
 
     return updatedVerification;
@@ -205,11 +209,11 @@ export class VerificationService {
       const user = verification.user;
       const clientUrl = this.configService.get<string>('app.clientUrl');
       const dashboardUrl = `${clientUrl}/en/dashboard`;
-      
+
       if (newStatus === VerificationStatus.APPROVED) {
         await this.mailerService.sendMail({
           to: user.email,
-          subject: '¡Verificación Aprobada! - FundingHero',
+          subject: '¡Verificación Aprobada!',
           template: 'verification-approved',
           context: {
             firstName: user.firstName,
@@ -222,7 +226,7 @@ export class VerificationService {
       } else if (newStatus === VerificationStatus.REJECTED) {
         await this.mailerService.sendMail({
           to: user.email,
-          subject: 'Verificación Rechazada - FundingHero',
+          subject: 'Verificación Rechazada',
           template: 'verification-rejected',
           context: {
             firstName: user.firstName,
