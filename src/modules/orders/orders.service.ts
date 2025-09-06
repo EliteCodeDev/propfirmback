@@ -205,7 +205,7 @@ export class OrdersService {
         user,
         relation,
       );
-
+      this.logger.log('Challenge creation result:', challengeRes);
       if (!challengeRes.data) {
         return {
           status: 'error',
@@ -443,61 +443,27 @@ export class OrdersService {
     credentials: any,
     user: any,
     relation: ChallengeRelation,
-    retryCount: number = 0,
   ): Promise<ServiceResult<Challenge>> {
-    const maxRetries = 3;
-    const retryDelay = 1000; // 1 second
-
     try {
       // broker account creation
       let brokerAccount;
       try {
         brokerAccount = await this.brokerAccountsService.create(credentials);
+        this.logger.log('Broker account created:', brokerAccount);
       } catch (err) {
-        // Check if this is a login conflict error and we can retry
-        if (
-          err?.message?.includes('Login already exists') &&
-          retryCount < maxRetries
-        ) {
-          this.logger.warn(
-            `Login conflict detected, retrying broker account creation. Attempt ${retryCount + 2}/${maxRetries + 1}`,
-            {
-              login: credentials.login,
-              attempt: retryCount + 1,
-            },
-          );
-
-          // Wait before retrying
-          await new Promise((resolve) =>
-            setTimeout(resolve, retryDelay * (retryCount + 1)),
-          );
-
-          // Modify the login to make it unique
-          const modifiedCredentials = {
-            ...credentials,
-            login: `${credentials.login}_${Date.now()}_${retryCount + 1}`,
-          };
-
-          return this.createBrokerAndChallenge(
-            modifiedCredentials,
-            user,
-            relation,
-            retryCount + 1,
-          );
-        }
-
         return {
           status: 'error',
-          message:
-            retryCount >= maxRetries
-              ? `Fallo al crear la cuenta de bróker después de ${maxRetries + 1} intentos`
-              : 'Fallo al crear la cuenta de bróker',
+          message: 'Fallo al crear la cuenta de bróker',
           failedAt: 'broker_account_create',
           details: err?.message ?? err,
         };
       }
       // challenge creation
       try {
+        this.logger.debug(
+          'creating challenge with relation: ' + relation.relationID,
+        );
+
         const challenge = await this.challengesService.create({
           brokerAccountID: brokerAccount.brokerAccountID,
           userID: user.userID,
@@ -510,18 +476,24 @@ export class OrdersService {
         });
         // challenge.relation.balances
         challenge.relation = relation;
-
+        this.logger.debug(
+          'CreateBrokerAndChallenge: challenge created',
+          JSON.stringify(challenge),
+        );
         // Cargar addons de la relación para el challenge
-        const addons =
-          await this.addonRulesService.getActiveAddonsFromRelation(relation);
-        challenge.addons = addons;
+        // const addons =
+        //   await this.addonRulesService.getActiveAddonsFromRelation(relation);
+        // challenge.addons = addons;
         const baseRiskParams = getBasicRiskParams(challenge);
         const riskParams = await calculateRiskParamsWithAddons(
           challenge,
           baseRiskParams,
           this.addonRulesService,
         );
-        this.logger.debug('CreateBrokerAndChallenge: riskParams', riskParams);
+        this.logger.debug(
+          'CreateBrokerAndChallenge: data to create challenge details',
+          riskParams,
+        );
         const challengeDetails =
           await this.challengeDetailsService.createChallengeDetails({
             challengeID: challenge.challengeID,
@@ -529,7 +501,10 @@ export class OrdersService {
           });
         challenge.details = challengeDetails;
         challenge.brokerAccount = brokerAccount;
-
+        this.logger.debug(
+          'CreateBrokerAndChallenge: completed',
+          JSON.stringify(challengeDetails),
+        );
         return {
           status: 'success',
           message: 'Challenge creado correctamente',

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BrokerAccount } from './entities/broker-account.entity';
@@ -7,12 +12,19 @@ import { UpdateBrokerAccountDto } from './dto/update-broker-account.dto';
 
 @Injectable()
 export class BrokerAccountsService {
+  private logger = new Logger(BrokerAccountsService.name);
   constructor(
     @InjectRepository(BrokerAccount)
     private brokerAccountRepository: Repository<BrokerAccount>,
   ) {}
 
-  async create(createBrokerAccountDto: CreateBrokerAccountDto): Promise<BrokerAccount> {
+  async create(
+    createBrokerAccountDto: CreateBrokerAccountDto,
+  ): Promise<BrokerAccount> {
+    this.logger.log(
+      'Creating broker account with DTO:',
+      createBrokerAccountDto,
+    );
     const existingLogin = await this.findByLogin(createBrokerAccountDto.login);
     if (existingLogin) {
       throw new ConflictException('Login already exists');
@@ -23,7 +35,9 @@ export class BrokerAccountsService {
       createBrokerAccountDto.server = process.env.MT_SERVER || 'DefaultServer';
     }
 
-    const brokerAccount = this.brokerAccountRepository.create(createBrokerAccountDto);
+    const brokerAccount = this.brokerAccountRepository.create(
+      createBrokerAccountDto,
+    );
     return this.brokerAccountRepository.save(brokerAccount);
   }
 
@@ -77,11 +91,19 @@ export class BrokerAccountsService {
     });
   }
 
-  async update(id: string, updateBrokerAccountDto: UpdateBrokerAccountDto): Promise<BrokerAccount> {
+  async update(
+    id: string,
+    updateBrokerAccountDto: UpdateBrokerAccountDto,
+  ): Promise<BrokerAccount> {
     const account = await this.findOne(id);
 
-    if (updateBrokerAccountDto.login && updateBrokerAccountDto.login !== account.login) {
-      const existingLogin = await this.findByLogin(updateBrokerAccountDto.login);
+    if (
+      updateBrokerAccountDto.login &&
+      updateBrokerAccountDto.login !== account.login
+    ) {
+      const existingLogin = await this.findByLogin(
+        updateBrokerAccountDto.login,
+      );
       if (existingLogin) {
         throw new ConflictException('Login already exists');
       }
