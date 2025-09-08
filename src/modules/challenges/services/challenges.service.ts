@@ -219,27 +219,40 @@ export class ChallengesService {
   }
 
   async findAll(query: ChallengeQueryDto) {
-    const { page = 1, limit = 10, status, userID } = query;
-    const skip = (page - 1) * limit;
+    const { page = 1, limit = 10, status, userID, search, login } = query;
+    const qb = this.challengeRepository
+      .createQueryBuilder('challenge')
+      .leftJoinAndSelect('challenge.user', 'user')
+      .leftJoinAndSelect('challenge.relation', 'relation')
+      .leftJoinAndSelect('challenge.parent', 'parent')
+      .leftJoinAndSelect('challenge.brokerAccount', 'brokerAccount')
+      .leftJoinAndSelect('challenge.details', 'details');
 
-    const whereConditions: any = {};
-
-    // Filtrar por status si se proporciona (array de strings)
     if (status && Array.isArray(status) && status.length > 0) {
-      whereConditions.status = In(status);
+      qb.andWhere('challenge.status IN (:...status)', { status });
     }
 
     if (userID) {
-      whereConditions.userID = userID;
+      qb.andWhere('challenge.userID = :userID', { userID });
     }
 
-    const [challenges, total] = await this.challengeRepository.findAndCount({
-      where: whereConditions,
-      skip,
-      take: limit,
-      order: { startDate: 'DESC' },
-      relations: ['user', 'relation', 'parent', 'brokerAccount', 'details'],
-    });
+    if (search && search.trim()) {
+      const s = `%${search.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(user.email) LIKE :s OR LOWER(user.username) LIKE :s OR LOWER(CONCAT(COALESCE(user.firstName, \'\'), \' \' , COALESCE(user.lastName, \'\'))) LIKE :s)',
+        { s },
+      );
+    }
+
+    if (login && login.trim()) {
+      const l = `%${login.trim().toLowerCase()}%`;
+      qb.andWhere('LOWER(brokerAccount.login) LIKE :l', { l });
+    }
+
+    qb.orderBy('challenge.startDate', 'DESC');
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [challenges, total] = await qb.getManyAndCount();
 
     return {
       data: challenges,
