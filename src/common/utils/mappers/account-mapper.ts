@@ -409,15 +409,17 @@ export function mapChallengesToBasicAccounts(
           balance: {
             initialBalance:
               // challenge.brokerAccount.innitialBalance ||
-              0,
+              challenge.details?.balance?.initialBalance ?? 0,
             currentBalance:
+              challenge.details?.balance?.currentBalance ??
               // challenge.dynamicBalance ||
               // challenge.brokerAccount.innitialBalance ||
               10,
             dailyBalance:
-              challenge.dynamicBalance ||
-              challenge.brokerAccount.innitialBalance ||
-              0,
+              challenge.details?.balance?.dailyBalance ?? 0,
+              // challenge.dynamicBalance ||
+              // challenge.brokerAccount.innitialBalance ||
+              
           },
           equity:
             challenge.details?.metaStats?.equity ||

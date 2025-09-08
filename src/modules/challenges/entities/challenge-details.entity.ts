@@ -7,7 +7,7 @@ import {
   ValueTransformer,
 } from 'typeorm';
 import { Challenge } from './challenge.entity';
-import { MetaStats, positionsDetails } from 'src/common/utils/account';
+import { Balance, MetaStats, positionsDetails } from 'src/common/utils/account';
 import { RiskParams } from 'src/common/utils/risk';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
 // Utilidad: transformer genérico para persistir objetos como JSON string en DB y exponer tipos en TS
@@ -35,6 +35,13 @@ export class ChallengeDetails {
     transformer: jsonStringTransformer<MetaStats>(),
   })
   metaStats?: MetaStats | null;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+    transformer: jsonStringTransformer<Balance>(),
+  })
+  balance: Balance
 
   @Column({
     type: 'text',
