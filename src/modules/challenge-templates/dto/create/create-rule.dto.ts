@@ -10,11 +10,15 @@ export class RuleDto {
     @IsNotEmpty()
     @IsOptional()
     @Length(1, 100)
-    slugRule: string;
+    ruleType: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @Length(1, 100)
+    slugRule:string;
 
     @IsOptional()
     @IsString()
-    @IsEmpty()
     descriptionRule: string;
 
 }
