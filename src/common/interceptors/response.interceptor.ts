@@ -9,7 +9,9 @@ import { map } from 'rxjs/operators';
 import { ResponseDto } from '../dto/response.dto';
 
 @Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, ResponseDto<T>> {
+export class ResponseInterceptor<T>
+  implements NestInterceptor<T, ResponseDto<T>>
+{
   intercept(
     context: ExecutionContext,
     next: CallHandler,

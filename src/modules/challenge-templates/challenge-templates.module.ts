@@ -10,11 +10,13 @@ import {
 } from './services';
 import { AddonsService } from './services/addons.service';
 import { RelationAddonService } from './services/relation-addon.service';
+import { AddonChallengService } from './services/addon-challenge.service';
 import { RulesWithdrawalService } from './services/rules-withdrawal.service';
 import { AddonRulesService } from './services/addon-rules.service';
 import { RulesService } from './services/rules.service';
 import { AddonsController } from './controllers/addons.controller';
 import { RelationAddonController } from './controllers/relation-addon.controller';
+import { AddonChallengController } from './controllers/addon-challeng.controller';
 import { RulesWithdrawalController } from './controllers/rules-withdrawal.controller';
 import { RulesController } from './controllers/rules.controller';
 // Entities
@@ -57,6 +59,7 @@ import {
     ChallengeTemplatesController,
     AddonsController,
     RelationAddonController,
+    AddonChallengController,
     RulesWithdrawalController,
     RulesController,
   ],
@@ -67,6 +70,7 @@ import {
     ChallengeStagesService,
     AddonsService,
     RelationAddonService,
+    AddonChallengService,
     RulesWithdrawalService,
     AddonRulesService,
     RulesService,
@@ -78,6 +82,7 @@ import {
     ChallengeStagesService,
     AddonsService,
     RelationAddonService,
+    AddonChallengService,
     RulesWithdrawalService,
     AddonRulesService,
     RulesService,

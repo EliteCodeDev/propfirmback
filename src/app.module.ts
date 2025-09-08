@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { WinstonModule } from 'nest-winston';
+
 import { TurnstileService } from './common/security/turnstile.service';
 import { CustomLoggerService } from './common/services/custom-logger.service';
 
@@ -46,7 +47,6 @@ import {
   // BrokeretApiModule,
   StorageModule,
   MinioModule,
-  N8nModule,
   StylesModule,
 } from 'src/modules';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -56,11 +56,12 @@ import { TasksModule } from './tasks/tasks.module';
 import { BufferModule } from './lib/buffer/buffer.module';
 
 // Flag para deshabilitar tareas/cron por entorno
-const disableTasks = String(process.env.DISABLE_TASKS || '').toLowerCase() === 'true';
+const disableTasks =
+  String(process.env.DISABLE_TASKS || '').toLowerCase() === 'true';
 
 @Module({
   imports: [
-    // config de entorno
+    // config global
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
@@ -71,11 +72,7 @@ const disableTasks = String(process.env.DISABLE_TASKS || '').toLowerCase() === '
     // cargar namespaces de config
     ConfigModule.forFeature(appConfig),
     ConfigModule.forFeature(jwtConfigValues),
-    ConfigModule.forFeature(mailerConfig),
-    ConfigModule.forFeature(smtApiConfig),
-    ConfigModule.forFeature(brokeretApiConfig),
     ConfigModule.forFeature(apiKeysConfig),
-    ConfigModule.forFeature(minioConfig),
     ConfigModule.forFeature(loggerConfig),
     // Winston Logger
     WinstonModule.forRootAsync({
@@ -112,12 +109,10 @@ const disableTasks = String(process.env.DISABLE_TASKS || '').toLowerCase() === '
     VerificationModule,
     WithdrawalsModule,
     RbacModule,
-    SmtApiModule,
     // BrokeretApiModule,
     DashboardModule,
     SeedOnBootModule,
-    ...(!disableTasks ? [TasksModule] : []),
-    N8nModule,
+    // ...(!disableTasks ? [TasksModule] : []),
     StylesModule,
   ],
   controllers: [

@@ -229,6 +229,9 @@ export class ChallengeRelationsService {
 
   //   return relation;
   // }
+  async findWithdrawalrules(){
+    
+  }
   async findCompleteRelationChain(
     relationID: string,
   ): Promise<ChallengeRelation> {

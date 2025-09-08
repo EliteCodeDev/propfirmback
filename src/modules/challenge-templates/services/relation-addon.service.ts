@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { RelationAddon } from '../entities/addons/relation-addon.entity';
 import { Addon } from '../entities/addons/addon.entity';
 import { ChallengeRelation } from '../entities/challenge-relation.entity';
@@ -26,7 +30,10 @@ export class RelationAddonService {
     return relationAddons.map(this.mapToResponseDto);
   }
 
-  async findOne(addonID: string, relationID: string): Promise<RelationAddonResponseDto> {
+  async findOne(
+    addonID: string,
+    relationID: string,
+  ): Promise<RelationAddonResponseDto> {
     const relationAddon = await this.relationAddonRepository.findOne({
       where: { addonID, relationID },
       relations: ['addon', 'relation'],
@@ -49,7 +56,9 @@ export class RelationAddonService {
     return relationAddons.map(this.mapToResponseDto);
   }
 
-  async findByRelationId(relationID: string): Promise<RelationAddonResponseDto[]> {
+  async findByRelationId(
+    relationID: string,
+  ): Promise<RelationAddonResponseDto[]> {
     const relationAddons = await this.relationAddonRepository.find({
       where: { relationID },
       relations: ['addon', 'relation'],
@@ -57,7 +66,9 @@ export class RelationAddonService {
     return relationAddons.map(this.mapToResponseDto);
   }
 
-  async create(createRelationAddonDto: CreateRelationAddonDto): Promise<RelationAddonResponseDto> {
+  async create(
+    createRelationAddonDto: CreateRelationAddonDto,
+  ): Promise<RelationAddonResponseDto> {
     // Validate that addon exists
     const addon = await this.addonRepository.findOne({
       where: { addonID: createRelationAddonDto.addonID },
@@ -94,16 +105,21 @@ export class RelationAddonService {
     // Set default values
     const relationAddonData = {
       ...createRelationAddonDto,
-      price: createRelationAddonDto.price ?? 0,
+      value: createRelationAddonDto.value ?? 0,
       isActive: createRelationAddonDto.isActive ?? true,
       hasDiscount: createRelationAddonDto.hasDiscount ?? false,
       discount: createRelationAddonDto.discount ?? 0,
     };
 
-    const relationAddon = this.relationAddonRepository.create(relationAddonData);
-    const savedRelationAddon = await this.relationAddonRepository.save(relationAddon);
+    const relationAddon =
+      this.relationAddonRepository.create(relationAddonData);
+    const savedRelationAddon =
+      await this.relationAddonRepository.save(relationAddon);
 
-    return this.findOne(savedRelationAddon.addonID, savedRelationAddon.relationID);
+    return this.findOne(
+      savedRelationAddon.addonID,
+      savedRelationAddon.relationID,
+    );
   }
 
   async update(
@@ -143,11 +159,22 @@ export class RelationAddonService {
     await this.relationAddonRepository.delete({ addonID, relationID });
   }
 
-  private mapToResponseDto(relationAddon: RelationAddon): RelationAddonResponseDto {
+  async getAddonsByArray(wooID: number[]) {
+    return await this.relationAddonRepository.find({
+      where: {
+        wooID: In(wooID),
+      },
+      relations: ['addon'],
+    });
+  }
+
+  private mapToResponseDto(
+    relationAddon: RelationAddon,
+  ): RelationAddonResponseDto {
     return {
       addonID: relationAddon.addonID,
       relationID: relationAddon.relationID,
-      price: relationAddon.price,
+      value: relationAddon.value,
       isActive: relationAddon.isActive,
       hasDiscount: relationAddon.hasDiscount,
       discount: relationAddon.discount,

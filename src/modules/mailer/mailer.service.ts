@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
@@ -7,33 +8,29 @@ import * as path from 'path';
 import * as handlebars from 'handlebars';
 import { StylesService } from '../styles/styles.service';
 import { UsersService } from '../users/services/users.service';
-
+import { mailerConfig } from 'src/config';
 @Injectable()
 export class MailerService {
   private transporter: Transporter;
-
+  private readonly defaultStyle: any;
   constructor(
+    @Inject(mailerConfig.KEY)
+    private readonly cfg: ConfigType<typeof mailerConfig>,
     private readonly configService: ConfigService,
     private readonly stylesService: StylesService,
     private readonly usersService: UsersService,
   ) {
+    const { host, port, user, pass } = this.cfg;
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('mailer.host'),
-      port: this.configService.get<number>('mailer.port'),
-      secure: this.configService.get<number>('mailer.port') === 465,
+      host,
+      port,
+      secure: port === 465,
       auth: {
-        user: this.configService.get<string>('mailer.user'),
-        pass: this.configService.get<string>('mailer.pass'),
+        user,
+        pass,
       },
     });
-  }
-
-  async sendMail({ to, subject, template, context }) {
-    // Obtener el estilo activo de la base de datos
-    const activeStyle = await this.stylesService.findActiveStyle();
-    
-    // Valores por defecto si no hay estilo activo
-    const defaultStyle = {
+    this.defaultStyle = {
       primaryColor: '#007bff',
       secondaryColor: '#6c757d',
       tertiaryColor: '#28a745',
@@ -41,8 +38,12 @@ export class MailerService {
       companyName: 'FundingHero',
       landingURL: 'https://propfirm.com',
     };
+  }
 
-    const styleData = activeStyle || defaultStyle;
+  async sendMail({ to, subject, template, context }) {
+    // Obtener el estilo activo de la base de datos
+    const activeStyle = await this.stylesService.findActiveStyle();
+    const styleData = activeStyle || this.defaultStyle;
 
     // Combinar el contexto proporcionado con los datos de estilo
     const enrichedContext = {
@@ -62,7 +63,7 @@ export class MailerService {
     const html = compiledTemplate(enrichedContext);
 
     const mailOptions = {
-      from: this.configService.get<string>('mailer.from'),
+      from: this.cfg.from,
       to,
       subject,
       html,
@@ -71,17 +72,9 @@ export class MailerService {
     return this.transporter.sendMail(mailOptions);
   }
 
-  async sendRawMail({
-    to,
-    subject,
-    html,
-  }: {
-    to: string;
-    subject: string;
-    html: string;
-  }) {
+  async sendRawMail({ to, subject, html }) {
     const mailOptions = {
-      from: this.configService.get<string>('mailer.from'),
+      from: this.cfg.from,
       to,
       subject,
       html,
@@ -103,7 +96,7 @@ export class MailerService {
   }) {
     // Obtener el estilo activo de la base de datos
     const activeStyle = await this.stylesService.findActiveStyle();
-    
+
     // Intentar obtener información del usuario por email
     let userInfo = null;
     try {
@@ -111,18 +104,7 @@ export class MailerService {
     } catch (error) {
       // Si no se encuentra el usuario, continuamos sin su información
     }
-    
-    // Valores por defecto si no hay estilo activo
-    const defaultStyle = {
-      primaryColor: '#007bff',
-      secondaryColor: '#6c757d',
-      tertiaryColor: '#28a745',
-      banner: this.configService.get<string>('DEFAULT_BANNER_URL') || '',
-      companyName: 'PropFirm',
-      landingURL: 'https://propfirm.com',
-    };
-
-    const styleData = activeStyle || defaultStyle;
+    const styleData = activeStyle || this.defaultStyle;
 
     const context = {
       ...styleData,

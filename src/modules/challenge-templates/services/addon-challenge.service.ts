@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChallengeAddon } from 'src/modules/challenge-templates/entities/addons/challenge-addon.entity';
 import { CreateChallegeAddonDto } from 'src/modules/challenge-templates/dto/create/create-challenge-addo.dto';
+import { UpdateChallengeAddonDto } from 'src/modules/challenge-templates/dto/update/update-challenge-addon.dto';
 
 @Injectable()
 export class AddonChallengService {
@@ -24,12 +25,15 @@ export class AddonChallengService {
         return await this.addonChallengRepository.save(addonChalleng);
     }
 
-    async update(id: string, addonChalleng: CreateChallegeAddonDto){
-        return await this.addonChallengRepository.update(id, addonChalleng);
+    async update(addonID: string, challengeID: string, addonChalleng: UpdateChallengeAddonDto){
+        return await this.addonChallengRepository.update(
+            { addonID, challengeID },
+            addonChalleng
+        );
     }
 
-    async remove(id: string){
-        return await this.addonChallengRepository.delete(id);
+    async remove(addonID: string, challengeID: string){
+        return await this.addonChallengRepository.delete({ addonID, challengeID });
     }
 
 }

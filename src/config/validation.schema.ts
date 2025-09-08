@@ -64,7 +64,7 @@ export const validationSchema = Joi.object({
     .description('Comma-separated list of valid API keys'),
 
   API_KEY_FUNDED: Joi.string().required(),
-  API_URL_SCRAP: Joi.string().required().default('https://localhost:40002'),
+  API_URL_SCRAP: Joi.string().required().default('https://localhost:4002'),
 
   // API Keys para diferentes servicios
   N8N_API_KEY: Joi.string().optional(),

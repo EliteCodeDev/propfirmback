@@ -1,26 +1,38 @@
-
-import { IsBoolean, IsNotEmpty, IsNumber, IsString, Length } from "class-validator";
-
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Length,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateAddonsDto {
+  @IsString({
+    message: 'Addon name is required',
+  })
+  @IsNotEmpty()
+  @Length(1, 100)
+  name: string;
 
-    @IsString({
-        message: 'Addon name is required'
-    })
-    @IsNotEmpty()
-    @Length(1, 100)
-    name: string;
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  slugRule?: string;
 
-    @IsBoolean()
-    isActive: boolean;
+  @IsOptional()
+  @IsEnum(['number', 'boolean', 'percentage'], {
+    message: 'Value type must be number, boolean, or percentage',
+  })
+  valueType?: 'number' | 'boolean' | 'percentage';
 
-    @IsBoolean()
-    hasDiscount: boolean;
+  @IsBoolean()
+  isActive: boolean;
 
-    @IsNumber()
-    discount: number;
+  @IsBoolean()
+  hasDiscount: boolean;
 
-    @IsNumber()
-    balance: number;
-
+  @IsNumber()
+  discount: number;
 }

@@ -1,5 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsUUID, ValidateNested, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsUUID,
+  ValidateNested,
+  IsObject,
+  IS_EMAIL,
+  isEmail,
+  IsEmail,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 import { wooOrderProduct, wooUserData } from '../types';
@@ -52,6 +62,7 @@ class UserDataDto {
 
   @ApiProperty()
   @IsString()
+  @IsEmail()
   email: string;
 
   @ApiProperty()
@@ -81,7 +92,23 @@ class ProductDto {
   @IsNumber()
   price: number;
 }
+class AddonDto {
+  @ApiProperty()
+  @IsNumber()
+  productID: number;
 
+  @ApiProperty()
+  @IsNumber()
+  variationID?: number;
+
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiProperty()
+  @IsNumber()
+  price?: number;
+}
 export class CreateCompleteOrderDto {
   @ApiProperty()
   @ValidateNested()
@@ -107,6 +134,8 @@ export class CreateCompleteOrderDto {
   @ValidateNested()
   @Type(() => ProductDto)
   product?: ProductDto;
+
+  addons?: AddonDto[];
 
   @ApiProperty({ required: false })
   @IsOptional()

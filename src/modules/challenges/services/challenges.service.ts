@@ -496,7 +496,7 @@ export class ChallengesService {
           const riskParams = await calculateRiskParamsWithAddons(
             tempChallenge,
             baseRiskParams,
-            this.addonRulesService,
+            addons,
           );
           await this.challengeDetailsService.createChallengeDetails({
             challengeID: newChallenge.challengeID,
@@ -611,7 +611,7 @@ export class ChallengesService {
       const riskParams = await calculateRiskParamsWithAddons(
         tempChallenge,
         baseRiskParams,
-        this.addonRulesService,
+        addons,
       );
       await this.challengeDetailsService.createChallengeDetails({
         challengeID: newChallenge.challengeID,

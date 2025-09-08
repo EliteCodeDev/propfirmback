@@ -3,10 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 // Entities
-import {
-  ChallengeBalance,
-  RelationBalance,
-} from '../entities';
+import { ChallengeBalance, RelationBalance } from '../entities';
 // DTOs
 import {
   CreateChallengeBalanceDto,
@@ -45,9 +42,9 @@ export class ChallengeBalancesService {
       relations: ['relationBalances'],
     });
 
-    if (!balance) {
-      throw new NotFoundException('Challenge balance not found');
-    }
+    // if (!balance) {
+    //   throw new NotFoundException('Challenge balance not found');
+    // }
 
     return balance;
   }

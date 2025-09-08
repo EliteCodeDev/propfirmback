@@ -17,14 +17,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
     const status = exception.getStatus();
-    
+
     // Obtener la respuesta completa de la excepción
     const exceptionResponse = exception.getResponse();
-    
+
     // Si es un objeto (como en validaciones), usar ese objeto, sino usar el mensaje
-    const errorResponse = typeof exceptionResponse === 'object' 
-      ? exceptionResponse 
-      : { message: exception.message };
+    const errorResponse =
+      typeof exceptionResponse === 'object'
+        ? exceptionResponse
+        : { message: exception.message };
 
     // Solo logear errores 5xx como ERROR, el resto como WARN o DEBUG
     if (status >= 500) {

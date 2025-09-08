@@ -25,8 +25,6 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { ApiKeyService, Public } from 'src/common/decorators';
 @ApiTags('Orders')
-// @ApiBearerAuth()
-// @Public()
 
 // @UseGuards(GenericApiKeyGuard)
 @Controller('orders')
