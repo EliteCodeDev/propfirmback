@@ -163,6 +163,7 @@ export class AuthService {
   }
   async adminLogin(dto: LoginDto) {
     const user = await this.login(dto);
+    this.logger.log(`Admin login attempted for user: ${user.user.username}`);
     if (!user || user.user.role.name !== 'admin')
       throw new UnauthorizedException('Invalid credentials');
     this.logger.log(

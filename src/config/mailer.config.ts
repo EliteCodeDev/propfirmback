@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config';
 
-export default registerAs('mailer', () => ({
+export const mailerConfig = registerAs('mailer', () => ({
   host: process.env.MAIL_HOST,
   port: parseInt(process.env.MAIL_PORT, 10) || 587,
   user: process.env.MAIL_USER,

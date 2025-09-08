@@ -7,6 +7,8 @@ import { createAccountResponse } from 'src/modules/data/smt-api/client/smt-api.c
 import { CreateBrokerAccountDto } from 'src/modules/broker-accounts/dto/create-broker-account.dto';
 import { ChallengeRelation } from 'src/modules/challenge-templates/entities/challenge-relation.entity';
 import { RelationRules } from 'src/modules/challenge-templates/entities/rules/relation-rule.entity';
+import { RelationAddon } from 'src/modules/challenge-templates/entities';
+import { getNumericAddonValue } from 'src/common/utils/addon-value-parser';
 
 /**
  * Función utilitaria para obtener valores de parámetros por slug desde un challenge
@@ -96,7 +98,10 @@ export function getLeverageFromChallenge(challenge: Challenge): number {
  * @param phaseIndex - Índice de la fase (por defecto 0 para la primera fase)
  * @returns El valor de leverage o 100 como valor por defecto
  */
-export function getLeverageFromRelation(relation: ChallengeRelation, phaseIndex: number = 0): number {
+export function getLeverageFromRelation(
+  relation: ChallengeRelation,
+  phaseIndex: number = 0,
+): number {
   if (!relation?.stages || relation.stages.length === 0) {
     return 100; // Valor por defecto
   }
@@ -116,37 +121,120 @@ export function getLeverageFromRelation(relation: ChallengeRelation, phaseIndex:
 
 /**
  * Calcula los parámetros de reglas considerando modificaciones por addons
- * Esta función ahora actúa como un wrapper que delega al AddonRulesService
  * @param challenge - El challenge con addons cargados
  * @param baseRiskParams - Parámetros base extraídos de las reglas de fase
- * @param addonRulesService - Servicio para aplicar modificaciones de addons
+ * @param addons - Addons pasados desde el servicio
  * @returns RiskParams modificados por addons
  */
 export async function calculateRiskParamsWithAddons(
   challenge: Challenge,
   baseRiskParams: RiskParams,
-  addonRulesService?: any, // AddonRulesService - usando any para evitar dependencia circular
+  addons?: RelationAddon[], // Addons pasados desde el servicio
 ): Promise<RiskParams> {
-  if (!challenge.addons || challenge.addons.length === 0) {
+  // Si no hay addons pasados como parámetro, usar los del challenge
+  const addonsToProcess = addons || [];
+
+  if (addonsToProcess.length === 0) {
     return baseRiskParams;
   }
 
-  // Si se proporciona el servicio, usarlo para calcular las modificaciones
-  if (addonRulesService) {
-    return await addonRulesService.calculateRiskParamsWithAddons(challenge, baseRiskParams);
-  }
-
-  // Fallback: lógica básica sin servicio (para compatibilidad)
+  // Lógica de modificación basada en slugRule de los addons
   const modifiedParams = { ...baseRiskParams };
-  
-  challenge.addons
-    .filter(addon => addon.isActive && addon.addon)
-    .forEach(challengeAddon => {
-      const addonName = challengeAddon.addon.name.toLowerCase();
-      
-      // Lógica básica de modificación
-      if (addonName.includes('news trading')) {
-        // News trading addon - lógica básica
+
+  // Procesar los addons pasados como parámetro o los del challenge
+  addonsToProcess
+    .filter((relationAddon) => relationAddon.isActive && relationAddon.addon)
+    .forEach((relationAddon) => {
+      const addon = relationAddon.addon;
+      const slugRule = addon.slugRule;
+
+      // Aplicar modificaciones basadas en el slugRule del addon
+      if (!slugRule) {
+        return; // Si no tiene slugRule, no aplicar modificaciones
+      }
+
+      switch (slugRule) {
+        case 'news-trading':
+          // News Trading — Allows trading ±2 min around red-folder events; profits count
+          // No modifica RiskParams directamente, solo permite ciertas acciones durante noticias
+          break;
+
+        case 'extra-drawdown':
+          // Extra Drawdown — Adds specified percentage to max overall drawdown
+          if (modifiedParams.maxDrawdown) {
+            const numericValue = getNumericAddonValue(
+              relationAddon.value,
+              relationAddon.addon?.valueType,
+            );
+            if (numericValue !== null) {
+              modifiedParams.maxDrawdown =
+                modifiedParams.maxDrawdown + numericValue;
+            }
+          }
+          break;
+
+        case 'profit-share-90':
+          // Profit Share 90% — Raises split from 80/20 to 90/10 on funded payouts
+          // No modifica RiskParams directamente, afecta reglas de retiro
+          break;
+
+        case 'faster-payouts-7':
+          // Faster Payouts 7 — Payouts every 7 days (vs 21) on funded
+          // No modifica RiskParams directamente, afecta reglas de retiro
+          break;
+
+        case 'weekend-holding':
+          // Weekend holding addon - permite mantener posiciones el fin de semana
+          // No modifica RiskParams directamente
+          break;
+
+        case 'extended-hours':
+          // Extended hours addon - permite trading fuera del horario normal
+          // No modifica RiskParams directamente
+          break;
+
+        case 'increased-leverage':
+          // Increased leverage addon - podría modificar el leverage máximo
+          // modifiedParams.maxLeverage = modifiedParams.maxLeverage * 1.5;
+          break;
+
+        case 'reduced-drawdown':
+          // Reduced drawdown addon - reduce el drawdown permitido por el valor especificado
+          const reductionValue = getNumericAddonValue(
+            relationAddon.value,
+            relationAddon.addon?.valueType,
+          );
+          if (reductionValue !== null) {
+            const reductionFactor = reductionValue / 100; // Convertir porcentaje a decimal
+            if (modifiedParams.dailyDrawdown) {
+              modifiedParams.dailyDrawdown =
+                modifiedParams.dailyDrawdown * (1 - reductionFactor);
+            }
+            if (modifiedParams.maxDrawdown) {
+              modifiedParams.maxDrawdown =
+                modifiedParams.maxDrawdown * (1 - reductionFactor);
+            }
+          }
+          break;
+
+        case 'profit-boost':
+          // Profit boost addon - reduce el profit target requerido por el valor especificado
+          if (modifiedParams.profitTarget) {
+            const boostValue = getNumericAddonValue(
+              relationAddon.value,
+              relationAddon.addon?.valueType,
+            );
+            if (boostValue !== null) {
+              const reductionFactor = boostValue / 100; // Convertir porcentaje a decimal
+              modifiedParams.profitTarget =
+                modifiedParams.profitTarget * (1 - reductionFactor);
+            }
+          }
+          break;
+
+        default:
+          // Para addons no reconocidos, no aplicar modificaciones
+          break;
       }
     });
 

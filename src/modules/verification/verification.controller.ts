@@ -40,9 +40,9 @@ export class VerificationController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FilesInterceptor('files', 5))
   create(
-    @Request() req, 
+    @Request() req,
     @Body() createVerificationDto: CreateVerificationDto,
-    @UploadedFiles() files?: any[]
+    @UploadedFiles() files?: any[],
   ) {
     return this.verificationService.create(
       req.user.userID,
@@ -103,10 +103,7 @@ export class VerificationController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Reject verification' })
-  reject(
-    @Param('id') id: string,
-    @Body() body: { rejectionReason: string },
-  ) {
+  reject(@Param('id') id: string, @Body() body: { rejectionReason: string }) {
     return this.verificationService.update(id, {
       status: 'rejected',
       rejectionReason: body.rejectionReason,

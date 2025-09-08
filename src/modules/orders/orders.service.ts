@@ -3,6 +3,7 @@ import {
   NotFoundException,
   Inject,
   forwardRef,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -34,6 +35,7 @@ import { Logger } from '@nestjs/common';
 import {
   ChallengeBalance,
   ChallengeRelation,
+  RelationAddon,
 } from '../challenge-templates/entities';
 import {
   createSmtApiResponseToBrokerAccount,
@@ -44,6 +46,7 @@ import {
   calculateRiskParamsWithAddons,
 } from 'src/common/utils/mappers/account-mapper';
 import { AddonRulesService } from '../challenge-templates/services/addon-rules.service';
+import { RelationAddonService } from '../challenge-templates/services/relation-addon.service';
 import { UserAccount } from '../users/entities';
 import { CreateBrokerAccountDto } from '../broker-accounts/dto/create-broker-account.dto';
 import { CreationFazoClient } from '../data/brokeret-api/client/creation-fazo.client';
@@ -51,6 +54,7 @@ import { CreateAccountDto } from '../data/brokeret-api/dto/create-account.dto';
 import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.client';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { mapChallengeToAccount } from 'src/common/utils/mappers/account-mapper';
+import { error } from 'console';
 
 @Injectable()
 export class OrdersService {
@@ -71,6 +75,7 @@ export class OrdersService {
     private brokeretApiClient: BrokeretApiClient,
     private bufferService: BufferService,
     private addonRulesService: AddonRulesService,
+    private relationAddonService: RelationAddonService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<CustomerOrder> {
@@ -85,247 +90,233 @@ export class OrdersService {
   async createCompleteOrder(
     createOrderDto: CreateCompleteOrderDto,
   ): Promise<ServiceResult<CustomerOrder>> {
-    try {
-      // find user by email
-      let user = await this.usersService
-        .findByEmail(createOrderDto.user.email)
-        .catch((err) => {
-          throw { failedAt: 'user_lookup', original: err };
+    // find user by email
+    let user = await this.usersService
+      .findByEmail(createOrderDto.user.email)
+      .catch((err) => {
+        throw new InternalServerErrorException({
+          message: 'error on find user by email',
+          failedAt: 'user_lookup',
+          original: err,
         });
-      this.logger.log('User lookup result:', user);
-
-      if (!user) {
-        // create new user
-        const userRes = await this.createUserByOrder(createOrderDto.user);
-        if (userRes.status === 'error' || !userRes.data) {
-          return {
-            status: 'error',
-            message: userRes.message || 'No se pudo crear el usuario',
-            failedAt: userRes.failedAt ?? 'user_create',
-            details: userRes.details,
-          };
-        }
-        const { password, user: createdUser } = userRes.data;
-        user = createdUser;
-        this.logger.log('New user created:', user);
-        // send email with credentials
-        try {
-          this.logger.log('Sending email with credentials to:', user.email);
-          await this.mailerService.sendMail({
-            to: user.email,
-            subject: 'Your account has been created',
-            template: 'account-credentials',
-            context: {
-              email: user.email,
-              password: password,
-              username: user.username,
-              landingUrl: this.configService.get<string>('app.clientUrl'),
-            },
-          });
-        } catch (err) {
-          return {
-            status: 'error',
-            message:
-              'User Account created, not able to send credentials email ',
-            failedAt: 'email_send',
-            details: err?.message ?? err,
-          };
-        }
-      }
-
-      // get relation and balance
-      let relation: ChallengeRelation;
-      try {
-        const { relations } =
-          await this.challengeTemplatesService.findOnePlanByWooID(
-            createOrderDto.product.productID,
-          );
-        this.logger.log('Plan relations fetched:', relations);
-        relation = relations?.[0];
-        relation =
-          await this.challengeTemplatesService.findCompleteRelationChain(
-            relation.relationID,
-          );
-        this.logger.log('Complete relation chain:', JSON.stringify(relation));
-        if (!relation) {
-          return {
-            status: 'error',
-            message: 'Plan hasnt a relation',
-            failedAt: 'relation_fetch',
-          };
-        }
-      } catch (err) {
-        return {
-          status: 'error',
-          message: 'Fallo al obtener la relación del plan',
-          failedAt: 'relation_fetch_error',
-          details: err?.message ?? err,
-        };
-      }
-
-      const relationBalance = relation.balances?.find(
-        (bal) => bal.wooID === createOrderDto.product.variationID,
-      );
-
-      this.logger.log(
-        'Matched relation balance:',
-        JSON.stringify(relationBalance),
-      );
-      const challengeBalance =
-        await this.challengeTemplatesService.findOneBalance(
-          relationBalance.balanceID,
-        );
-      if (!relationBalance || !challengeBalance) {
-        return {
-          status: 'error',
-          message:
-            'No se encontró el balance correspondiente a la variación seleccionada',
-          failedAt: 'relation_balance_match',
-        };
-      }
-      // //for smt-api
-      // const credentials = await this.completeCreateSmtApiAccount(
-      //   user,
-      //   createOrderDto,
-      //   challengeBalance.balance,
-      //   relation,
-      // );
-      // for brokeret-api
-
-      const credentials = await this.createBrokeretApiAccount(
-        user,
-        createOrderDto,
-        challengeBalance.balance,
-        relation.groupName,
-        relation,
-      );
-      // Create broker account and challenge using the separated function
-      const challengeRes = await this.createBrokerAndChallenge(
-        credentials,
-        user,
-        relation,
-      );
-      this.logger.log('Challenge creation result:', challengeRes);
-      if (!challengeRes.data) {
-        return {
-          status: 'error',
-          message: challengeRes.message || 'No se pudo crear el challenge',
-          failedAt: challengeRes.failedAt ?? 'challenge_create',
-          details: challengeRes.details,
-        };
-      }
-
-      const challenge = challengeRes.data;
-
-      // Cargar la nueva cuenta en el buffer para seguimiento
-      try {
-        this.logger.log('Cargando nueva cuenta en el buffer:', {
-          challengeId: challenge.challengeID,
-          login: challenge.brokerAccount.login,
-        });
-
-        const accountForBuffer = mapChallengeToAccount(challenge);
-
-        await this.bufferService.upsertAccount(
-          challenge.brokerAccount.login,
-          (prev) => {
-            if (prev) {
-              // Si ya existe, actualizar con los nuevos datos del challenge
-              this.logger.log(
-                'Actualizando cuenta existente en buffer:',
-                challenge.brokerAccount.login,
-              );
-              prev.challengeId = challenge.challengeID;
-              prev.riskValidation = accountForBuffer.riskValidation;
-              prev.lastUpdate = new Date();
-              return prev;
-            } else {
-              // Nueva cuenta
-              this.logger.log(
-                'Agregando nueva cuenta al buffer:',
-                challenge.brokerAccount.login,
-              );
-              return accountForBuffer;
-            }
-          },
-        );
-
-        this.logger.log('Cuenta cargada exitosamente en el buffer');
-      } catch (bufferError) {
-        this.logger.warn('Error al cargar cuenta en el buffer (no crítico):', {
-          error: bufferError.message,
-          challengeId: challenge.challengeID,
-          login: challenge.brokerAccount.login,
-        });
-        // No retornamos error aquí porque el buffer es para seguimiento,
-        // no es crítico para la creación de la orden
-      }
-
-      // build and save order
-      const order = this.orderRepository.create({
-        challenge,
-        user,
-        createDateTime: new Date(),
-        product: JSON.stringify(createOrderDto.product),
-        total: createOrderDto.product.price,
-        orderStatus: OrderStatus.COMPLETED,
-        wooID: createOrderDto.wooID,
       });
 
-      let savedOrder: CustomerOrder;
-      try {
-        savedOrder = await this.orderRepository.save(order);
-      } catch (err) {
-        return {
+    if (!user) {
+      // create new user
+      this.logger.log(
+        'Creating new user for email: ' + createOrderDto.user.email,
+      );
+      const userRes = await this.createUserByOrder(createOrderDto.user);
+      if (userRes.status === 'error' || !userRes.data) {
+        throw new InternalServerErrorException({
           status: 'error',
-          message: 'Fallo al guardar la orden en la base de datos',
-          failedAt: 'order_save',
-          details: err?.message ?? err,
-        };
+          message: userRes.message || 'Could not create user',
+          failedAt: userRes.failedAt ?? 'user_create',
+          details: userRes.details,
+        });
       }
-
-      // Send confirmation email
+      const { password, user: createdUser } = userRes.data;
+      user = createdUser;
+      this.logger.log('New user created:', user.userID);
       try {
+        this.logger.log(
+          'Sending user credentials email with credentials to:',
+          user.email,
+        );
         await this.mailerService.sendMail({
           to: user.email,
-          subject: 'Challenge is ready to use!',
-          template: 'challenge-credentials',
+          subject: 'Your account has been created',
+          template: 'account-credentials',
           context: {
             email: user.email,
-            challenge_type: relation.plan.name,
-            Account_size: challengeBalance.balance,
-            login_details: {
-              login: challenge.brokerAccount.login,
-              password: challenge.brokerAccount.password,
-              server: challenge.brokerAccount.server,
-              platform: challenge.brokerAccount.platform,
-            },
+            password: password,
+            username: user.username,
             landingUrl: this.configService.get<string>('app.clientUrl'),
           },
         });
       } catch (err) {
-        return {
+        throw new InternalServerErrorException({
           status: 'error',
-          message:
-            'La orden fue creada, pero falló el envío del correo con credenciales',
+          message: 'User created, unable to send credentials email',
           failedAt: 'email_send',
           details: err?.message ?? err,
-        };
+        });
       }
-
-      return {
-        status: 'success',
-        message: 'Orden creada correctamente',
-        data: savedOrder,
-      };
-    } catch (err) {
-      return {
-        status: 'error',
-        message: 'Error inesperado al crear la orden completa',
-        failedAt: err?.failedAt,
-        details: err?.original?.message ?? err?.message ?? err,
-      };
     }
+
+    // get relation and balance
+    let relation: ChallengeRelation;
+    try {
+      const { relations } =
+        await this.challengeTemplatesService.findOnePlanByWooID(
+          createOrderDto.product.productID,
+        );
+      this.logger.log('Plan relations fetched:', relations);
+      relation = relations?.[0];
+      relation = await this.challengeTemplatesService.findCompleteRelationChain(
+        relation.relationID,
+      );
+      this.logger.log('Complete relation chain:', JSON.stringify(relation));
+
+      if (!relation) {
+        throw new NotFoundException({
+          status: 'error',
+          message: 'Plan hasnt a relation',
+          failedAt: 'relation_fetch',
+        });
+      }
+    } catch (err) {
+      throw new NotFoundException('Failed to get plan relation');
+    }
+
+    const relationBalance = relation.balances?.find(
+      (bal) => bal.wooID === createOrderDto.product.variationID,
+    );
+
+    this.logger.log(
+      'Matched relation balance:',
+      JSON.stringify(relationBalance),
+    );
+    const challengeBalance =
+      await this.challengeTemplatesService.findOneBalance(
+        relationBalance.balanceID,
+      );
+    if (!relationBalance || !challengeBalance) {
+      throw new NotFoundException({
+        status: 'error',
+        message: 'balance or relation balance not found',
+        failedAt: 'relation_balance_match',
+      });
+    }
+
+    const credentials = await this.createBrokeretApiAccount(
+      user,
+      createOrderDto,
+      challengeBalance.balance,
+      relation.groupName,
+      relation,
+    );
+    //extract addons for dto
+    const orderAddons = createOrderDto.addons.map((addon) => addon.productID);
+    const challengeAddons =
+      await this.relationAddonService.getAddonsByArray(orderAddons);
+
+    // Create broker account and challenge using the separated function
+    const challengeRes = await this.createBrokerAndChallenge(
+      credentials,
+      user,
+      relation,
+      challengeAddons,
+    );
+    this.logger.log('Challenge creation result:', challengeRes);
+    if (!challengeRes.data) {
+      throw new InternalServerErrorException({
+        message: challengeRes.message || 'Could not create challenge',
+        failedAt: challengeRes.failedAt ?? 'challenge_create',
+        details: challengeRes.details,
+      });
+    }
+
+    const challenge = challengeRes.data;
+
+    // Cargar la nueva cuenta en el buffer para seguimiento
+    try {
+      this.logger.log('Cargando nueva cuenta en el buffer:', {
+        challengeId: challenge.challengeID,
+        login: challenge.brokerAccount.login,
+      });
+
+      const accountForBuffer = mapChallengeToAccount(challenge);
+
+      await this.bufferService.upsertAccount(
+        challenge.brokerAccount.login,
+        (prev) => {
+          if (prev) {
+            // Si ya existe, actualizar con los nuevos datos del challenge
+            this.logger.log(
+              'Actualizando cuenta existente en buffer:',
+              challenge.brokerAccount.login,
+            );
+            prev.challengeId = challenge.challengeID;
+            prev.riskValidation = accountForBuffer.riskValidation;
+            prev.lastUpdate = new Date();
+            return prev;
+          } else {
+            // Nueva cuenta
+            this.logger.log(
+              'Agregando nueva cuenta al buffer:',
+              challenge.brokerAccount.login,
+            );
+            return accountForBuffer;
+          }
+        },
+      );
+
+      this.logger.log('Cuenta cargada exitosamente en el buffer');
+    } catch (bufferError) {
+      this.logger.warn('Error al cargar cuenta en el buffer (no crítico):', {
+        error: bufferError.message,
+        challengeId: challenge.challengeID,
+        login: challenge.brokerAccount.login,
+      });
+      // No retornamos error aquí porque el buffer es para seguimiento,
+      // no es crítico para la creación de la orden
+    }
+
+    // build and save order
+    const order = this.orderRepository.create({
+      challenge,
+      user,
+      createDateTime: new Date(),
+      product: JSON.stringify(createOrderDto.product),
+      total: createOrderDto.product.price,
+      orderStatus: OrderStatus.COMPLETED,
+      wooID: createOrderDto.wooID,
+    });
+
+    let savedOrder: CustomerOrder;
+    try {
+      savedOrder = await this.orderRepository.save(order);
+    } catch (err) {
+      throw new InternalServerErrorException({
+        message: 'Failed to save order to database',
+        failedAt: 'order_save',
+        details: err?.message ?? err,
+      });
+    }
+
+    // Send confirmation email
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Challenge is ready to use!',
+        template: 'challenge-credentials',
+        context: {
+          email: user.email,
+          challenge_type: relation.plan.name,
+          Account_size: challengeBalance.balance,
+          login_details: {
+            login: challenge.brokerAccount.login,
+            password: challenge.brokerAccount.password,
+            server: challenge.brokerAccount.server,
+            platform: challenge.brokerAccount.platform,
+          },
+          landingUrl: this.configService.get<string>('app.clientUrl'),
+        },
+      });
+    } catch (err) {
+      throw new InternalServerErrorException({
+        message: 'Order was created, but failed to send credentials email',
+        failedAt: 'email_send',
+        details: err?.message ?? err,
+      });
+    }
+
+    return {
+      status: 'success',
+      message: 'Order created successfully',
+      data: savedOrder,
+    };
   }
 
   async findAll(query: any) {
@@ -426,16 +417,11 @@ export class OrdersService {
       const newUser = await this.usersService.create(userPayload);
       return {
         status: 'success',
-        message: 'Usuario creado correctamente',
+        message: 'User created successfully',
         data: { user: newUser, password },
       };
     } catch (err) {
-      return {
-        status: 'error',
-        message: 'Fallo al crear el usuario',
-        failedAt: 'user_create',
-        details: err?.message ?? err,
-      };
+      throw new InternalServerErrorException({ err });
     }
   }
 
@@ -443,6 +429,7 @@ export class OrdersService {
     credentials: any,
     user: any,
     relation: ChallengeRelation,
+    addons: RelationAddon[],
   ): Promise<ServiceResult<Challenge>> {
     try {
       // broker account creation
@@ -453,7 +440,7 @@ export class OrdersService {
       } catch (err) {
         return {
           status: 'error',
-          message: 'Fallo al crear la cuenta de bróker',
+          message: 'Failed to create broker account',
           failedAt: 'broker_account_create',
           details: err?.message ?? err,
         };
@@ -488,7 +475,7 @@ export class OrdersService {
         const riskParams = await calculateRiskParamsWithAddons(
           challenge,
           baseRiskParams,
-          this.addonRulesService,
+          addons,
         );
         this.logger.debug(
           'CreateBrokerAndChallenge: data to create challenge details',
@@ -507,13 +494,13 @@ export class OrdersService {
         );
         return {
           status: 'success',
-          message: 'Challenge creado correctamente',
+          message: 'Challenge created successfully',
           data: challenge,
         };
       } catch (err) {
         return {
           status: 'error',
-          message: 'Fallo al crear el challenge',
+          message: 'Failed to create challenge',
           failedAt: 'challenge_create',
           details: err?.message ?? err,
         };
@@ -521,7 +508,7 @@ export class OrdersService {
     } catch (err) {
       return {
         status: 'error',
-        message: 'Error inesperado al crear el challenge',
+        message: 'Unexpected error creating challenge',
         details: err?.message ?? err,
       };
     }
@@ -564,7 +551,7 @@ export class OrdersService {
       } catch (err) {
         return {
           status: 'error',
-          message: 'Fallo al crear la cuenta en SMT API',
+          message: 'Failed to create SMT API account',
           failedAt: 'smt_account_create',
           details: err?.message ?? err,
         };
@@ -572,7 +559,7 @@ export class OrdersService {
     } catch (err) {
       return {
         status: 'error',
-        message: 'Error inesperado al crear el challenge',
+        message: 'Unexpected error creating challenge',
         details: err?.message ?? err,
       };
     }
@@ -602,7 +589,7 @@ export class OrdersService {
     if (smtRes.status === 'error' || !smtRes.data) {
       return {
         status: 'error',
-        message: smtRes.message || 'No se pudo crear el challenge',
+        message: smtRes.message || 'Could not create challenge',
         failedAt: smtRes.failedAt ?? 'challenge_create',
         details: smtRes.details,
       };
@@ -774,43 +761,6 @@ export class OrdersService {
 
       return brokerAccountDto;
     } catch (error) {
-      this.logger.error('Error creating Brokeret API account:', {
-        error: error.message,
-        attempt: retryCount + 1,
-        maxRetries,
-      });
-
-      // Check if this is a login conflict error and we can retry
-      if (
-        error.message.includes('Login already exists') ||
-        error.message.includes('already exists') ||
-        error.message.includes('duplicate')
-      ) {
-        if (retryCount < maxRetries) {
-          this.logger.warn(
-            `Retrying account creation due to duplicate login. Attempt ${retryCount + 2}/${maxRetries + 1}`,
-          );
-
-          // Wait before retrying
-          await new Promise((resolve) =>
-            setTimeout(resolve, retryDelay * (retryCount + 1)),
-          );
-
-          return this.createBrokeretApiAccount(
-            user,
-            createOrderDto,
-            balance,
-            groupName,
-            relation,
-            retryCount + 1,
-          );
-        } else {
-          throw new Error(
-            `Failed to create Brokeret API account after ${maxRetries + 1} attempts: Login conflicts persist`,
-          );
-        }
-      }
-
       throw new Error(
         `Failed to create Brokeret API account: ${error.message}`,
       );

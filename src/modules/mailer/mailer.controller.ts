@@ -11,13 +11,22 @@ export class MailerController {
 
   @Post('send')
   @Auth('admin')
-  @ApiOperation({ summary: 'Send an email (admin only)' })
+  @ApiOperation({ summary: 'Send an email' })
   async send(@Body() dto: SendMailDto) {
     if (dto.html) {
-      return this.mailerService.sendRawMail({ to: dto.to, subject: dto.subject, html: dto.html });
+      return this.mailerService.sendRawMail({
+        to: dto.to,
+        subject: dto.subject,
+        html: dto.html,
+      });
     }
     if (dto.template) {
-      return this.mailerService.sendMail({ to: dto.to, subject: dto.subject, template: dto.template, context: dto.context || {} });
+      return this.mailerService.sendMail({
+        to: dto.to,
+        subject: dto.subject,
+        template: dto.template,
+        context: dto.context || {},
+      });
     }
     return { error: 'Either html or template must be provided' };
   }
@@ -25,7 +34,9 @@ export class MailerController {
   @Post('send-admin')
   @Auth('admin')
   @ApiOperation({ summary: 'Send a styled admin email using company branding' })
-  async sendAdmin(@Body() dto: { to: string; subject: string; title?: string; body: string }) {
+  async sendAdmin(
+    @Body() dto: { to: string; subject: string; title?: string; body: string },
+  ) {
     return this.mailerService.sendAdminMail(dto);
   }
 }

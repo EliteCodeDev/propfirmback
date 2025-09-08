@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike, Raw } from 'typeorm';
 import { Verification } from './entities/verification.entity';
 import { Media } from './entities/media.entity';
 import { CreateVerificationDto } from './dto/create-verification.dto';
@@ -11,7 +11,6 @@ import { MinioService } from 'src/modules/storage/minio/minio.service';
 import { MailerService } from 'src/modules/mailer/mailer.service';
 import { UserAccount } from '../users/entities';
 import { ConfigService } from '@nestjs/config';
-
 @Injectable()
 export class VerificationService {
   constructor(
@@ -96,33 +95,44 @@ export class VerificationService {
     return savedVerification;
   }
 
-  async findAll(query: any) {
-    const { page = 1, limit = 10, status, documentType } = query;
-    const skip = (page - 1) * limit;
+  // ^ ILike (Postgres). Si no usas Postgres, mira la variante con Raw más abajo.
 
-    const whereConditions: any = {};
-    if (status) {
-      whereConditions.status = status;
-    }
-    if (documentType) {
-      whereConditions.documentType = documentType;
-    }
+  async findAll(query: any) {
+    console.log(JSON.stringify(query));
+    const { page = 1, limit = 10, status, documentType, search } = query;
+
+    const take = Math.min(Math.max(+limit || 10, 1), 100);
+    const skip = (Math.max(+page || 1, 1) - 1) * take;
+
+    // Filtros base (AND)
+    const base: any = {};
+    if (status) base.status = status;
+    if (documentType) base.documentType = documentType;
+
+    // Búsqueda (OR) en campos del usuario
+    const where = search
+      ? [
+          { ...base, user: { firstName: ILike(`%${search}%`) } },
+          { ...base, user: { lastName: ILike(`%${search}%`) } },
+          { ...base, user: { email: ILike(`%${search}%`) } },
+        ]
+      : [base];
 
     const [verifications, total] =
       await this.verificationRepository.findAndCount({
-        where: whereConditions,
-        skip,
-        take: limit,
+        where, // AND sobre base + OR entre elementos del array
+        relations: { user: true, media: true },
         order: { submittedAt: 'DESC' },
-        relations: ['user', 'media'],
+        skip,
+        take,
       });
 
     return {
       data: verifications,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      page: Math.max(+page || 1, 1),
+      limit: take,
+      totalPages: Math.ceil(total / take),
     };
   }
 

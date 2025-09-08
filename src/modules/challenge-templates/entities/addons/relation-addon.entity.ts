@@ -1,24 +1,17 @@
-import {
-  Entity,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  PrimaryColumn
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 import { Addon } from './addon.entity';
 import { ChallengeRelation } from '../challenge-relation.entity';
 
 @Entity('RelationAddon')
 export class RelationAddon {
-
   @PrimaryColumn('uuid')
   addonID: string;
 
   @PrimaryColumn('uuid')
   relationID: string;
 
-  @Column({ type: 'float', nullable: true, default: 0 })
-  price: number;
+  @Column({ type: 'json', nullable: true })
+  value: number | boolean | null;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

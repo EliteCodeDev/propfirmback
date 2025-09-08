@@ -64,14 +64,10 @@ async function bootstrap() {
   ];
 
   const allowedExact = Array.from(
-    new Set(
-      [
-        ...originRules
-          .filter((r) => r.exact)
-          .map((r) => r.exact as string),
-        ...defaultLocalOrigins.map((o) => o.replace(/\/$/, '')),
-      ],
-    ),
+    new Set([
+      ...originRules.filter((r) => r.exact).map((r) => r.exact as string),
+      ...defaultLocalOrigins.map((o) => o.replace(/\/$/, '')),
+    ]),
   );
 
   // Debug inicial
@@ -108,7 +104,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
-      transform: true,
+      transform: true, //transforma los datos a los tipos definidos en el DTO
       transformOptions: { enableImplicitConversion: true },
     }),
   );

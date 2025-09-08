@@ -11,8 +11,7 @@ export class ChallengeAddon {
     @PrimaryColumn('uuid')
     challengeID: string
 
-    @Column({ type: 'float', nullable: true, default: 0 })
-    price: number;
+
 
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
@@ -25,6 +24,9 @@ export class ChallengeAddon {
 
     @Column({ type: 'float', nullable: true })
     wooID: number;
+
+    @Column({ type: 'json', nullable: true, default: 0 })
+    value: number | boolean | null;
 
     @ManyToOne(() => Addon, (addon) => addon.challengeAddons)
     @JoinColumn({name: "addonID"})

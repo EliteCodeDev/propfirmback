@@ -35,7 +35,6 @@ export class ChallengeDetails {
     transformer: jsonStringTransformer<MetaStats>(),
   })
   metaStats?: MetaStats | null;
-
   @Column({
     type: 'text',
     nullable: true,
