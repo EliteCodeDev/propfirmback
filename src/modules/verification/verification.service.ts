@@ -98,39 +98,41 @@ export class VerificationService {
   // ^ ILike (Postgres). Si no usas Postgres, mira la variante con Raw más abajo.
 
   async findAll(query: any) {
-    console.log(JSON.stringify(query));
-    const { page = 1, limit = 10, status, documentType, search } = query;
+    const { page = 1, limit = 10, status, documentType } = query;
+    const rawSearch: string | undefined = (query.search || query.q || '')?.toString();
+    const search = rawSearch?.trim();
 
     const take = Math.min(Math.max(+limit || 10, 1), 100);
-    const skip = (Math.max(+page || 1, 1) - 1) * take;
+    const currentPage = Math.max(+page || 1, 1);
+    const skip = (currentPage - 1) * take;
 
-    // Filtros base (AND)
-    const base: any = {};
-    if (status) base.status = status;
-    if (documentType) base.documentType = documentType;
+    const qb = this.verificationRepository
+      .createQueryBuilder('v')
+      .leftJoinAndSelect('v.user', 'u')
+      .leftJoinAndSelect('v.media', 'm')
+      .orderBy('v.submittedAt', 'DESC')
+      .skip(skip)
+      .take(take);
 
-    // Búsqueda (OR) en campos del usuario
-    const where = search
-      ? [
-          { ...base, user: { firstName: ILike(`%${search}%`) } },
-          { ...base, user: { lastName: ILike(`%${search}%`) } },
-          { ...base, user: { email: ILike(`%${search}%`) } },
-        ]
-      : [base];
+    if (status) {
+      qb.andWhere('v.status = :status', { status });
+    }
+    if (documentType) {
+      qb.andWhere('v.documentType = :documentType', { documentType });
+    }
+    if (search) {
+      qb.andWhere(
+        '(u.firstName ILIKE :q OR u.lastName ILIKE :q OR u.email ILIKE :q OR u.username ILIKE :q OR v.numDocument ILIKE :q)',
+        { q: `%${search}%` },
+      );
+    }
 
-    const [verifications, total] =
-      await this.verificationRepository.findAndCount({
-        where, // AND sobre base + OR entre elementos del array
-        relations: { user: true, media: true },
-        order: { submittedAt: 'DESC' },
-        skip,
-        take,
-      });
+    const [verifications, total] = await qb.getManyAndCount();
 
     return {
       data: verifications,
       total,
-      page: Math.max(+page || 1, 1),
+      page: currentPage,
       limit: take,
       totalPages: Math.ceil(total / take),
     };
