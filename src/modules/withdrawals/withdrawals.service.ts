@@ -21,11 +21,14 @@ import { generateRandomPassword } from 'src/common/utils/randomPassword';
 import { OrdersService } from '../orders/orders.service';
 import { getWithdrawalRuleValueBySlug } from 'src/common/utils/mappers/account-mapper';
 import { RulesWithdrawalService } from '../challenge-templates/services/rules-withdrawal.service';
+import { ChallengeDetails } from '../challenges/entities/challenge-details.entity';
+import { ChallengeDetailsService } from '../challenges/services/challenge-details.service';
 @Injectable()
 export class WithdrawalsService {
   constructor(
     @InjectRepository(Withdrawal)
     private withdrawalRepository: Repository<Withdrawal>,
+    private challengeDetailsService: ChallengeDetailsService,
     private challengesService: ChallengesService,
     private certificatesService: CertificatesService,
     private challengeTemplatesService: ChallengeTemplatesService,
@@ -81,11 +84,11 @@ export class WithdrawalsService {
     const existingWithdrawals = await this.withdrawalRepository.count({
       where: {
         challengeID: createWithdrawalDto.challengeID,
-        status: WithdrawalStatus.APPROVED,
-        // status: WithdrawalStatus.PENDING,
+        // status: WithdrawalStatus.APPROVED,
+        status: WithdrawalStatus.PENDING,
       },
     });
-
+    //LOGICA PARA VALIDAR EL PRIMER RETIRO
     if(existingWithdrawals === 0){
 
       const start = new Date(challenge.startDate);
@@ -134,8 +137,17 @@ export class WithdrawalsService {
     // console.log("CHALLENGE => ",challenge);
     // console.log("SPLIT ESPERADO => ", expectedSplit);
 
+    challenge.details.balance.currentBalance = challenge.details.balance.currentBalance - createWithdrawalDto.amount;
+
+    console.log("BALANCE ACTUALIZADO => ", challenge.details);
+
+    const actualizar = await this.challengeDetailsService.updateChallengeDetails(challenge.details.challengeID,challenge.details);
+
+    console.log("CHALLENGE DETAILS ACTUALIZADO => ", actualizar);
+    
     createWithdrawalDto.amount = (createWithdrawalDto.amount * expectedSplit) / 100;
     // console.log("MONTO DE RETIRO A GUARDAR => ", createWithdrawalDto.amount);
+
 
     // Crear el withdrawal request
     const withdrawal = this.withdrawalRepository.create({
