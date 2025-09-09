@@ -25,7 +25,7 @@ export class BufferDataUpdaterJob implements OnModuleInit {
    * Job programado para actualizar datos del buffer cada 30 segundos
    * Cron: cada 30 segundos con offset de 15 segundos para dar tiempo a la carga inicial
    */
-  @Cron('15,45 * * * * *', { timeZone: 'America/Lima' })
+  @Cron('0 */3 * * * *', { timeZone: 'America/Lima' })
   async updateBufferData() {
     const startTime = Date.now();
     this.logger.log('Iniciando actualización de datos del buffer');
