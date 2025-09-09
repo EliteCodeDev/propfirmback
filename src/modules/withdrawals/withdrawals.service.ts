@@ -84,8 +84,8 @@ export class WithdrawalsService {
     const existingWithdrawals = await this.withdrawalRepository.count({
       where: {
         challengeID: createWithdrawalDto.challengeID,
-        // status: WithdrawalStatus.APPROVED,
-        status: WithdrawalStatus.PENDING,
+        status: WithdrawalStatus.APPROVED,
+        // status: WithdrawalStatus.PENDING,
       },
     });
     //LOGICA PARA VALIDAR EL PRIMER RETIRO
