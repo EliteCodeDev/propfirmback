@@ -6,6 +6,7 @@ import { BufferModule } from 'src/lib/buffer/buffer.module';
 import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 import { WinstonModule } from 'nest-winston';
 import { loggerConfig } from 'src/config/logger.config';
+// import { BusinessDataExtractorJob } from './business-api-data-extractor.job';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { loggerConfig } from 'src/config/logger.config';
   ],
   providers: [
     BrokeretDataExtractorJob, // El job principal
+    // BusinessDataExtractorJob,
     BrokeretDataMapper, // El mapper de datos
     CustomLoggerService, // Servicio de logging personalizado
   ],
