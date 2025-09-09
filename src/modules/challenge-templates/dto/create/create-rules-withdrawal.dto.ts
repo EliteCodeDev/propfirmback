@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsUUID, IsNotEmpty, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateRulesWithdrawalDto {
   @ApiProperty({
@@ -25,7 +26,13 @@ export class CreateRulesWithdrawalDto {
     example: 'Regla de retiro específica para este challenge',
     maxLength: 100,
   })
-  @IsString({ message: 'value debe ser una cadena de texto' })
+  @Transform(({ value }) => {
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    return value;
+  })
+  @IsString({ message: 'value debe ser una cadena de texto gaa' })
   @IsNotEmpty({ message: 'value es requerido' })
   value: string;
 }

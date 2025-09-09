@@ -1,0 +1,125 @@
+{
+  "/Home/getPosition/{loginid}": {
+    "get": {
+      "tags": ["Home"],
+      "parameters": [
+        {
+          "name": "loginid",
+          "in": "path",
+          "required": true,
+          "style": "simple",
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success"
+        }
+      }
+    }
+  },
+  "/Home/tradehistory": {
+    "post": {
+      "tags": ["Home"],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "loginId": 0,
+            "startDate": "string",
+            "endDate": "string"
+          },
+          "text/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TradeHistory"
+            }
+          },
+          "application/*+json": {
+            "schema": {
+              "$ref": "#/components/schemas/TradeHistory"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success"
+        }
+      }
+    }
+  },
+  "/Home/getUserInfo/{loginid}": {
+    "get": {
+      "tags": ["Home"],
+      "parameters": [
+        {
+          "name": "loginid",
+          "in": "path",
+          "required": true,
+          "style": "simple",
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success"
+        }
+      }
+    }
+  },
+  "/Home/tradeDisable": {
+    "post": {
+      "tags": ["Home"],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "loginId": 0,
+            "flag": true
+          },
+          "text/json": {
+            "schema": {
+              "$ref": "#/components/schemas/userPermmision"
+            }
+          },
+          "application/*+json": {
+            "schema": {
+              "$ref": "#/components/schemas/userPermmision"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success"
+        }
+      }
+    }
+  },
+  "/Home/getPendingOrder/{loginid}": {
+    "get": {
+      "tags": ["Home"],
+      "parameters": [
+        {
+          "name": "loginId",
+          "in": "path",
+          "required": true,
+          "style": "simple",
+          "schema": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success"
+        }
+      }
+    }
+  }
+}

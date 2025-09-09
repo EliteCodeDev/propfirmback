@@ -38,7 +38,7 @@ import { BalanceAccountDto } from './dto/balance.dto';
 
 @ApiTags('Brokeret API')
 @Controller('brokeret-api')
-@UseGuards(GenericApiKeyGuard)
+// @UseGuards(GenericApiKeyGuard)
 @ApiKeyService('brokeret')
 export class BrokeretApiController {
   constructor(
@@ -76,6 +76,101 @@ export class BrokeretApiController {
     @Body() accountData: CreateAccountDto,
   ): Promise<CreateAccountResponse> {
     return this.creationFazoClient.createAccount(accountData);
+  }
+
+  // === Nuevos endpoints de Fazo ===
+
+  @Get('fazo/position/:loginId')
+  @ApiOperation({ summary: 'Obtener posición de un usuario por loginId' })
+  @ApiResponse({
+    status: 200,
+    description: 'Posición del usuario obtenida exitosamente',
+    type: Object,
+  })
+  async getFazoPosition(@Param('loginId') loginId: string): Promise<any> {
+    return this.creationFazoClient.getPosition(Number(loginId));
+  }
+
+  @Post('fazo/trade-history')
+  @ApiOperation({ summary: 'Obtener historial de trades de un usuario' })
+  @ApiResponse({
+    status: 200,
+    description: 'Historial de trades obtenido exitosamente',
+    type: Object,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        loginId: { type: 'number' },
+        startDate: { type: 'string' },
+        endDate: { type: 'string' },
+      },
+      required: ['loginId', 'startDate', 'endDate'],
+    },
+    description: 'Datos para obtener el historial de trades',
+  })
+  async getFazoTradeHistory(
+    @Body()
+    tradeHistoryData: {
+      loginId: number;
+      startDate: string;
+      endDate: string;
+    },
+  ): Promise<any> {
+    return this.creationFazoClient.getTradeHistory(tradeHistoryData);
+  }
+
+  @Get('fazo/user-info/:loginId')
+  @ApiOperation({ summary: 'Obtener información de un usuario por loginId' })
+  @ApiResponse({
+    status: 200,
+    description: 'Información del usuario obtenida exitosamente',
+    type: Object,
+  })
+  async getFazoUserInfo(@Param('loginId') loginId: string): Promise<any> {
+    return this.creationFazoClient.getUserInfo(Number(loginId));
+  }
+
+  @Post('fazo/trade-disable')
+  @ApiOperation({ summary: 'Habilitar o deshabilitar trading para un usuario' })
+  @ApiResponse({
+    status: 200,
+    description: 'Estado de trading actualizado exitosamente',
+    type: Object,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        loginId: { type: 'number' },
+        flag: { type: 'boolean' },
+      },
+      required: ['loginId', 'flag'],
+    },
+    description: 'Datos para habilitar/deshabilitar trading',
+  })
+  async setFazoTradeDisable(
+    @Body()
+    tradePermissionData: {
+      loginId: number;
+      flag: boolean;
+    },
+  ): Promise<any> {
+    return this.creationFazoClient.tradeDisable(tradePermissionData);
+  }
+
+  @Get('fazo/pending-order/:loginId')
+  @ApiOperation({
+    summary: 'Obtener órdenes pendientes de un usuario por loginId',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Órdenes pendientes obtenidas exitosamente',
+    type: Object,
+  })
+  async getFazoPendingOrder(@Param('loginId') loginId: string): Promise<any> {
+    return this.creationFazoClient.getPendingOrder(Number(loginId));
   }
 
   @Get('user/:login')

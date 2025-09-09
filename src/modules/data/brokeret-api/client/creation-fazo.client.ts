@@ -247,6 +247,51 @@ export class CreationFazoClient {
   }> {
     return this.requestWithAuth('post', 'Home/balanceOP', depositData);
   }
+
+  // === Nuevos endpoints de la API Fazo ===
+
+  /**
+   * Obtiene la posición de un usuario por su loginId
+   */
+  async getPosition(loginId: number): Promise<any> {
+    return this.requestWithAuth('get', `Home/getPosition/${loginId}`);
+  }
+
+  /**
+   * Obtiene el historial de trades de un usuario
+   */
+  async getTradeHistory(tradeHistoryData: {
+    loginId: number;
+    startDate: string;
+    endDate: string;
+  }): Promise<any> {
+    return this.requestWithAuth('post', 'Home/tradehistory', tradeHistoryData);
+  }
+
+  /**
+   * Obtiene la información de un usuario por su loginId
+   */
+  async getUserInfo(loginId: number): Promise<any> {
+    return this.requestWithAuth('get', `Home/getUserInfo/${loginId}`);
+  }
+
+  /**
+   * Habilita o deshabilita el trading para un usuario
+   */
+  async tradeDisable(tradePermissionData: {
+    loginId: number;
+    flag: boolean;
+  }): Promise<any> {
+    return this.requestWithAuth('post', 'Home/tradeDisable', tradePermissionData);
+  }
+
+  /**
+   * Obtiene las órdenes pendientes de un usuario por su loginId
+   */
+  async getPendingOrder(loginId: number): Promise<any> {
+    return this.requestWithAuth('get', `Home/getPendingOrder/${loginId}`);
+  }
+
   // === Endpoints detectados en el flujo n8n (Brokeret) ===
 
   // === Nuevos endpoints del flujo n8n ===
