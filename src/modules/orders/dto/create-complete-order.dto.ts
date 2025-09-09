@@ -135,6 +135,10 @@ export class CreateCompleteOrderDto {
   @Type(() => ProductDto)
   product?: ProductDto;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => AddonDto)
   addons?: AddonDto[];
 
   @ApiProperty({ required: false })

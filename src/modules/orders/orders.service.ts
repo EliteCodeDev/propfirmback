@@ -37,6 +37,7 @@ import {
   ChallengeRelation,
   RelationAddon,
 } from '../challenge-templates/entities';
+import { ChallengeAddon } from '../challenge-templates/entities/addons/challenge-addon.entity';
 import {
   createSmtApiResponseToBrokerAccount,
   getParameterValueBySlug,
@@ -55,6 +56,7 @@ import { BrokeretApiClient } from '../data/brokeret-api/client/brokeret-api.clie
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { mapChallengeToAccount } from 'src/common/utils/mappers/account-mapper';
 import { error } from 'console';
+import { CreateAccountResponse } from '../data/brokeret-api/types/response.type';
 
 @Injectable()
 export class OrdersService {
@@ -62,6 +64,8 @@ export class OrdersService {
   constructor(
     @InjectRepository(CustomerOrder)
     private orderRepository: Repository<CustomerOrder>,
+    @InjectRepository(ChallengeAddon)
+    private challengeAddonRepository: Repository<ChallengeAddon>,
     private mailerService: MailerService,
     private configService: ConfigService,
     @Inject(forwardRef(() => ChallengesService))
@@ -198,7 +202,7 @@ export class OrdersService {
     );
     //extract addons for dto
     const orderAddons = createOrderDto.addons.map((addon) => addon.productID);
-    const challengeAddons =
+    const relationAddons =
       await this.relationAddonService.getAddonsByArray(orderAddons);
 
     // Create broker account and challenge using the separated function
@@ -206,8 +210,9 @@ export class OrdersService {
       credentials,
       user,
       relation,
-      challengeAddons,
+      relationAddons,
     );
+
     this.logger.log('Challenge creation result:', challengeRes);
     if (!challengeRes.data) {
       throw new InternalServerErrorException({
@@ -225,6 +230,31 @@ export class OrdersService {
         challengeId: challenge.challengeID,
         login: challenge.brokerAccount.login,
       });
+      const challengeAddons = relationAddons.map((relation) => {
+        return {
+          addonID: relation.addonID,
+          challengeID: challenge.challengeID,
+          value: relation.value,
+          isActive: relation.isActive,
+          wooID: relation.wooID,
+        };
+      });
+      
+      // Save challenge addons to database
+      if (challengeAddons.length > 0) {
+        try {
+          const challengeAddonEntities = challengeAddons.map(addon => 
+            this.challengeAddonRepository.create(addon)
+          );
+          await this.challengeAddonRepository.save(challengeAddonEntities);
+        } catch (err) {
+          throw new InternalServerErrorException({
+            message: 'Failed to save challenge addons to database',
+            failedAt: 'challenge_addons_save',
+            details: err?.message ?? err,
+          });
+        }
+      }
 
       const accountForBuffer = mapChallengeToAccount(challenge);
 
@@ -666,8 +696,28 @@ export class OrdersService {
       };
 
       // Llamar al cliente de creación Fazo
-      const fazoResponse =
-        await this.creationFazoClient.createAccount(createAccountData);
+      let fazoResponse: CreateAccountResponse;
+      try {
+        fazoResponse =
+          await this.creationFazoClient.createAccount(createAccountData);
+      } catch (error) {
+        this.logger.error('Error creating account with Fazo:', error);
+
+        // Extraer información detallada del error para propagarla
+        const errorDetails = {
+          message: error.message || 'Unknown error',
+          status: error.response?.status,
+          url: error.config?.url,
+          method: error.config?.method,
+        };
+
+        throw new InternalServerErrorException({
+          message: 'Failed to create broker account with Fazo API',
+          failedAt: 'broker_account_creation',
+          details: errorDetails,
+          originalError: error.message,
+        });
+      }
 
       this.logger.log('Brokeret API account created successfully:', {
         message: fazoResponse.message,
@@ -761,9 +811,21 @@ export class OrdersService {
 
       return brokerAccountDto;
     } catch (error) {
-      throw new Error(
-        `Failed to create Brokeret API account: ${error.message}`,
-      );
+      // Si el error ya es una InternalServerErrorException, lo propagamos tal como está
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      // Para otros errores, crear una excepción más descriptiva
+      throw new InternalServerErrorException({
+        message: 'Failed to create Brokeret API account',
+        failedAt: 'broker_account_creation_general',
+        details: {
+          originalMessage: error.message,
+          errorType: error.constructor.name,
+        },
+        originalError: error.message,
+      });
     }
   }
 }

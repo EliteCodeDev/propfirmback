@@ -65,6 +65,9 @@ export class WithdrawalsService {
       challenge.relationID,
     );
 
+    //evaluar si existe la regla del primer retiro (true)
+    //evaluar cuantos retiros tiene el challenge (0)
+
     if (!withdrawalRules || withdrawalRules.length === 0) {
       throw new NotFoundException('Withdrawal rules not found for this challenge');
     }
