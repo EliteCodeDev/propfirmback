@@ -42,6 +42,7 @@ export class WithdrawalsController {
     @Request() req,
     @Body() createWithdrawalDto: CreateWithdrawalDto,
   ) {
+    console.log("DTO => ", createWithdrawalDto);
     return this.withdrawalsService.createRequest(
       req.user.userID,
       createWithdrawalDto,
