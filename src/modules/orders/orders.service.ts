@@ -201,10 +201,13 @@ export class OrdersService {
       relation,
     );
     //extract addons for dto
-    const orderAddons = createOrderDto.addons.map((addon) => addon.productID);
-    const relationAddons =
-      await this.relationAddonService.getAddonsByArray(orderAddons);
-
+    let relationAddons;
+    // Validate if addons parameter exists and is not empty
+    if (createOrderDto.addons && createOrderDto.addons.length > 0) {
+      const orderAddons = createOrderDto.addons.map((addon) => addon.productID);
+      relationAddons =
+        await this.relationAddonService.getAddonsByArray(orderAddons);
+    }
     // Create broker account and challenge using the separated function
     const challengeRes = await this.createBrokerAndChallenge(
       credentials,
@@ -230,29 +233,32 @@ export class OrdersService {
         challengeId: challenge.challengeID,
         login: challenge.brokerAccount.login,
       });
-      const challengeAddons = relationAddons.map((relation) => {
-        return {
-          addonID: relation.addonID,
-          challengeID: challenge.challengeID,
-          value: relation.value,
-          isActive: relation.isActive,
-          wooID: relation.wooID,
-        };
-      });
-      
-      // Save challenge addons to database
-      if (challengeAddons.length > 0) {
-        try {
-          const challengeAddonEntities = challengeAddons.map(addon => 
-            this.challengeAddonRepository.create(addon)
-          );
-          await this.challengeAddonRepository.save(challengeAddonEntities);
-        } catch (err) {
-          throw new InternalServerErrorException({
-            message: 'Failed to save challenge addons to database',
-            failedAt: 'challenge_addons_save',
-            details: err?.message ?? err,
-          });
+      // Only process challenge addons if relationAddons exists and has items
+      if (relationAddons && relationAddons.length > 0) {
+        const challengeAddons = relationAddons.map((relation) => {
+          return {
+            addonID: relation.addonID,
+            challengeID: challenge.challengeID,
+            value: relation.value,
+            isActive: relation.isActive,
+            wooID: relation.wooID,
+          };
+        });
+
+        // Save challenge addons to database
+        if (challengeAddons.length > 0) {
+          try {
+            const challengeAddonEntities = challengeAddons.map((addon) =>
+              this.challengeAddonRepository.create(addon),
+            );
+            await this.challengeAddonRepository.save(challengeAddonEntities);
+          } catch (err) {
+            throw new InternalServerErrorException({
+              message: 'Failed to save challenge addons to database',
+              failedAt: 'challenge_addons_save',
+              details: err?.message ?? err,
+            });
+          }
         }
       }
 
@@ -801,7 +807,7 @@ export class OrdersService {
       const brokerAccountDto: CreateBrokerAccountDto = {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
-        server: this.configService.get<string>('MT_SERVER') || 'FazoLiquidity',
+        server: this.configService.get<string>('MT_SERVER') || '',
         serverIp: 'server.com', // IP del servidor por defecto
         platform: 'MT5',
         isUsed: false,

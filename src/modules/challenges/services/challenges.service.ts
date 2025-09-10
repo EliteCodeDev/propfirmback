@@ -163,7 +163,7 @@ export class ChallengesService {
       return {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
-        server: this.configService.get<string>('MT_SERVER') || 'FazoLiquidity',
+        server: this.configService.get<string>('MT_SERVER') || '',
         platform: 'MT5',
         isUsed: true,
         investorPass: investorPassword,
@@ -239,7 +239,7 @@ export class ChallengesService {
     if (search && search.trim()) {
       const s = `%${search.trim().toLowerCase()}%`;
       qb.andWhere(
-        '(LOWER(user.email) LIKE :s OR LOWER(user.username) LIKE :s OR LOWER(CONCAT(COALESCE(user.firstName, \'\'), \' \' , COALESCE(user.lastName, \'\'))) LIKE :s)',
+        "(LOWER(user.email) LIKE :s OR LOWER(user.username) LIKE :s OR LOWER(CONCAT(COALESCE(user.firstName, ''), ' ' , COALESCE(user.lastName, ''))) LIKE :s)",
         { s },
       );
     }
