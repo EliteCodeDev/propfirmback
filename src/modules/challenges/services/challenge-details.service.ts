@@ -85,6 +85,7 @@ export class ChallengeDetailsService {
     const updates: DeepPartial<ChallengeDetails> = {
       lastUpdate: new Date(),
     };
+
     if (
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
@@ -93,6 +94,7 @@ export class ChallengeDetailsService {
     ) {
       updates.metaStats = updateChallengeDetailsDto.metaStats || null;
     }
+
     if (
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
@@ -101,6 +103,7 @@ export class ChallengeDetailsService {
     ) {
       updates.positions = updateChallengeDetailsDto.positions || null;
     }
+
     if (
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
@@ -110,6 +113,17 @@ export class ChallengeDetailsService {
       updates.rulesValidation =
         updateChallengeDetailsDto.rulesValidation || null;
     }
+
+    // AGREGAR ESTA VALIDACIÓN PARA BALANCE
+    if (
+      Object.prototype.hasOwnProperty.call(
+        updateChallengeDetailsDto,
+        'balance',
+      )
+    ) {
+      updates.balance = updateChallengeDetailsDto.balance || null;
+    }
+
     if (
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
