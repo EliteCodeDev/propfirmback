@@ -61,7 +61,7 @@ export class BrokerAccountsService {
       where: whereConditions,
       skip,
       take: parseInt(limit),
-      order: { login: 'ASC' },
+      order: { login: 'DESC' },
     });
 
     return {
