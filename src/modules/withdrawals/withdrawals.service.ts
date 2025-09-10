@@ -55,8 +55,8 @@ export class WithdrawalsService {
   async createRequest(
     userID: string,
     createWithdrawalDto: CreateWithdrawalDto,
-  ): Promise<Withdrawal> {          
-    // Obtener el challenge y validar que existe
+  ): Promise<Withdrawal> {     
+
     const challenge = await this.challengesService.findOne(
       createWithdrawalDto.challengeID,
     );
@@ -65,14 +65,9 @@ export class WithdrawalsService {
       throw new NotFoundException('Challenge not found');
     }
 
-    // console.log("DATOS DEL CHALLENGE: ", challenge);
-    // Obtener las reglas de retiro para la relación del challenge
     const withdrawalRules = await this.rulesWithdrawalService.findRulesByRelationId(
       challenge.relationID,
     );
-
-    //evaluar si existe la regla del primer retiro (true)
-    //evaluar cuantos retiros tiene el challenge (0)
 
     if (!withdrawalRules || withdrawalRules.length === 0) {
       throw new NotFoundException('Withdrawal rules not found for this challenge');
@@ -80,34 +75,41 @@ export class WithdrawalsService {
 
     console.log("REGLAS EXISTENTES => ", withdrawalRules);
 
-    // Contar retiros existentes para este challenge
     const existingWithdrawals = await this.withdrawalRepository.count({
       where: {
         challengeID: createWithdrawalDto.challengeID,
-        status: WithdrawalStatus.APPROVED,
+        status: WithdrawalStatus.APPROVED
         // status: WithdrawalStatus.PENDING,
       },
     });
-    //LOGICA PARA VALIDAR EL PRIMER RETIRO
+
+    let start : Date;
+    //LOGICA PARA VALIDAR EL PRIMER RETIRO----
     if(existingWithdrawals === 0){
 
-      const start = new Date(challenge.startDate);
-      const days = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      start = new Date(challenge.startDate);
 
-      const ruleDays = getWithdrawalRuleValueBySlug(withdrawalRules, 'first-payout-day');
+    }else{
 
-      // console.log("DIAS EN EL CHALLENGE => ", days);
-      // console.log("DIAS PARA PRIMER RETIRO => ", parseInt(ruleDays));
-      // console.log(`COMPARACION : ${days} >= ${parseInt(ruleDays)}`);
-      // console.log("REGLA DEL PRIMER RETIRO => ", (days >= parseInt(ruleDays)));
+      const myWithdrawals = await this.withdrawalRepository.findOne({
+        where:{ userID:userID },
+        order: {createdAt:'DESC'}
+      })
 
-      //VERIFICAR SI LA REGLA DEL PRIMER RETIRO EXISTE Y DESPUES VERIFICAR SI CUMPLEN CON LOS DIAS ESTABLEECIDOS PARA HACER LE RETIRO 
-      if (ruleDays && !(days >= parseInt(ruleDays))) {
-        throw new BadRequestException(`Cannot request first withdrawal yet. Required: ${ruleDays || 'N/A'} days, elapsed: ${days} days`);
-      }
+      start = new Date(myWithdrawals.createdAt);
 
+      console.log("ULTIMO RETIRO REALIZADO => ", myWithdrawals);
     }
+    
+    const days = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
+    const ruleDays = getWithdrawalRuleValueBySlug(withdrawalRules, 'first-payout-day');
+
+    //VERIFICAR SI LA REGLA DEL PRIMER RETIRO EXISTE Y DESPUES VERIFICAR SI CUMPLEN CON LOS DIAS ESTABLEECIDOS PARA HACER LE RETIRO 
+    if (ruleDays && !(days >= parseInt(ruleDays))) {
+      throw new BadRequestException(`Cannot request first withdrawal yet. Required: ${ruleDays || 'N/A'} days, elapsed: ${days} days`);
+    }
+    
     // Validar según el número de retiro y los splits
     const withdrawalNumber = existingWithdrawals + 1; // El próximo número de retiro
     // console.log("NUMERO DE RETIRO => ", withdrawalNumber);
@@ -134,9 +136,6 @@ export class WithdrawalsService {
       );
     }
 
-    // console.log("CHALLENGE => ",challenge);
-    // console.log("SPLIT ESPERADO => ", expectedSplit);
-
     challenge.details.balance.currentBalance = challenge.details.balance.currentBalance - createWithdrawalDto.amount;
 
     console.log("BALANCE ACTUALIZADO => ", challenge.details);
@@ -146,8 +145,6 @@ export class WithdrawalsService {
     console.log("CHALLENGE DETAILS ACTUALIZADO => ", actualizar);
     
     createWithdrawalDto.amount = (createWithdrawalDto.amount * expectedSplit) / 100;
-    // console.log("MONTO DE RETIRO A GUARDAR => ", createWithdrawalDto.amount);
-
 
     // Crear el withdrawal request
     const withdrawal = this.withdrawalRepository.create({
