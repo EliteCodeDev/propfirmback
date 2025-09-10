@@ -21,11 +21,14 @@ import { generateRandomPassword } from 'src/common/utils/randomPassword';
 import { OrdersService } from '../orders/orders.service';
 import { getWithdrawalRuleValueBySlug } from 'src/common/utils/mappers/account-mapper';
 import { RulesWithdrawalService } from '../challenge-templates/services/rules-withdrawal.service';
+import { ChallengeDetails } from '../challenges/entities/challenge-details.entity';
+import { ChallengeDetailsService } from '../challenges/services/challenge-details.service';
 @Injectable()
 export class WithdrawalsService {
   constructor(
     @InjectRepository(Withdrawal)
     private withdrawalRepository: Repository<Withdrawal>,
+    private challengeDetailsService: ChallengeDetailsService,
     private challengesService: ChallengesService,
     private certificatesService: CertificatesService,
     private challengeTemplatesService: ChallengeTemplatesService,
@@ -48,18 +51,21 @@ export class WithdrawalsService {
 
     return this.withdrawalRepository.save(withdrawal);
   }
+  // VALIDACION DE UN RETIRO
   async createRequest(
     userID: string,
     createWithdrawalDto: CreateWithdrawalDto,
-  ): Promise<Withdrawal> {
+  ): Promise<Withdrawal> {          
     // Obtener el challenge y validar que existe
     const challenge = await this.challengesService.findOne(
       createWithdrawalDto.challengeID,
     );
+
     if (!challenge) {
       throw new NotFoundException('Challenge not found');
     }
 
+    // console.log("DATOS DEL CHALLENGE: ", challenge);
     // Obtener las reglas de retiro para la relación del challenge
     const withdrawalRules = await this.rulesWithdrawalService.findRulesByRelationId(
       challenge.relationID,
@@ -72,23 +78,43 @@ export class WithdrawalsService {
       throw new NotFoundException('Withdrawal rules not found for this challenge');
     }
 
-    // Extraer las reglas de retiro de la respuesta
-    const rules = withdrawalRules;
+    console.log("REGLAS EXISTENTES => ", withdrawalRules);
 
     // Contar retiros existentes para este challenge
     const existingWithdrawals = await this.withdrawalRepository.count({
       where: {
         challengeID: createWithdrawalDto.challengeID,
         status: WithdrawalStatus.APPROVED,
+        // status: WithdrawalStatus.PENDING,
       },
     });
+    //LOGICA PARA VALIDAR EL PRIMER RETIRO
+    if(existingWithdrawals === 0){
+
+      const start = new Date(challenge.startDate);
+      const days = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+      const ruleDays = getWithdrawalRuleValueBySlug(withdrawalRules, 'first-payout-day');
+
+      // console.log("DIAS EN EL CHALLENGE => ", days);
+      // console.log("DIAS PARA PRIMER RETIRO => ", parseInt(ruleDays));
+      // console.log(`COMPARACION : ${days} >= ${parseInt(ruleDays)}`);
+      // console.log("REGLA DEL PRIMER RETIRO => ", (days >= parseInt(ruleDays)));
+
+      //VERIFICAR SI LA REGLA DEL PRIMER RETIRO EXISTE Y DESPUES VERIFICAR SI CUMPLEN CON LOS DIAS ESTABLEECIDOS PARA HACER LE RETIRO 
+      if (ruleDays && !(days >= parseInt(ruleDays))) {
+        throw new BadRequestException(`Cannot request first withdrawal yet. Required: ${ruleDays || 'N/A'} days, elapsed: ${days} days`);
+      }
+
+    }
 
     // Validar según el número de retiro y los splits
     const withdrawalNumber = existingWithdrawals + 1; // El próximo número de retiro
+    // console.log("NUMERO DE RETIRO => ", withdrawalNumber);
 
     // Buscar el split específico para este número de retiro (split-n)
     const splitSlug = `split-${withdrawalNumber}`;
-    const splitValue = getWithdrawalRuleValueBySlug(rules, splitSlug);
+    const splitValue = getWithdrawalRuleValueBySlug(withdrawalRules, splitSlug);
     
     // Si no existe un split específico para este número, buscar valores por defecto
     let expectedSplit: number;
@@ -96,33 +122,32 @@ export class WithdrawalsService {
       // Existe un split específico para este número de retiro
       expectedSplit = parseFloat(splitValue);
     } else {
-      // No existe split específico, usar valores por defecto
-      const firstPayoutValue = getWithdrawalRuleValueBySlug(rules, 'first-payout');
-      const payoutPerValue = getWithdrawalRuleValueBySlug(rules, 'payout-per');
-      
-      if (withdrawalNumber === 1) {
-        expectedSplit = parseFloat(firstPayoutValue);
-      } else {
-        expectedSplit = parseFloat(payoutPerValue);
-      }
+      //ULTIMO SPLIT GUARDADO
+      const rules_split = withdrawalRules.filter((rule)=> rule.rule.slugRule.includes('split'))
+      expectedSplit = parseFloat(rules_split.pop().value)
+
     }
 
-    // Validar que el split sea válido
     if (expectedSplit <= 0) {
       throw new BadRequestException(
         `No withdrawal split configuration found for withdrawal number ${withdrawalNumber}`,
       );
     }
 
-    // Calcular el monto máximo permitido para este retiro (% del profit total)
-    const maxWithdrawalAmount = (challenge.dynamicBalance * expectedSplit) / 100;
+    // console.log("CHALLENGE => ",challenge);
+    // console.log("SPLIT ESPERADO => ", expectedSplit);
 
-    // Validar que el monto solicitado no exceda el máximo permitido
-    if (createWithdrawalDto.amount > maxWithdrawalAmount) {
-      throw new BadRequestException(
-        `Withdrawal amount ${createWithdrawalDto.amount} exceeds maximum allowed ${maxWithdrawalAmount.toFixed(2)} (${expectedSplit}% of profit) for withdrawal number ${withdrawalNumber}`,
-      );
-    }
+    challenge.details.balance.currentBalance = challenge.details.balance.currentBalance - createWithdrawalDto.amount;
+
+    console.log("BALANCE ACTUALIZADO => ", challenge.details);
+
+    const actualizar = await this.challengeDetailsService.updateChallengeDetails(challenge.details.challengeID,challenge.details);
+
+    console.log("CHALLENGE DETAILS ACTUALIZADO => ", actualizar);
+    
+    createWithdrawalDto.amount = (createWithdrawalDto.amount * expectedSplit) / 100;
+    // console.log("MONTO DE RETIRO A GUARDAR => ", createWithdrawalDto.amount);
+
 
     // Crear el withdrawal request
     const withdrawal = this.withdrawalRepository.create({

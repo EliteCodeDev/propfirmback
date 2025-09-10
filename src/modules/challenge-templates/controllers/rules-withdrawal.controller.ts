@@ -21,6 +21,7 @@ import { RulesWithdrawalService } from '../services/rules-withdrawal.service';
 import { CreateRulesWithdrawalDto } from '../dto/create/create-rules-withdrawal.dto';
 import { UpdateRulesWithdrawalDto } from '../dto/update/update-rules-withdrawal.dto';
 import { RulesWithdrawalResponseDto } from '../dto/response/rules-withdrawal-response.dto';
+import { Public } from 'src/common/decorators';
 
 @ApiTags('Rules Withdrawal')
 @Controller('rules-withdrawal')
@@ -28,6 +29,7 @@ export class RulesWithdrawalController {
   constructor(private readonly rulesWithdrawalService: RulesWithdrawalService) {}
 
   @Post()
+  @Public()
   @ApiOperation({ summary: 'Crear una nueva regla de retiro' })
   @ApiResponse({
     status: 201,

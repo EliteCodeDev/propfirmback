@@ -177,19 +177,39 @@ export class OrdersService {
       (bal) => bal.wooID === createOrderDto.product.variationID,
     );
 
+    if (!relationBalance) {
+      this.logger.warn('Relation balance not found for variationID:', {
+        requestedVariationID: createOrderDto.product.variationID,
+        available: relation.balances?.map((b) => ({ wooID: b.wooID, balanceID: b.balanceID })),
+      });
+      throw new NotFoundException({
+        status: 'error',
+        message: 'relation balance not found',
+        failedAt: 'relation_balance_match',
+      });
+    }
+
     this.logger.log(
       'Matched relation balance:',
       JSON.stringify(relationBalance),
     );
-    const challengeBalance =
-      await this.challengeTemplatesService.findOneBalance(
-        relationBalance.balanceID,
-      );
-    if (!relationBalance || !challengeBalance) {
+
+    const challengeBalance = await this.challengeTemplatesService
+      .findOneBalance(relationBalance.balanceID)
+      .catch((err) => {
+        this.logger.error('Error fetching challenge balance', err);
+        throw new NotFoundException({
+          status: 'error',
+          message: 'challenge balance not found',
+          failedAt: 'balance_fetch',
+        });
+      });
+
+    if (!challengeBalance) {
       throw new NotFoundException({
         status: 'error',
-        message: 'balance or relation balance not found',
-        failedAt: 'relation_balance_match',
+        message: 'challenge balance not found',
+        failedAt: 'balance_fetch',
       });
     }
 

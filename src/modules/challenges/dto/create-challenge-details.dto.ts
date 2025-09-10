@@ -8,7 +8,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MetaStats, positionsDetails } from 'src/common/utils/account';
+import { Balance, MetaStats, positionsDetails } from 'src/common/utils/account';
 import { RiskParams } from 'src/common/utils/risk';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
 
@@ -67,4 +67,11 @@ export class CreateChallengeDetailsDto {
   @IsOptional()
   @IsDateString()
   lastUpdate?: Date;
+
+  @IsObject()
+  @IsOptional()
+  @ApiProperty({
+    description: 'Current balance information'
+  })
+  balance?: Balance;
 }
