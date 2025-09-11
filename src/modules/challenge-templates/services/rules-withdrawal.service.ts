@@ -124,8 +124,9 @@ export class RulesWithdrawalService {
     relationID: string,
     updateRulesWithdrawalDto: UpdateRulesWithdrawalDto,
   ): Promise<RulesWithdrawalResponseDto> {
-    const rulesWithdrawal = await this.rulesWithdrawalRepository.findOne({
-      where: { ruleID, relationID },
+    const rulesWithdrawal = await this.rulesWithdrawalRepository.findOneBy({
+      ruleID,
+      relationID,
     });
 
     if (!rulesWithdrawal) {
