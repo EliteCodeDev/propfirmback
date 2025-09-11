@@ -180,7 +180,10 @@ export class OrdersService {
     if (!relationBalance) {
       this.logger.warn('Relation balance not found for variationID:', {
         requestedVariationID: createOrderDto.product.variationID,
-        available: relation.balances?.map((b) => ({ wooID: b.wooID, balanceID: b.balanceID })),
+        available: relation.balances?.map((b) => ({
+          wooID: b.wooID,
+          balanceID: b.balanceID,
+        })),
       });
       throw new NotFoundException({
         status: 'error',
@@ -485,7 +488,8 @@ export class OrdersService {
     credentials: any,
     user: any,
     relation: ChallengeRelation,
-    addons: RelationAddon[],
+    addons?: RelationAddon[],
+    parentID?: string,
   ): Promise<ServiceResult<Challenge>> {
     try {
       // broker account creation
@@ -507,7 +511,7 @@ export class OrdersService {
           'creating challenge with relation: ' + relation.relationID,
         );
 
-        const challenge = await this.challengesService.create({
+        const challengeData: any = {
           brokerAccountID: brokerAccount.brokerAccountID,
           userID: user.userID,
           relationID: relation.relationID,
@@ -516,7 +520,13 @@ export class OrdersService {
             .numPhase,
           isActive: true,
           status: ChallengeStatus.INNITIAL,
-        });
+        };
+
+        if (parentID) {
+          challengeData.parentID = parentID;
+        }
+
+        const challenge = await this.challengesService.create(challengeData);
         // challenge.relation.balances
         challenge.relation = relation;
         this.logger.debug(

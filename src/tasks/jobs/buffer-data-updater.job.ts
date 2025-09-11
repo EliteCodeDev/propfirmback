@@ -18,51 +18,56 @@ export class BufferDataUpdaterJob implements OnModuleInit {
 
   onModuleInit() {
     this.logger.log('BufferDataUpdaterJob inicializado');
-    this.logger.debug('Job configurado para ejecutarse cada 30 segundos');
+    this.logger.debug('Job configurado para ejecutarse cada 3 minutos');
   }
 
   /**
-   * Job programado para actualizar datos del buffer cada 30 segundos
-   * Cron: cada 30 segundos con offset de 15 segundos para dar tiempo a la carga inicial
+   * Job programado para actualizar datos del buffer cada 3 minutos
+   * Cron: cada 3 minutos con offset de 15 segundos para dar tiempo a la carga inicial
    */
   @Cron('0 */3 * * * *', { timeZone: 'America/Lima' })
   async updateBufferData() {
     const startTime = Date.now();
     this.logger.log('Iniciando actualización de datos del buffer');
-    
+
     this.customLogger.logBufferTimeline(
       'BufferDataUpdaterJob',
       {
-        action: 'data_update_start'
+        action: 'data_update_start',
       },
-      'Starting buffer data update'
+      'Starting buffer data update',
     );
 
     try {
       await this.updateBufferDataProcess();
       const duration = Date.now() - startTime;
-      
-      this.logger.log('Actualización de datos del buffer completada exitosamente');
+
+      this.logger.log(
+        'Actualización de datos del buffer completada exitosamente',
+      );
       this.customLogger.logBufferTimeline(
         'BufferDataUpdaterJob',
         {
           action: 'data_update_success',
-          duration: duration
+          duration: duration,
         },
-        'Buffer data update completed successfully'
+        'Buffer data update completed successfully',
       );
     } catch (error) {
       const duration = Date.now() - startTime;
-      
-      this.logger.error('Error en el proceso de actualización del buffer:', error);
+
+      this.logger.error(
+        'Error en el proceso de actualización del buffer:',
+        error,
+      );
       this.customLogger.logBufferTimeline(
         'BufferDataUpdaterJob',
         {
           action: 'data_update_error',
           duration: duration,
-          error: error?.message || error.toString()
+          error: error?.message || error.toString(),
         },
-        'Buffer data update failed'
+        'Buffer data update failed',
       );
     }
   }
@@ -80,9 +85,9 @@ export class BufferDataUpdaterJob implements OnModuleInit {
           'BufferDataUpdaterJob',
           {
             action: 'data_update_empty',
-            metadata: { buffer_size: 0 }
+            metadata: { buffer_size: 0 },
           },
-          'Buffer is empty, no data to update'
+          'Buffer is empty, no data to update',
         );
         return;
       }
@@ -92,11 +97,11 @@ export class BufferDataUpdaterJob implements OnModuleInit {
         'BufferDataUpdaterJob',
         {
           action: 'data_update_processing',
-          metadata: { 
-            buffer_size: stats.bufferSize
-          }
+          metadata: {
+            buffer_size: stats.bufferSize,
+          },
         },
-        'Processing buffer data update'
+        'Processing buffer data update',
       );
 
       // Llamar a los extractores de datos
@@ -110,9 +115,14 @@ export class BufferDataUpdaterJob implements OnModuleInit {
       results.forEach((result, index) => {
         const providerName = index === 0 ? 'Brokeret' : `Provider-${index}`;
         if (result.status === 'fulfilled') {
-          this.logger.debug(`${providerName}: Procesamiento completado exitosamente`);
+          this.logger.debug(
+            `${providerName}: Procesamiento completado exitosamente`,
+          );
         } else {
-          this.logger.error(`${providerName}: Error en procesamiento:`, result.reason);
+          this.logger.error(
+            `${providerName}: Error en procesamiento:`,
+            result.reason,
+          );
         }
       });
 

@@ -18,7 +18,13 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { UpdateUserDto, UserQueryDto, CreateUserDto, UpdateUserProfileDto } from '../dto';
+import {
+  UpdateUserDto,
+  UserQueryDto,
+  CreateUserDto,
+  UpdateUserProfileDto,
+  GenerateUserDto,
+} from '../dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -41,6 +47,15 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'User successfully created' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @Post('generate')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Generate a user with random password' })
+  @ApiResponse({ status: 201, description: 'User generated successfully' })
+  async generate(@Body() body: GenerateUserDto) {
+    return this.usersService.generate(body);
   }
 
   // 3) Resto de endpoints protegidos por rol "admin"
@@ -85,7 +100,10 @@ export class UsersController {
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'Profile successfully updated' })
   async updateProfile(@Request() req, @Body() body: UpdateUserProfileDto) {
-    const updated = await this.usersService.updateProfile(req.user.userID, body);
+    const updated = await this.usersService.updateProfile(
+      req.user.userID,
+      body,
+    );
     const addr = updated.address || ({} as any);
     const { address, ...rest } = updated as any;
     return {

@@ -177,29 +177,6 @@ export class ChallengesService {
         maxRetries,
       });
 
-      // Reintentar en caso de conflicto de login
-      if (
-        (error.message.includes('Login already exists') ||
-          error.message.includes('already exists') ||
-          error.message.includes('duplicate')) &&
-        retryCount < maxRetries
-      ) {
-        this.logger.warn(
-          `Reintentando creación de cuenta. Intento ${retryCount + 2}/${maxRetries + 1}`,
-        );
-
-        await new Promise((resolve) =>
-          setTimeout(resolve, retryDelay * (retryCount + 1)),
-        );
-
-        return this.createBrokeretAccount(
-          user,
-          balance,
-          groupName,
-          retryCount + 1,
-        );
-      }
-
       throw new Error(`Failed to create Brokeret account: ${error.message}`);
     }
   }
@@ -369,7 +346,7 @@ export class ChallengesService {
       // Obtener balance para usar en toda la función
       let challengeBalance;
       let balance;
-
+      const brokerAccount = challenge.brokerAccount;
       if (challenge.dynamicBalance && challenge.dynamicBalance > 0) {
         // Si hay un dynamicBalance válido, buscar el balance correspondiente
         challengeBalance = relation.balances.find(
@@ -378,8 +355,8 @@ export class ChallengesService {
         balance = challengeBalance?.balance || challenge.dynamicBalance;
       } else {
         // Si no hay dynamicBalance válido, usar el primer balance disponible
-        challengeBalance = relation.balances?.[0];
-        balance = challengeBalance?.balance || 10000; // Fallback por defecto
+        challengeBalance = brokerAccount.innitialBalance;
+        balance = brokerAccount.innitialBalance; // Fallback por defecto
       }
 
       // Actualizar datos del challenge
@@ -472,50 +449,11 @@ export class ChallengesService {
             );
           }
 
-          const newBrokerAccount = await this.brokerAccountsService.create({
-            login: brokeretAccountDto.login,
-            password: brokeretAccountDto.password,
-            server: brokeretAccountDto.server,
-            platform: brokeretAccountDto.platform || 'MT5',
-            serverIp: brokeretAccountDto.serverIp || '',
-            isUsed: user.isVerified, // true si está verificado, false si no
-            investorPass: brokeretAccountDto.investorPass,
-            innitialBalance: brokeretAccountDto.innitialBalance,
-          });
-
-          // Crear nuevo challenge para la siguiente fase
-          const newChallenge = await queryRunner.manager.save(Challenge, {
-            userID: challenge.userID,
-            relationID: challenge.relationID,
-            numPhase: challenge.numPhase + 1,
-            dynamicBalance: challenge.dynamicBalance,
-            status: ChallengeStatus.INNITIAL,
-            isActive: user.isVerified, // true si está verificado, false si no
-            parentID: challenge.challengeID,
-            brokerAccountID: newBrokerAccount.brokerAccountID,
-            startDate: new Date(),
-          });
-
-          // Crear challenge details para el nuevo challenge
-          // Crear un challenge temporal con la relación para obtener los parámetros de riesgo
-          const tempChallenge = {
-            ...newChallenge,
-            relation: relation,
-          } as Challenge;
-
-          const addons =
-            await this.addonRulesService.getActiveAddonsFromRelation(relation);
-          tempChallenge.addons = addons;
-          const baseRiskParams = getBasicRiskParams(tempChallenge);
-          const riskParams = await calculateRiskParamsWithAddons(
-            tempChallenge,
-            baseRiskParams,
-            addons,
+          const challengeRes = this.ordersService.createBrokerAndChallenge(
+            brokeretAccountDto,
+            user,
+            relation,
           );
-          await this.challengeDetailsService.createChallengeDetails({
-            challengeID: newChallenge.challengeID,
-            rulesParams: riskParams,
-          });
 
           // Crear certificado para el challenge actual
           await this.certificatesService.create({
@@ -584,54 +522,14 @@ export class ChallengesService {
 
       // Crear registro local de la cuenta de broker
 
-      const newBrokerAccount = await this.brokerAccountsService.create({
-        login: brokeretAccountDto.login,
-        password: brokeretAccountDto.password,
-        server:
-          brokeretAccountDto.server ||
-          this.configService.get<string>('MT_SERVER') ||
-          'brokeret-server',
-        platform: brokeretAccountDto.platform || 'MT5',
-        serverIp: brokeretAccountDto.serverIp || 'brokeret-server.com',
-        isUsed: user.isVerified, // true si está verificado, false si no
-        investorPass: brokeretAccountDto.investorPass,
-        innitialBalance: brokeretAccountDto.innitialBalance,
-      });
-
-      // Crear nuevo challenge para la siguiente fase
-      const newChallenge = await queryRunner.manager.save(Challenge, {
-        userID: challenge.userID,
-        relationID: challenge.relationID,
-        numPhase: challenge.numPhase + 1,
-        dynamicBalance: challenge.dynamicBalance,
-        status: ChallengeStatus.INNITIAL,
-        isActive: user.isVerified, // true si está verificado, false si no
-        parentID: challenge.challengeID,
-        brokerAccountID: newBrokerAccount.brokerAccountID,
-        startDate: new Date(),
-      });
-
+      const challengeRes = this.ordersService.createBrokerAndChallenge(
+        brokeretAccountDto,
+        user,
+        relation,
+      );
+      this.logger
       // Crear challenge details para el nuevo challenge
       // Crear un challenge temporal con la relación para obtener los parámetros de riesgo
-      const tempChallenge = {
-        ...newChallenge,
-        relation: relation,
-      } as Challenge;
-
-      const addons =
-        await this.addonRulesService.getActiveAddonsFromRelation(relation);
-      tempChallenge.addons = addons;
-      const baseRiskParams = getBasicRiskParams(tempChallenge);
-      const riskParams = await calculateRiskParamsWithAddons(
-        tempChallenge,
-        baseRiskParams,
-        addons,
-      );
-      await this.challengeDetailsService.createChallengeDetails({
-        challengeID: newChallenge.challengeID,
-        rulesParams: riskParams,
-      });
-
       // Enviar email de aprobación con credenciales de la nueva cuenta
 
       await this.mailerService.sendMail({
@@ -644,11 +542,10 @@ export class ChallengesService {
           lastName: user.lastName || '',
           email: user.email,
           old_login: challenge.brokerAccount?.login || 'N/A',
-          login: newBrokerAccount.login,
-          password: newBrokerAccount.password,
-          server: newBrokerAccount.server,
+          login: brokeretAccountDto.login,
+          password: brokeretAccountDto.password,
+          server: brokeretAccountDto.server,
           account_size: balance || challenge.dynamicBalance,
-          profit_target: balance || 'N/A',
           currentYear: new Date().getFullYear(),
           logoUrl: this.configService.get<string>('app.logoUrl') || '',
           landingUrl: this.configService.get<string>('app.clientUrl'),

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
@@ -18,6 +18,7 @@ export class MailerService {
     private readonly cfg: ConfigType<typeof mailerConfig>,
     private readonly configService: ConfigService,
     private readonly stylesService: StylesService,
+    @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
   ) {
     const { host, port, user, pass } = this.cfg;
