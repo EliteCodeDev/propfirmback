@@ -48,6 +48,7 @@ export class ChallengesService {
     private challengeDetailsService: ChallengeDetailsService,
     private addonRulesService: AddonRulesService,
     private certificatesService: CertificatesService,
+    @Inject(forwardRef(() => BrokerAccountsService))
     private brokerAccountsService: BrokerAccountsService,
     private mailerService: MailerService,
     private bufferService: BufferService,

@@ -72,6 +72,7 @@ export class OrdersService {
     private challengesService: ChallengesService,
     private challengeDetailsService: ChallengeDetailsService,
     private challengeTemplatesService: ChallengeTemplatesService,
+    @Inject(forwardRef(() => BrokerAccountsService))
     private brokerAccountsService: BrokerAccountsService,
     private usersService: UsersService,
     private smtApiService: SmtApiClient,
@@ -838,7 +839,7 @@ export class OrdersService {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
         server: this.configService.get<string>('MT_SERVER') || '',
-        serverIp: 'server.com', // IP del servidor por defecto
+        serverIp: this.configService.get<string>('MT_SERVER'), // IP del servidor por defecto
         platform: 'MT5',
         isUsed: false,
         investorPass: investorPassword,

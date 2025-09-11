@@ -251,7 +251,7 @@ export class UsersService {
     const saved = await this.userRepository.save(user);
     return this.findById(saved.userID);
   }
-  async generate({ email, name, isConfirmed = true }: GenerateUserDto) {
+  async generate({ email, name, isConfirmed }: GenerateUserDto) {
     const user = await this.findByEmail(email);
     if (user) {
       throw new BadRequestException('User already exists');
@@ -268,8 +268,10 @@ export class UsersService {
       username,
       password,
       firstName: name,
-      isConfirmed,
     };
+    if (isConfirmed) {
+      userDto.isConfirmed = true;
+    }
     const newUser = await this.create(userDto);
     try {
       this.logger.log(

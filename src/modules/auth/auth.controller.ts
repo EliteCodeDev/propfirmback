@@ -74,7 +74,10 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset' })
-  @ApiResponse({ status: 200, description: 'Password reset email sent successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset email sent successfully',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   @UseGuards(TurnstileGuard)
   async forgotPassword(@Body() dto: ResetPasswordDto) {
@@ -99,7 +102,10 @@ export class AuthController {
   @Post('resend-confirmation')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Resend email confirmation' })
-  @ApiResponse({ status: 200, description: 'Confirmation email sent successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Confirmation email sent successfully',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 409, description: 'Email is already confirmed' })
   @UseGuards(TurnstileGuard)

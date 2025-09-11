@@ -21,7 +21,7 @@ import { jwtConfig } from 'src/config';
     UsersModule,
     JwtModule.registerAsync(jwtConfig),
     forwardRef(() => ChallengesModule),
-    BrokerAccountsModule,
+    forwardRef(() => BrokerAccountsModule),
     ChallengeTemplatesModule,
     SmtApiModule,
     BrokeretApiModule,
