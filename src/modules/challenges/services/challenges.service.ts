@@ -54,6 +54,7 @@ export class ChallengesService {
     private configService: ConfigService,
     private stylesService: StylesService,
     @Inject(forwardRef(() => OrdersService))
+    private ordersService: OrdersService,
     private dataSource: DataSource,
     private creationFazoClient: CreationFazoClient,
     private brokeretApiClient: BrokeretApiClient,
