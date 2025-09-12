@@ -93,6 +93,7 @@ const disableTasks =
     // Schedule/Tasks condicionales por entorno
     // ...(!disableTasks ? [ScheduleModule.forRoot()] : []),
     // Application modules
+    ScheduleModule.forRoot(),
     BusinessRequirementModule,
     BufferModule,
     // StorageModule,
@@ -113,7 +114,7 @@ const disableTasks =
     DashboardModule,
     SeedOnBootModule,
     // ...(!disableTasks ? [TasksModule] : []),
-    // TasksModule,
+    TasksModule,
     StylesModule,
   ],
   controllers: [

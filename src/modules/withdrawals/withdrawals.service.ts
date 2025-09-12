@@ -156,7 +156,8 @@ export class WithdrawalsService {
     const sumWeek = recent.reduce((s, w) => s + (parseFloat(String(w.amount)) || 0), 0);
     if (sumWeek + requestedFinal > Number(limit)) {
       throw new BadRequestException(
-        `Weekly limit exceeded (Monday-Sunday). Limit: ${limit}, requested: ${requestedFinal.toFixed(2)}, already requested this week: ${sumWeek.toFixed(2)}.`,
+        `Weekly limit exceeded (Monday-Sunday). Limit: ${limit}.`,
+        // `Weekly limit exceeded (Monday-Sunday). Limit: ${limit}, requested: ${requestedFinal.toFixed(2)}, already requested this week: ${sumWeek.toFixed(2)}.`,
       );
     }
     // console.log("BALANCE ACTUALIZADO => ", challenge.details);
