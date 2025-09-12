@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   Logger,
+  HttpException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
@@ -108,12 +109,7 @@ export class BrokerAccountsService {
       updateBrokerAccountDto.login &&
       updateBrokerAccountDto.login !== account.login
     ) {
-      const existingLogin = await this.findByLogin(
-        updateBrokerAccountDto.login,
-      );
-      if (existingLogin) {
-        throw new ConflictException('Login already exists');
-      }
+      throw new HttpException('Login is not editable', 400);
     }
 
     Object.assign(account, updateBrokerAccountDto);
