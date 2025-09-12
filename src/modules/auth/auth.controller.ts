@@ -28,11 +28,15 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { Query } from '@nestjs/common/decorators';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { TurnstileGuard } from 'src/common/security/turnstile.guard';
+import { IntercomService } from 'src/common/services/intercom.service';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly intercomService: IntercomService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -148,5 +152,30 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid authorization code' })
   async googleCallback(@Body() dto: GoogleCallbackDto) {
     return this.authService.googleCallback(dto);
+  }
+
+  @Public()
+  @UseGuards(JwtAuthGuard)
+  @Get('intercom-hash')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get Intercom user hash for secure authentication' })
+  @ApiResponse({ status: 200, description: 'User hash generated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getIntercomHash(@Request() req) {
+    const userId = req.user?.userID || req.user?.sub || req.user?.id;
+    if (!userId) {
+      throw new Error('User ID not found');
+    }
+    
+    const userHash = this.intercomService.generateUserHash(String(userId));
+    const appId = this.intercomService.getAppId();
+    
+    return {
+      success: true,
+      data: {
+        user_hash: userHash,
+        app_id: appId,
+      },
+    };
   }
 }

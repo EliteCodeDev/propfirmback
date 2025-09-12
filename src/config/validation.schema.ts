@@ -84,4 +84,8 @@ export const validationSchema = Joi.object({
   MINIO_ACCESS_KEY: Joi.string().required(),
   MINIO_SECRET_KEY: Joi.string().required(),
   MINIO_BUCKET_NAME: Joi.string().required(),
+
+  // Intercom
+  INTERCOM_SECRET_KEY: Joi.string().required(),
+  INTERCOM_APP_ID: Joi.string().required(),
 });
