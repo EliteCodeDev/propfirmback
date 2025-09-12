@@ -28,7 +28,7 @@ export class CreateBrokerAccountDto {
   @ApiProperty({ default: false })
   @IsOptional()
   @IsBoolean()
-  isUsed?: boolean = false;
+  isUsed?: boolean = true;
 
   @ApiProperty({ required: false })
   @IsOptional()

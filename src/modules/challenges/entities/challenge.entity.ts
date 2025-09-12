@@ -73,7 +73,7 @@ export class Challenge {
   @OneToMany(() => Challenge, (challenge) => challenge.parent)
   children: Challenge[];
 
-  @ManyToOne(() => BrokerAccount, (account) => account.challenges)
+  @OneToOne(() => BrokerAccount, (account) => account.challenge)
   @JoinColumn({ name: 'brokerAccountID' })
   brokerAccount: BrokerAccount;
 

@@ -58,4 +58,8 @@ export class CreateUserDto {
   @IsOptional()
   @IsUUID()
   roleId?: string;
+
+  @ApiProperty({ example: 'true' })
+  @IsOptional()
+  isConfirmed?: boolean;
 }

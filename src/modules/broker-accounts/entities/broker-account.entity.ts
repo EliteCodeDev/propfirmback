@@ -2,7 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToMany,
+  OneToOne,
   Index,
 } from 'typeorm';
 import { Challenge } from '../../challenges/entities/challenge.entity';
@@ -38,6 +38,6 @@ export class BrokerAccount {
   innitialBalance: number;
 
   // Relations
-  @OneToMany(() => Challenge, (challenge) => challenge.brokerAccount)
-  challenges: Challenge[];
+  @OneToOne(() => Challenge, (challenge) => challenge.brokerAccount)
+  challenge: Challenge;
 }

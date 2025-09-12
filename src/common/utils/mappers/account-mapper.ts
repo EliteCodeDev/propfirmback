@@ -61,6 +61,25 @@ export function getWithdrawalRuleValueBySlug(
 
   return rule?.value || '0';
 }
+
+export function getLimitWeek() {
+
+  const now = new Date();
+  // calcular inicio de semana (lunes)
+  const day = now.getDay(); // 0 (Dom) .. 6 (Sáb)
+  const diffToMonday = (day + 6) % 7; // días desde lunes
+  const weekStart = new Date(now);
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(now.getDate() - diffToMonday);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  return { weekStart, weekEnd };
+
+}
+
+
 export function getRiskParamsFromChallenge(
   challenge: Challenge,
   slugs: string[],

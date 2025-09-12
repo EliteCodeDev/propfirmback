@@ -21,7 +21,7 @@
 //     this.logger.log('BusinessDataExtractorJob inicializado');
 //     // No ejecutar al inicio - solo cuando haya datos en el buffer
 //     this.logger.debug(
-//       'Job configurado para ejecutarse cada 30 segundos cuando haya cuentas en el buffer',
+//       'Job configurado para ejecutarse cada 3 minutos cuando haya cuentas en el buffer',
 //     );
 //   }
 

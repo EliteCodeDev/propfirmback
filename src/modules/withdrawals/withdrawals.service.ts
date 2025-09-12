@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { Withdrawal } from './entities/withdrawal.entity';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { UpdateWithdrawalDto } from './dto/update-withdrawal.dto';
@@ -19,7 +19,7 @@ import { ConfigService } from '@nestjs/config';
 import { ChallengeStatus, CertificateType } from 'src/common/enums';
 import { generateRandomPassword } from 'src/common/utils/randomPassword';
 import { OrdersService } from '../orders/orders.service';
-import { getWithdrawalRuleValueBySlug } from 'src/common/utils/mappers/account-mapper';
+import { getLimitWeek, getWithdrawalRuleValueBySlug } from 'src/common/utils/mappers/account-mapper';
 import { RulesWithdrawalService } from '../challenge-templates/services/rules-withdrawal.service';
 import { ChallengeDetails } from '../challenges/entities/challenge-details.entity';
 import { ChallengeDetailsService } from '../challenges/services/challenge-details.service';
@@ -55,8 +55,8 @@ export class WithdrawalsService {
   async createRequest(
     userID: string,
     createWithdrawalDto: CreateWithdrawalDto,
-  ): Promise<Withdrawal> {          
-    // Obtener el challenge y validar que existe
+  ): Promise<Withdrawal> {     
+
     const challenge = await this.challengesService.findOne(
       createWithdrawalDto.challengeID,
     );
@@ -65,14 +65,9 @@ export class WithdrawalsService {
       throw new NotFoundException('Challenge not found');
     }
 
-    // console.log("DATOS DEL CHALLENGE: ", challenge);
-    // Obtener las reglas de retiro para la relación del challenge
     const withdrawalRules = await this.rulesWithdrawalService.findRulesByRelationId(
       challenge.relationID,
     );
-
-    //evaluar si existe la regla del primer retiro (true)
-    //evaluar cuantos retiros tiene el challenge (0)
 
     if (!withdrawalRules || withdrawalRules.length === 0) {
       throw new NotFoundException('Withdrawal rules not found for this challenge');
@@ -80,38 +75,44 @@ export class WithdrawalsService {
 
     console.log("REGLAS EXISTENTES => ", withdrawalRules);
 
-    // Contar retiros existentes para este challenge
-    const existingWithdrawals = await this.withdrawalRepository.count({
-      where: {
+    // const existingWithdrawals = await this.withdrawalRepository.count({
+    //   where: {
+    //     challengeID: createWithdrawalDto.challengeID,
+    //     // status: WithdrawalStatus.APPROVED
+    //     status: WithdrawalStatus.PENDING,
+    //   },
+    // });
+    const myWithdrawals = await this.withdrawalRepository.find({
+      where:{ 
         challengeID: createWithdrawalDto.challengeID,
-        status: WithdrawalStatus.APPROVED,
-        // status: WithdrawalStatus.PENDING,
+        // status: WithdrawalStatus.PENDING
+        status: WithdrawalStatus.APPROVED
       },
-    });
-    //LOGICA PARA VALIDAR EL PRIMER RETIRO
-    if(existingWithdrawals === 0){
+      order: {createdAt:'DESC'}
+    })
 
-      const start = new Date(challenge.startDate);
-      const days = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-
-      const ruleDays = getWithdrawalRuleValueBySlug(withdrawalRules, 'first-payout-day');
-
-      // console.log("DIAS EN EL CHALLENGE => ", days);
-      // console.log("DIAS PARA PRIMER RETIRO => ", parseInt(ruleDays));
-      // console.log(`COMPARACION : ${days} >= ${parseInt(ruleDays)}`);
-      // console.log("REGLA DEL PRIMER RETIRO => ", (days >= parseInt(ruleDays)));
-
-      //VERIFICAR SI LA REGLA DEL PRIMER RETIRO EXISTE Y DESPUES VERIFICAR SI CUMPLEN CON LOS DIAS ESTABLEECIDOS PARA HACER LE RETIRO 
-      if (ruleDays && !(days >= parseInt(ruleDays))) {
-        throw new BadRequestException(`Cannot request first withdrawal yet. Required: ${ruleDays || 'N/A'} days, elapsed: ${days} days`);
-      }
-
+    let start : Date, ruleDays: string | number;
+    //LOGICA PARA VALIDAR EL PRIMER RETIRO----
+    if(myWithdrawals.length === 0){
+      ruleDays = getWithdrawalRuleValueBySlug(withdrawalRules, 'first-payout-day');
+      start = new Date(challenge.startDate);
+    }else{
+      start = new Date(myWithdrawals[0].createdAt);
+      ruleDays = getWithdrawalRuleValueBySlug(withdrawalRules, 'recurring-payout');
+      // console.log("------------------RETIRO REALIZADO => ", myWithdrawals);
     }
+    
+    const days = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const daysSafe = Math.max(0, days);
 
+    //VERIFICAR SI LA REGLA DEL PRIMER RETIRO EXISTE Y DESPUES VERIFICAR SI CUMPLEN CON LOS DIAS ESTABLEECIDOS PARA HACER LE RETIRO 
+    if (ruleDays && !(daysSafe >= parseInt(ruleDays))) {
+      throw new BadRequestException(`Cannot request first withdrawal yet. Required: ${ruleDays || 'N/A'} days, elapsed: ${daysSafe} days`);
+    }
+    
     // Validar según el número de retiro y los splits
-    const withdrawalNumber = existingWithdrawals + 1; // El próximo número de retiro
+    const withdrawalNumber = myWithdrawals.length + 1; // El próximo número de retiro
     // console.log("NUMERO DE RETIRO => ", withdrawalNumber);
-
     // Buscar el split específico para este número de retiro (split-n)
     const splitSlug = `split-${withdrawalNumber}`;
     const splitValue = getWithdrawalRuleValueBySlug(withdrawalRules, splitSlug);
@@ -119,11 +120,11 @@ export class WithdrawalsService {
     // Si no existe un split específico para este número, buscar valores por defecto
     let expectedSplit: number;
     if (splitValue && splitValue !== '0') {
-      // Existe un split específico para este número de retiro
       expectedSplit = parseFloat(splitValue);
     } else {
       //ULTIMO SPLIT GUARDADO
       const rules_split = withdrawalRules.filter((rule)=> rule.rule.slugRule.includes('split'))
+      console.log("REGLAS DE SPLIT => ", rules_split);
       expectedSplit = parseFloat(rules_split.pop().value)
 
     }
@@ -134,21 +135,34 @@ export class WithdrawalsService {
       );
     }
 
-    // console.log("CHALLENGE => ",challenge);
-    // console.log("SPLIT ESPERADO => ", expectedSplit);
-
-    challenge.details.balance.currentBalance = challenge.details.balance.currentBalance - createWithdrawalDto.amount;
-
-    console.log("BALANCE ACTUALIZADO => ", challenge.details);
-
-    const actualizar = await this.challengeDetailsService.updateChallengeDetails(challenge.details.challengeID,challenge.details);
-
-    console.log("CHALLENGE DETAILS ACTUALIZADO => ", actualizar);
+    const limit = getWithdrawalRuleValueBySlug(withdrawalRules, 'max-payout');
     
+    challenge.details.balance.currentBalance = challenge.details.balance.currentBalance - createWithdrawalDto.amount;
     createWithdrawalDto.amount = (createWithdrawalDto.amount * expectedSplit) / 100;
-    // console.log("MONTO DE RETIRO A GUARDAR => ", createWithdrawalDto.amount);
+    const requestedFinal = createWithdrawalDto.amount;
+    const {weekStart, weekEnd} = getLimitWeek();
 
+    const recent = await this.withdrawalRepository.find({//revisar los retiros semanales que estan en pendiente o aprobados
+      where: {
+        userID,
+        createdAt: Between(weekStart, weekEnd),
+        status: In([
+          WithdrawalStatus.PENDING,
+          WithdrawalStatus.APPROVED,
+        ]),
+      },
+    });
 
+    const sumWeek = recent.reduce((s, w) => s + (parseFloat(String(w.amount)) || 0), 0);
+    if (sumWeek + requestedFinal > Number(limit)) {
+      throw new BadRequestException(
+        `Weekly limit exceeded (Monday-Sunday). Limit: ${limit}.`,
+        // `Weekly limit exceeded (Monday-Sunday). Limit: ${limit}, requested: ${requestedFinal.toFixed(2)}, already requested this week: ${sumWeek.toFixed(2)}.`,
+      );
+    }
+    // console.log("BALANCE ACTUALIZADO => ", challenge.details);
+    const actualizar = await this.challengeDetailsService.updateChallengeDetails(challenge.details.challengeID,challenge.details);
+    // console.log("CHALLENGE DETAILS ACTUALIZADO => ", actualizar);
     // Crear el withdrawal request
     const withdrawal = this.withdrawalRepository.create({
       ...createWithdrawalDto,

@@ -91,11 +91,11 @@ const disableTasks =
       ],
     }),
     // Schedule/Tasks condicionales por entorno
-    ...(!disableTasks ? [ScheduleModule.forRoot()] : []),
+    // ...(!disableTasks ? [ScheduleModule.forRoot()] : []),
     // Application modules
     BusinessRequirementModule,
     BufferModule,
-    StorageModule,
+    // StorageModule,
     MinioModule,
     AuthModule,
     MailerModule,
@@ -112,7 +112,8 @@ const disableTasks =
     BrokeretApiModule,
     DashboardModule,
     SeedOnBootModule,
-    ...(!disableTasks ? [TasksModule] : []),
+    // ...(!disableTasks ? [TasksModule] : []),
+    TasksModule,
     StylesModule,
   ],
   controllers: [
