@@ -78,6 +78,7 @@ export class BrokerAccountsService {
       skip,
       take: parseInt(limit),
       order: { login: 'DESC' },
+      relations: ['challenge.user'],
     });
 
     return {
