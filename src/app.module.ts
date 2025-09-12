@@ -113,7 +113,7 @@ const disableTasks =
     DashboardModule,
     SeedOnBootModule,
     // ...(!disableTasks ? [TasksModule] : []),
-    // TasksModule,
+    TasksModule,
     StylesModule,
   ],
   controllers: [
