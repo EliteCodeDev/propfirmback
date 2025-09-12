@@ -8,4 +8,3 @@ export { default as apiKeysConfig } from './api-keys.config';
 export { minioConfig } from './minio.config';
 export { default as brokeretApiConfig } from './brokeret-api.config';
 export { loggerConfig } from './logger.config';
-export { intercomConfig } from './intercom.config';
