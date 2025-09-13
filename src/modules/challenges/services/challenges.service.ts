@@ -38,6 +38,12 @@ import { CreateBrokerAccountDto } from '../../broker-accounts/dto/create-broker-
 import { CreateAccountDto } from '../../data/brokeret-api/dto/create-account.dto';
 import { CreationFazoClient } from '../../data/brokeret-api/client/creation-fazo.client';
 import { BrokeretApiClient } from '../../data/brokeret-api/client/brokeret-api.client';
+import { ChallengeDetails } from '../entities/challenge-details.entity';
+import { Certificate } from '../../certificates/entities/certificate.entity';
+import { CustomerOrder } from '../../orders/entities/customer-order.entity';
+import { Withdrawal } from '../../withdrawals/entities/withdrawal.entity';
+import { ChallengeAddon } from 'src/modules/challenge-templates/entities/addons/challenge-addon.entity';
+import { BrokerAccount } from '../../broker-accounts/entities/broker-account.entity';
 @Injectable()
 export class ChallengesService {
   private readonly logger = new Logger(ChallengesService.name);
@@ -294,6 +300,16 @@ export class ChallengesService {
 
     return challenge;
   }
+
+  /**
+   * Helper: find challenge by brokerAccountID
+   */
+  async findByBrokerAccountId(brokerAccountID: string): Promise<Challenge | null> {
+    return this.challengeRepository.findOne({
+      where: { brokerAccountID },
+      relations: ['user', 'relation', 'parent', 'brokerAccount', 'details'],
+    });
+  }
   async getWithdrawalConditions(id: string) {
     const challenge = await this.findOne(id);
     const relation = await this.challengeTemplatesService.findWithdrawalrules(
@@ -316,6 +332,67 @@ export class ChallengesService {
   async remove(id: string): Promise<void> {
     const challenge = await this.findOne(id);
     await this.challengeRepository.remove(challenge);
+  }
+
+  /**
+   * Anti-chucho delete:
+   * Deletes challenge with its details and related child rows, and its broker account,
+   * only if the linked broker login starts with '0_'. All within a transaction.
+   */
+  async removeAntiChucho(id: string): Promise<{ success: boolean; deleted: { challengeID: string; brokerAccountID?: string } }> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const challenge = await queryRunner.manager.findOne(Challenge, {
+        where: { challengeID: id },
+        relations: ['brokerAccount'],
+      });
+
+      if (!challenge) {
+        throw new NotFoundException('Challenge not found');
+      }
+
+      const brokerAccount = challenge.brokerAccount
+        ? await queryRunner.manager.findOne(BrokerAccount, {
+            where: { brokerAccountID: challenge.brokerAccount.brokerAccountID },
+          })
+        : null;
+
+      // Broker account may not exist; proceed to delete challenge and details regardless.
+
+      // Delete related child rows referencing challengeID
+  await queryRunner.manager.delete(ChallengeAddon, { challengeID: id });
+      await queryRunner.manager.delete(Certificate, { challengeID: id });
+      await queryRunner.manager.delete(CustomerOrder, { challengeID: id });
+      await queryRunner.manager.delete(Withdrawal, { challengeID: id });
+      await queryRunner.manager.delete(ChallengeDetails, { challengeID: id });
+
+      // Remove the challenge first (it holds FK to brokerAccount)
+      await queryRunner.manager.delete(Challenge, { challengeID: id });
+
+      // Then remove the broker account if exists
+      if (brokerAccount?.brokerAccountID) {
+        await queryRunner.manager.delete(BrokerAccount, {
+          brokerAccountID: brokerAccount.brokerAccountID,
+        });
+      }
+
+      await queryRunner.commitTransaction();
+      return {
+        success: true,
+        deleted: {
+          challengeID: id,
+          brokerAccountID: brokerAccount?.brokerAccountID,
+        },
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async setApprovedChallenge(id: string): Promise<Challenge> {

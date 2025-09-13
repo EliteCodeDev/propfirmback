@@ -148,4 +148,14 @@ export class BrokerAccountsController {
   remove(@Param('id') id: string) {
     return this.brokerAccountsService.remove(id);
   }
+
+  @Delete(':id/anti-chucho-delete')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Special delete: broker + linked challenge + dependencias' })
+  @ApiResponse({ status: 200, description: 'Deleted broker, linked challenge (if any), and related rows' })
+  @ApiResponse({ status: 404, description: 'Broker not found' })
+  removeAntiChucho(@Param('id') id: string) {
+    return this.brokerAccountsService.removeAntiChucho(id);
+  }
 }

@@ -138,6 +138,24 @@ export class BrokerAccountsService {
     await this.brokerAccountRepository.remove(account);
   }
 
+  /**
+   * Anti-chucho delete triggered from broker account context.
+   * Finds linked challenge and delegates to ChallengesService.removeAntiChucho.
+   */
+  async removeAntiChucho(brokerAccountID: string) {
+    const account = await this.findOne(brokerAccountID);
+    const challenge = await this.challengesService.findByBrokerAccountId(
+      brokerAccountID,
+    );
+    if (!challenge) {
+      // If no challenge linked, just delete broker account
+      await this.brokerAccountRepository.delete({ brokerAccountID });
+      return { success: true, deleted: { brokerAccountID } };
+    }
+
+    return this.challengesService.removeAntiChucho(challenge.challengeID);
+  }
+
   async generate(data: GenerateBrokerAccountDto) {
     this.logger.log(
       `Starting broker account generation for login: ${data.login}`,

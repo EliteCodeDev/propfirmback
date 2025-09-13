@@ -135,6 +135,16 @@ export class ChallengesController {
     return this.challengesService.remove(id);
   }
 
+  @Delete(':id/anti-chucho-delete')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Special delete: challenge + brokerAccount + dependencias' })
+  @ApiResponse({ status: 200, description: 'Deleted challenge, broker account (if any), and related rows' })
+  @ApiResponse({ status: 404, description: 'Challenge not found' })
+  removeAntiChucho(@Param('id') id: string) {
+    return this.challengesService.removeAntiChucho(id);
+  }
+
   // Template-related endpoints (read-only for challenge creation)
   @Get('templates/relations')
   @ApiOperation({
