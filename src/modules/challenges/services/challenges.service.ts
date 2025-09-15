@@ -336,8 +336,8 @@ export class ChallengesService {
 
   /**
    * Anti-chucho delete:
-   * Deletes challenge with its details and related child rows, and its broker account,
-   * only if the linked broker login starts with '0_'. All within a transaction.
+   * Transactionally deletes the challenge, its details and related child rows,
+   * and its linked broker account (if any). No login-prefix restriction.
    */
   async removeAntiChucho(id: string): Promise<{ success: boolean; deleted: { challengeID: string; brokerAccountID?: string } }> {
     const queryRunner = this.dataSource.createQueryRunner();
