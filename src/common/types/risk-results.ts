@@ -21,6 +21,11 @@ export interface consecutiveInactiveDaysResult {
   inactiveDays: number;
   status: boolean;
 }
+export interface globalConsistencyResult {
+  status: boolean;
+  consistencyPercentage: number;
+  violatingPositions?: ClosedPosition[];
+}
 export interface riskEvaluationResult {
   status: boolean;
   profitTarget: profitTargetResult;
@@ -28,4 +33,5 @@ export interface riskEvaluationResult {
   maxDrawdown: dailyTotalDrawdownResult;
   tradingDays: tradingDaysResult;
   inactiveDays: consecutiveInactiveDaysResult;
+  globalConsistency: globalConsistencyResult;
 }

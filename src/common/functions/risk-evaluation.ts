@@ -7,6 +7,7 @@ import {
 } from './index';
 import { riskEvaluationResult } from '../types/risk-results';
 import { ClosedPosition } from '../utils/positions';
+import { calculateGlobalConsistency } from './global-consistency';
 
 export function riskEvaluation(
   account: Account,
@@ -34,7 +35,16 @@ export function riskEvaluation(
     openPositions.positions,
     closedPositions.positions as ClosedPosition[],
   );
-  
+  // const globalConsistency = calculateGlobalConsistency(
+  //   closedPositions.positions as ClosedPosition[],
+  //   balance.initialBalance,
+  //   1,
+  // );
+  const globalConsistency = calculateGlobalConsistency(
+    account.equity || balance.currentBalance,
+    balance.initialBalance,
+    1,
+  );
   // Asegurar que createDateTime sea un objeto Date válido
   let createDateTime: Date;
   try {
@@ -55,7 +65,7 @@ export function riskEvaluation(
     // En caso de error en el parseo, usar fecha actual
     createDateTime = new Date();
   }
-    
+
   const inactiveDays = consecutiveInactiveDays(
     openPositions.positions,
     closedPositions.positions as ClosedPosition[],
@@ -68,6 +78,7 @@ export function riskEvaluation(
       dailyDrawdown.status &&
       maxDrawdown.status &&
       tradingDays.status &&
+      globalConsistency.status &&
       inactiveDays.status,
 
     profitTarget,
@@ -75,5 +86,6 @@ export function riskEvaluation(
     maxDrawdown,
     tradingDays,
     inactiveDays,
+    globalConsistency,
   };
 }
