@@ -208,7 +208,8 @@ export class RulesEvaluationJob {
       const isDissaprovable = !(
         riskEvaluation.dailyDrawdown.status ||
         riskEvaluation.maxDrawdown.status ||
-        riskEvaluation.inactiveDays.status
+        riskEvaluation.inactiveDays.status || 
+        riskEvaluation.globalConsistency.status
       );
       // Lógica para cuenta desaprobada
       if (isDissaprovable) {
