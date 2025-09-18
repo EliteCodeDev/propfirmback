@@ -5,7 +5,7 @@ import {
   Logger,
   Inject,
   forwardRef,
-  HttpException
+  HttpException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
@@ -144,9 +144,8 @@ export class BrokerAccountsService {
    */
   async removeAntiChucho(brokerAccountID: string) {
     const account = await this.findOne(brokerAccountID);
-    const challenge = await this.challengesService.findByBrokerAccountId(
-      brokerAccountID,
-    );
+    const challenge =
+      await this.challengesService.findByBrokerAccountId(brokerAccountID);
     if (!challenge) {
       // If no challenge linked, just delete broker account
       await this.brokerAccountRepository.delete({ brokerAccountID });
@@ -220,11 +219,11 @@ export class BrokerAccountsService {
       this.logger.log(
         'Creating broker account and challenge through orders service',
       );
-      const challengeRes = await this.ordersService.createBrokerAndChallenge(
-        brokerAccountDto,
+      const challengeRes = await this.ordersService.createBrokerAndChallenge({
+        credentials: brokerAccountDto,
         user,
         relation,
-      );
+      });
 
       if (!challengeRes || !challengeRes.data) {
         this.logger.error('Failed to create broker account and challenge');

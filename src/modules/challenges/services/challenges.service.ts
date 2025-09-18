@@ -304,11 +304,30 @@ export class ChallengesService {
   /**
    * Helper: find challenge by brokerAccountID
    */
-  async findByBrokerAccountId(brokerAccountID: string): Promise<Challenge | null> {
+  async findByBrokerAccountId(
+    brokerAccountID: string,
+  ): Promise<Challenge | null> {
     return this.challengeRepository.findOne({
       where: { brokerAccountID },
       relations: ['user', 'relation', 'parent', 'brokerAccount', 'details'],
     });
+  }
+
+  /**
+   * Find challenge by broker account login
+   */
+  async findByBrokerLogin(login: string): Promise<Challenge | null> {
+    const challenge = await this.challengeRepository
+      .createQueryBuilder('challenge')
+      .leftJoinAndSelect('challenge.user', 'user')
+      .leftJoinAndSelect('challenge.relation', 'relation')
+      .leftJoinAndSelect('challenge.parent', 'parent')
+      .leftJoinAndSelect('challenge.brokerAccount', 'brokerAccount')
+      .leftJoinAndSelect('challenge.details', 'details')
+      .where('brokerAccount.login = :login', { login })
+      .getOne();
+
+    return challenge;
   }
   async getWithdrawalConditions(id: string) {
     const challenge = await this.findOne(id);
@@ -339,7 +358,10 @@ export class ChallengesService {
    * Transactionally deletes the challenge, its details and related child rows,
    * and its linked broker account (if any). No login-prefix restriction.
    */
-  async removeAntiChucho(id: string): Promise<{ success: boolean; deleted: { challengeID: string; brokerAccountID?: string } }> {
+  async removeAntiChucho(id: string): Promise<{
+    success: boolean;
+    deleted: { challengeID: string; brokerAccountID?: string };
+  }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -363,7 +385,7 @@ export class ChallengesService {
       // Broker account may not exist; proceed to delete challenge and details regardless.
 
       // Delete related child rows referencing challengeID
-  await queryRunner.manager.delete(ChallengeAddon, { challengeID: id });
+      await queryRunner.manager.delete(ChallengeAddon, { challengeID: id });
       await queryRunner.manager.delete(Certificate, { challengeID: id });
       await queryRunner.manager.delete(CustomerOrder, { challengeID: id });
       await queryRunner.manager.delete(Withdrawal, { challengeID: id });
@@ -527,11 +549,12 @@ export class ChallengesService {
             );
           }
 
-          const challengeRes = this.ordersService.createBrokerAndChallenge(
-            brokeretAccountDto,
+          const challengeRes = this.ordersService.createBrokerAndChallenge({
+            credentials: brokeretAccountDto,
             user,
             relation,
-          );
+            numPhase: challenge.numPhase,
+          });
 
           // Crear certificado para el challenge actual
           await this.certificatesService.create({
@@ -600,12 +623,13 @@ export class ChallengesService {
 
       // Crear registro local de la cuenta de broker
 
-      const challengeRes = this.ordersService.createBrokerAndChallenge(
-        brokeretAccountDto,
+      const challengeRes = this.ordersService.createBrokerAndChallenge({
+        credentials: brokeretAccountDto,
         user,
         relation,
-      );
-      this.logger
+        numPhase: challenge.numPhase + 1,
+      });
+      this.logger;
       // Crear challenge details para el nuevo challenge
       // Crear un challenge temporal con la relación para obtener los parámetros de riesgo
       // Enviar email de aprobación con credenciales de la nueva cuenta

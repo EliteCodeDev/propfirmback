@@ -58,6 +58,16 @@ import { mapChallengeToAccount } from 'src/common/utils/mappers/account-mapper';
 import { error } from 'console';
 import { CreateAccountResponse } from '../data/brokeret-api/types/response.type';
 
+// Interface para parámetros de createBrokerAndChallenge
+export interface CreateBrokerAndChallengeParams {
+  credentials: any;
+  user: any;
+  relation: ChallengeRelation;
+  addons?: RelationAddon[];
+  parentID?: string;
+  numPhase?: number;
+}
+
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -233,12 +243,12 @@ export class OrdersService {
         await this.relationAddonService.getAddonsByArray(orderAddons);
     }
     // Create broker account and challenge using the separated function
-    const challengeRes = await this.createBrokerAndChallenge(
+    const challengeRes = await this.createBrokerAndChallenge({
       credentials,
       user,
       relation,
-      relationAddons,
-    );
+      addons: relationAddons,
+    });
 
     this.logger.log('Challenge creation result:', challengeRes);
     if (!challengeRes.data) {
@@ -486,12 +496,9 @@ export class OrdersService {
   }
 
   async createBrokerAndChallenge(
-    credentials: any,
-    user: any,
-    relation: ChallengeRelation,
-    addons?: RelationAddon[],
-    parentID?: string,
+    params: CreateBrokerAndChallengeParams,
   ): Promise<ServiceResult<Challenge>> {
+    const { credentials, user, relation, addons, parentID, numPhase } = params;
     try {
       // broker account creation
       let brokerAccount;
@@ -517,8 +524,9 @@ export class OrdersService {
           userID: user.userID,
           relationID: relation.relationID,
           startDate: new Date(),
-          numPhase: relation.stages.sort((a, b) => a.numPhase - b.numPhase)[0]
-            .numPhase,
+          numPhase:
+            numPhase ||
+            relation.stages.sort((a, b) => a.numPhase - b.numPhase)[0].numPhase,
           isActive: true,
           status: ChallengeStatus.INNITIAL,
         };

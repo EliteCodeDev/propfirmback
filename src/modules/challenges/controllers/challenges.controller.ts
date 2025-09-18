@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -117,8 +118,30 @@ export class ChallengesController {
   findOne(@Param('id') id: string) {
     return this.challengesService.findOne(id);
   }
+  @Get('by-login/:login')
+  @ApiOperation({ summary: 'Get challenge by broker account login' })
+  @ApiResponse({
+    status: 200,
+    description: 'Challenge found successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Challenge not found for the given login',
+  })
+  async findByBrokerLogin(@Param('login') login: string) {
+    const challenge = await this.challengesService.findByBrokerLogin(login);
+
+    if (!challenge) {
+      throw new NotFoundException(
+        `Challenge not found for broker login: ${login}`,
+      );
+    }
+
+    return challenge;
+  }
 
   @Patch(':id')
+  @Public()
   @ApiOperation({ summary: 'Update challenge' })
   update(
     @Param('id') id: string,
@@ -138,8 +161,13 @@ export class ChallengesController {
   @Delete(':id/anti-chucho-delete')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  @ApiOperation({ summary: 'Special delete: challenge + brokerAccount + dependencias' })
-  @ApiResponse({ status: 200, description: 'Deleted challenge, broker account (if any), and related rows' })
+  @ApiOperation({
+    summary: 'Special delete: challenge + brokerAccount + dependencias',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Deleted challenge, broker account (if any), and related rows',
+  })
   @ApiResponse({ status: 404, description: 'Challenge not found' })
   removeAntiChucho(@Param('id') id: string) {
     return this.challengesService.removeAntiChucho(id);
