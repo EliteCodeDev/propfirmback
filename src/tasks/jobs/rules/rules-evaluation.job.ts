@@ -14,7 +14,7 @@ export class RulesEvaluationJob {
     private readonly customLogger: CustomLoggerService,
   ) {}
 
-  @Cron('20,50 * * * * *')
+  @Cron('20,50 */3 * * * *')
   async evaluate() {
     const startTime = Date.now();
 

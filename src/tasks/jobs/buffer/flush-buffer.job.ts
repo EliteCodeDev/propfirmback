@@ -38,7 +38,7 @@ export class FlushBufferJob {
   ) {}
 
   // Cada minuto en el segundo 30 para persistir datos actualizados
-  @Cron('30 * * * * *')
+  @Cron('30 */3 * * * *')
   async flush() {
     const startTime = Date.now();
     this.logger.debug('FlushBufferJob: iniciando flush optimizado...');
