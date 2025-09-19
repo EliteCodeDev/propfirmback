@@ -7,6 +7,7 @@ import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-details.entity';
 import { Account } from 'src/common/utils';
 import { CustomLoggerService } from 'src/common/services/custom-logger.service';
+import { ChallengeStatus } from 'src/common/enums';
 
 @Injectable()
 export class FlushBufferJob {
@@ -277,6 +278,7 @@ export class FlushBufferJob {
 
       // Prepare bulk upsert data
       const challengeDetailsToSave: DeepPartial<ChallengeDetails>[] = [];
+      const challengesToUpdateStatus: { challengeID: string; status: ChallengeStatus }[] = [];
       const accountsToMarkClean: Account[] = [];
 
       for (const { login, account } of accountEntries) {
@@ -298,6 +300,22 @@ export class FlushBufferJob {
           // Extract positions from the PositionsClassType structure
           const openPositions = account.openPositions?.positions ?? [];
           const closedPositions = account.closedPositions?.positions ?? [];
+          if (
+            (openPositions.length > 0 || closedPositions.length > 0) &&
+            account.status === ChallengeStatus.INNITIAL
+          ) {
+            account.status = ChallengeStatus.IN_PROGRESS;
+            
+            // Agregar el challenge a la lista para actualizar su status en la base de datos
+            challengesToUpdateStatus.push({
+              challengeID: challenge.challengeID,
+              status: ChallengeStatus.IN_PROGRESS
+            });
+
+            this.logger.debug(
+              `FlushBufferJob: Challenge status actualizado a IN_PROGRESS para login=${login}, challengeID=${challenge.challengeID}`,
+            );
+          }
 
           const payload: DeepPartial<ChallengeDetails> = {
             challengeID: challenge.challengeID,
@@ -336,6 +354,39 @@ export class FlushBufferJob {
           `FlushBufferJob: batch ${batchIndex + 1} completado - ` +
             `persistido=${persisted} omitido=${skipped} fallido=${failed}`,
         );
+      }
+
+      // Bulk update challenge status for this batch
+      if (challengesToUpdateStatus.length > 0) {
+        try {
+          const challengeIDs = challengesToUpdateStatus.map(c => c.challengeID);
+          const status = challengesToUpdateStatus[0].status; // All have the same status in this case
+          
+          await this.challengeRepo.update(
+            { challengeID: In(challengeIDs) },
+            { status: status }
+          );
+
+          this.logger.debug(
+            `FlushBufferJob: actualizados ${challengesToUpdateStatus.length} challenges a status ${status}`,
+          );
+
+          this.customLogger.logBufferTimeline(
+            'FlushBufferJob',
+            {
+              action: 'challenge_status_update',
+              metadata: { 
+                updatedChallenges: challengesToUpdateStatus.length,
+                newStatus: status
+              }
+            },
+            `Updated ${challengesToUpdateStatus.length} challenges to status ${status}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `FlushBufferJob: error actualizando status de challenges: ${error?.message || error}`,
+          );
+        }
       }
     } catch (error) {
       this.logger.error(
