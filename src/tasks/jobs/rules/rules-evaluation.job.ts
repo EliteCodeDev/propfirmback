@@ -65,11 +65,11 @@ export class RulesEvaluationJob {
         try {
           // Recrear instancia de Account para restaurar métodos de clase
           const accountInstance = this.recreateAccountInstance(account);
-          
+
           // ✅ OPTIMIZACIÓN: Saltar evaluación si la cuenta no ha cambiado
           if (!accountInstance.isDirty()) {
             this.logger.debug(
-              `RulesEvaluationJob: Saltando evaluación para ${login} - sin cambios detectados`
+              `RulesEvaluationJob: Saltando evaluación para ${login} - sin cambios detectados`,
             );
             skippedCount++;
             continue;
@@ -208,7 +208,7 @@ export class RulesEvaluationJob {
       const isDissaprovable = !(
         riskEvaluation.dailyDrawdown.status ||
         riskEvaluation.maxDrawdown.status ||
-        riskEvaluation.inactiveDays.status || 
+        riskEvaluation.inactiveDays.status ||
         riskEvaluation.globalConsistency.status
       );
       // Lógica para cuenta desaprobada
@@ -244,10 +244,10 @@ export class RulesEvaluationJob {
   private recreateAccountInstance(accountData: any): Account {
     // Crear nueva instancia de Account
     const account = new Account(accountData.accountID, accountData.login);
-    
+
     // Copiar todas las propiedades del objeto plano
     Object.assign(account, accountData);
-    
+
     // Asegurar que las fechas sean objetos Date apropiados
     if (accountData.createDateTime) {
       account.createDateTime = new Date(accountData.createDateTime);
@@ -255,7 +255,7 @@ export class RulesEvaluationJob {
     if (accountData.lastUpdate) {
       account.lastUpdate = new Date(accountData.lastUpdate);
     }
-    
+
     return account;
   }
 }

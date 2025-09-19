@@ -40,7 +40,7 @@ export class ChallengeDetails {
     nullable: true,
     transformer: jsonStringTransformer<Balance>(),
   })
-  balance: Balance
+  balance: Balance;
 
   @Column({
     type: 'text',

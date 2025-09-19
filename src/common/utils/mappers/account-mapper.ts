@@ -63,7 +63,6 @@ export function getWithdrawalRuleValueBySlug(
 }
 
 export function getLimitWeek() {
-
   const now = new Date();
   // calcular inicio de semana (lunes)
   const day = now.getDay(); // 0 (Dom) .. 6 (Sáb)
@@ -76,9 +75,7 @@ export function getLimitWeek() {
   weekEnd.setHours(23, 59, 59, 999);
 
   return { weekStart, weekEnd };
-
 }
-
 
 export function getRiskParamsFromChallenge(
   challenge: Challenge,
@@ -371,6 +368,7 @@ export function mapChallengeDetailsToAccount(
         winRate: 0,
       };
       account.metaStats.numTrades = metaStatsData.numTrades || 0;
+      account.metaStats.tradingDays = metaStatsData.tradingDays || 0;
 
       // Actualizar equity de la cuenta
       if (metaStatsData.equity) {
@@ -522,11 +520,9 @@ export function mapChallengesToBasicAccounts(
               // challenge.dynamicBalance ||
               // challenge.brokerAccount.innitialBalance ||
               10,
-            dailyBalance:
-              challenge.details?.balance?.dailyBalance ?? 0,
-              // challenge.dynamicBalance ||
-              // challenge.brokerAccount.innitialBalance ||
-              
+            dailyBalance: challenge.details?.balance?.dailyBalance ?? 0,
+            // challenge.dynamicBalance ||
+            // challenge.brokerAccount.innitialBalance ||
           },
           equity:
             challenge.details?.metaStats?.equity ||

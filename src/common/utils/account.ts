@@ -190,7 +190,7 @@ export class MetaStats {
   maxMinBalance: MaxMinBalance;
   averageMetrics: AverageMetrics;
   numTrades: number;
-  
+  tradingDays?: number;
 }
 export class positionsDetails {
   openPositions: OpenPosition[];
