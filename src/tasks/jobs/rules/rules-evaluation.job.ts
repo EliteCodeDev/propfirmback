@@ -195,6 +195,7 @@ export class RulesEvaluationJob {
     accountStatus: ChallengeStatus,
   ): Promise<ChallengeStatus> {
     const status = riskEvaluation.status;
+
     let challengeStatus = accountStatus;
     if (status && challengeStatus !== ChallengeStatus.DISAPPROVABLE) {
       // Lógica para cuenta aprobada
@@ -205,12 +206,49 @@ export class RulesEvaluationJob {
       );
       // Aquí puedes llamar a TasksService.approvedChallenge() si es necesario
     } else {
-      const isDissaprovable = !(
-        riskEvaluation.dailyDrawdown.status ||
-        riskEvaluation.maxDrawdown.status ||
-        riskEvaluation.inactiveDays.status ||
-        riskEvaluation.globalConsistency.status
+      // Una cuenta es desaprobable si alguna regla crítica falla (status: false) 
+      // y tiene un valor válido (no null)
+      const isDissaprovable = 
+        (!riskEvaluation.dailyDrawdown.status && riskEvaluation.dailyDrawdown.drawdown !== null) ||
+        (!riskEvaluation.maxDrawdown.status && riskEvaluation.maxDrawdown.drawdown !== null) ||
+        (!riskEvaluation.inactiveDays.status && riskEvaluation.inactiveDays.inactiveDays !== null) ||
+        (!riskEvaluation.globalConsistency.status && riskEvaluation.globalConsistency.consistencyPercentage !== null);
+
+      // Log detallado del estado de cada regla de riesgo
+      this.logger.debug('Estado detallado de evaluación de riesgo:', {
+        dailyDrawdown: {
+          status: riskEvaluation.dailyDrawdown.status,
+          value: riskEvaluation.dailyDrawdown.drawdown,
+        },
+        maxDrawdown: {
+          status: riskEvaluation.maxDrawdown.status,
+          value: riskEvaluation.maxDrawdown.drawdown,
+        },
+        inactiveDays: {
+          status: riskEvaluation.inactiveDays.status,
+          value: riskEvaluation.inactiveDays.inactiveDays,
+        },
+        globalConsistency: {
+          status: riskEvaluation.globalConsistency.status,
+          percentage: riskEvaluation.globalConsistency.consistencyPercentage,
+        },
+        tradingDays: {
+          status: riskEvaluation.tradingDays.status,
+          value: riskEvaluation.tradingDays.numDays,
+        },
+        profitTarget: {
+          status: riskEvaluation.profitTarget.status,
+          profit: riskEvaluation.profitTarget.profit,
+          target: riskEvaluation.profitTarget.profitTarget,
+        },
+        overallStatus: riskEvaluation.status,
+        isDissaprovable,
+      });
+
+      this.logger.debug(
+        `Evaluación de riesgo - Cuenta ${isDissaprovable ? 'desaprobada' : 'aprobada'}`,
       );
+
       // Lógica para cuenta desaprobada
       if (isDissaprovable) {
         challengeStatus = ChallengeStatus.DISAPPROVABLE;

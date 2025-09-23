@@ -66,6 +66,7 @@ export interface CreateBrokerAndChallengeParams {
   addons?: RelationAddon[];
   parentID?: string;
   numPhase?: number;
+  isActive?: boolean;
 }
 
 @Injectable()

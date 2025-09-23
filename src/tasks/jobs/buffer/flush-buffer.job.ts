@@ -278,7 +278,10 @@ export class FlushBufferJob {
 
       // Prepare bulk upsert data
       const challengeDetailsToSave: DeepPartial<ChallengeDetails>[] = [];
-      const challengesToUpdateStatus: { challengeID: string; status: ChallengeStatus }[] = [];
+      const challengesToUpdateStatus: {
+        challengeID: string;
+        status: ChallengeStatus;
+      }[] = [];
       const accountsToMarkClean: Account[] = [];
 
       for (const { login, account } of accountEntries) {
@@ -294,9 +297,6 @@ export class FlushBufferJob {
           }
           account.metaStats.tradingDays =
             account.rulesEvaluation.tradingDays.numDays;
-          this.logger.warn(
-            `FlushBufferJob: TradingDays actualizados para login=${login}, tradingDays=${account.metaStats.tradingDays} || numDays=${account.rulesEvaluation.tradingDays.numDays}`,
-          );
           // Extract positions from the PositionsClassType structure
           const openPositions = account.openPositions?.positions ?? [];
           const closedPositions = account.closedPositions?.positions ?? [];
@@ -305,11 +305,11 @@ export class FlushBufferJob {
             account.status === ChallengeStatus.INNITIAL
           ) {
             account.status = ChallengeStatus.IN_PROGRESS;
-            
+
             // Agregar el challenge a la lista para actualizar su status en la base de datos
             challengesToUpdateStatus.push({
               challengeID: challenge.challengeID,
-              status: ChallengeStatus.IN_PROGRESS
+              status: ChallengeStatus.IN_PROGRESS,
             });
 
             this.logger.debug(
@@ -359,12 +359,14 @@ export class FlushBufferJob {
       // Bulk update challenge status for this batch
       if (challengesToUpdateStatus.length > 0) {
         try {
-          const challengeIDs = challengesToUpdateStatus.map(c => c.challengeID);
+          const challengeIDs = challengesToUpdateStatus.map(
+            (c) => c.challengeID,
+          );
           const status = challengesToUpdateStatus[0].status; // All have the same status in this case
-          
+
           await this.challengeRepo.update(
             { challengeID: In(challengeIDs) },
-            { status: status }
+            { status: status },
           );
 
           this.logger.debug(
@@ -375,10 +377,10 @@ export class FlushBufferJob {
             'FlushBufferJob',
             {
               action: 'challenge_status_update',
-              metadata: { 
+              metadata: {
                 updatedChallenges: challengesToUpdateStatus.length,
-                newStatus: status
-              }
+                newStatus: status,
+              },
             },
             `Updated ${challengesToUpdateStatus.length} challenges to status ${status}`,
           );

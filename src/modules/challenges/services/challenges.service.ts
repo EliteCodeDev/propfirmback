@@ -444,20 +444,18 @@ export class ChallengesService {
       const isBeforeFinalPhase = challenge.numPhase === totalPhases - 1;
 
       // Obtener balance para usar en toda la función
-      let challengeBalance;
-      let balance;
-      const brokerAccount = challenge.brokerAccount;
-      if (challenge.dynamicBalance && challenge.dynamicBalance > 0) {
-        // Si hay un dynamicBalance válido, buscar el balance correspondiente
-        challengeBalance = relation.balances.find(
-          (b) => Number(b.balance) === Number(challenge.dynamicBalance),
-        );
-        balance = challengeBalance?.balance || challenge.dynamicBalance;
-      } else {
-        // Si no hay dynamicBalance válido, usar el primer balance disponible
-        challengeBalance = brokerAccount.innitialBalance;
-        balance = brokerAccount.innitialBalance; // Fallback por defecto
-      }
+      const balance = challenge.brokerAccount.innitialBalance;
+      // if (challenge.dynamicBalance && challenge.dynamicBalance > 0) {
+      //   // Si hay un dynamicBalance válido, buscar el balance correspondiente
+      //   challengeBalance = relation.balances.find(
+      //     (b) => Number(b.balance) === Number(challenge.dynamicBalance),
+      //   );
+      //   balance = challengeBalance?.balance || challenge.dynamicBalance;
+      // } else {
+      //   // Si no hay dynamicBalance válido, usar el primer balance disponible
+      //   challengeBalance = brokerAccount.innitialBalance;
+      //   balance = brokerAccount.innitialBalance; // Fallback por defecto
+      // }
 
       // Actualizar datos del challenge
       challenge.status = ChallengeStatus.APPROVED;
@@ -553,7 +551,7 @@ export class ChallengesService {
             credentials: brokeretAccountDto,
             user,
             relation,
-            numPhase: challenge.numPhase,
+            numPhase: challenge.numPhase + 1,
           });
 
           // Crear certificado para el challenge actual
