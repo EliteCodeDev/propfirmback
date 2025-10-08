@@ -215,7 +215,7 @@ export class VerificationService {
 
   private async sendVerificationStatusEmail(
     verification: Verification,
-    newStatus: string,
+    newStatus: VerificationStatus,
   ): Promise<void> {
     try {
       const user = verification.user;

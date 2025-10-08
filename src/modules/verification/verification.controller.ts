@@ -23,6 +23,7 @@ import {
 import { VerificationService } from './verification.service';
 import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
+import { VerificationStatus } from 'src/common/enums/verification-status.enum';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -96,7 +97,7 @@ export class VerificationController {
   @Roles('admin')
   @ApiOperation({ summary: 'Approve verification' })
   approve(@Param('id') id: string) {
-    return this.verificationService.update(id, { status: 'approved' });
+    return this.verificationService.update(id, { status: VerificationStatus.APPROVED });
   }
 
   @Patch(':id/reject')
@@ -105,7 +106,7 @@ export class VerificationController {
   @ApiOperation({ summary: 'Reject verification' })
   reject(@Param('id') id: string, @Body() body: { rejectionReason: string }) {
     return this.verificationService.update(id, {
-      status: 'rejected',
+      status: VerificationStatus.REJECTED,
       rejectionReason: body.rejectionReason,
     });
   }
