@@ -11,4 +11,5 @@ export class UpdateVerificationDto {
   @IsOptional()
   @IsString()
   rejectionReason?: string;
+  
 }
