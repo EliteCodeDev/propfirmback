@@ -22,9 +22,11 @@ export class Verification {
   @Column({
     type: 'enum',
     enum: VerificationStatus,
-    default: VerificationStatus.PENDING,
+    enumName: 'Verification_status_enum', // 👈 nombre exacto en PostgreSQL
+    default: VerificationStatus.PENDING,  // o PENDING, según tu lógica
   })
   status: VerificationStatus;
+
 
   @Column({
     type: 'enum',

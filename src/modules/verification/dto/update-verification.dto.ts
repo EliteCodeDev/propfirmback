@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString, IsOptional } from 'class-validator';
+import { VerificationStatus } from 'src/common/enums/verification-status.enum';
 
 export class UpdateVerificationDto {
-  @ApiProperty({ enum: ['pending', 'approved', 'rejected'], required: false })
+  @ApiProperty({ enum: VerificationStatus, required: false })
   @IsOptional()
-  @IsEnum(['pending', 'approved', 'rejected'])
-  status?: string;
+  @IsEnum(VerificationStatus)
+  status?: VerificationStatus;
 
   @ApiProperty({ required: false })
   @IsOptional()
