@@ -28,7 +28,7 @@ export class CreationFazoClient {
     private readonly http: HttpService,
     @Inject(brokeretApiConfig.KEY)
     private readonly cfg: ConfigType<typeof brokeretApiConfig>,
-  ) {}
+  ) { }
 
   private buildFazoUrl(path: string): string {
     const base = (this.cfg.creationApiUrl || '').replace(/\/+$/, '');
@@ -121,27 +121,48 @@ export class CreationFazoClient {
   ): Promise<T> {
     await this.ensureValidToken();
 
+    // 🔹 Asegurar serialización JSON correcta
+    const serializedData =
+      typeof data === 'object' && data !== null
+        ? JSON.stringify(data)
+        : data;
+
     try {
+      this.logger.debug('[FAZO DEBUG] Request body:', serializedData);
+
       const response = await firstValueFrom(
         this.http.request<T>({
           method,
           url: this.buildFazoUrl(path),
-          data,
-          headers: this.buildFazoHeaders(true),
+          data: serializedData,
+          headers: {
+            ...this.buildFazoHeaders(true),
+            'Content-Type': 'application/json',
+          },
+          responseType: 'json',
         }),
       );
+
       return response.data;
     } catch (error: any) {
-      // Si es 401 (Unauthorized) y podemos reintentar, obtenemos nuevo token
+      // Si es 401 (Unauthorized), reintenta con nuevo token
       if (error?.response?.status === 401 && retryOnUnauthorized) {
-        this.logger.warn('Token no autorizado, obteniendo nuevo token...');
+        this.logger.warn('Token expirado/no autorizado, renovando...');
         await this.getToken();
-        return this.requestWithAuth<T>(method, path, data, false); // Reintento sin más reintentos
+        return this.requestWithAuth<T>(method, path, data, false);
       }
 
-      this.logger.error(
-        `HTTP ${method?.toUpperCase()} ${this.buildFazoUrl(path)} falló: ${error?.response?.status} ${JSON.stringify(error?.response?.data || error.message)}`,
-      );
+      // 🔹 Log extendido para depuración
+      this.logger.error('[FAZO ERROR]', {
+        url: this.buildFazoUrl(path),
+        method,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        sentData: serializedData,
+        receivedData: error?.response?.data,
+        headers: error?.config?.headers,
+      });
+
       throw error;
     }
   }
