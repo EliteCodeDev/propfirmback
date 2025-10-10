@@ -727,6 +727,11 @@ export class OrdersService {
 
       // Crear el DTO para la API de Fazo
       const createAccountData: CreateAccountDto = {
+        id: 0,
+        accountid: 0,
+        type: 0, // 0 = demo
+        platform: 0, // 0 = MT5
+        server: 'FazoLiquidity-Server',
         name: uniqueName,
         groupName: groupName || 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
         email: user.email,
