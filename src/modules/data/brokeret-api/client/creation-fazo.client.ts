@@ -317,6 +317,9 @@ export class CreationFazoClient {
     message: string;
     result: string;
   }> {
+    await this.ensureValidToken();
+    await this.connectToManager(); // 🔹 asegúrate de reconectar siempre
+    this.logger.log('Ejecutando depósito en Fazo:', depositData);
     return this.requestWithAuth('post', 'Home/balanceOP', depositData);
   }
 
