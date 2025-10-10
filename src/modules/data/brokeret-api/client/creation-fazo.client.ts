@@ -200,6 +200,32 @@ export class CreationFazoClient {
   }
 
   // === Nuevos endpoints de Fazo ===
+  async connectToManager(): Promise<any> {
+    const managerData = {
+      mngId: 2013, // tu Manager Login
+      pwd: 'N_UmMbG3', // tu Manager Password
+      srvIp: '185.56.137.162:443', // IP y puerto del servidor del broker
+    };
+
+    this.logger.log('Conectando al Manager MT5 con Fazo API:', managerData);
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post(
+          this.buildFazoUrl('Home/login'),
+          managerData,
+          { headers: this.buildFazoHeaders(true) }
+        )
+      );
+
+      this.logger.log('Conectado correctamente al Manager:', response.data);
+      return response.data;
+    } catch (error: any) {
+      this.logger.error('Error conectando al Manager:', error?.response?.data || error.message);
+      throw error;
+    }
+  }
+
 
   async authenticate(authData: AuthDto): Promise<TokenResponse> {
     try {
@@ -240,6 +266,8 @@ export class CreationFazoClient {
     });
 
     try {
+      await this.ensureValidToken(); // obtiene token si no lo hay
+      await this.connectToManager(); // se conecta al Manager MT5
       const response = await this.requestWithAuth<CreateAccountResponse>(
         'post',
         'Home/createAccount',
