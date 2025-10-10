@@ -107,7 +107,7 @@ export class ChallengesService {
         accountid: 0,
         type: 0, // 0 = demo
         platform: 0, // 0 = MT5
-        server: 'FazoLiquidity-Server',
+        server: 'ClassicGlobal-Server',
         name: uniqueName,
         groupName: groupName,
         email: user.email,

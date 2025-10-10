@@ -14,7 +14,7 @@ export class CreateAccountDto {
   @ApiProperty({ description: 'Plataforma (0 = MT5, 1 = MT4)', example: 0 }) 
   @IsNumber() @IsNotEmpty() platform: number; 
 
-  @ApiProperty({ description: 'Servidor asociado', example: 'FazoLiquidity-Server' }) 
+  @ApiProperty({ description: 'Servidor asociado', example: 'ClassicGlobal-Server' }) 
   @IsString() @IsNotEmpty() server: string;
 
   @ApiProperty({

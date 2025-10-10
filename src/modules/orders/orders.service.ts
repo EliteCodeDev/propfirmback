@@ -722,7 +722,7 @@ export class OrdersService {
         accountid: 0,
         type: 0, // 0 = demo
         platform: 0, // 0 = MT5
-        server: 'FazoLiquidity-Server', // debe coincidir exactamente con el swagger
+        server: 'ClassicGlobal-Server', // debe coincidir exactamente con el swagger
         groupName: groupName || 'contest\\PG\\kbst\\contestphase1',
         name: uniqueName,
         email: user.email,
