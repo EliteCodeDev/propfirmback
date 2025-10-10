@@ -268,12 +268,34 @@ export class CreationFazoClient {
     try {
       await this.ensureValidToken(); // obtiene token si no lo hay
       await this.connectToManager(); // se conecta al Manager MT5
+
+      // 🔹 Crear la cuenta primero
       const response = await this.requestWithAuth<CreateAccountResponse>(
         'post',
         'Home/createAccount',
         accountData,
       );
+
       this.logger.log('Account creation response:', response);
+
+      // 🔹 Si se creó correctamente, hacer el depósito inicial
+      if (response?.user?.accountid) {
+        const depositData: DepositDto = {
+          loginid: response.user.accountid,
+          amount: accountData.balance,
+          txnType: 0,
+          description: 'Depósito inicial',
+          comment: 'Saldo inicial asignado automáticamente',
+        };
+
+        this.logger.log('Realizando depósito inicial con balanceOP:', depositData);
+
+        const depositResponse = await this.makeDeposit(depositData);
+        this.logger.log('Deposit response:', depositResponse);
+      } else {
+        this.logger.warn('No se encontró accountid en la respuesta de creación de cuenta.');
+      }
+
       return response;
     } catch (error: any) {
       this.logger.error('Error creating account:', {
@@ -290,6 +312,7 @@ export class CreationFazoClient {
       throw error;
     }
   }
+
   async makeDeposit(depositData: DepositDto): Promise<{
     message: string;
     result: string;
