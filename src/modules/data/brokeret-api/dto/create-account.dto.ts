@@ -18,17 +18,17 @@ export class CreateAccountDto {
 
   @ApiProperty({
     description: 'Tipo de cuenta (0 = demo, 1 = real)',
-    example: 0,
+    example: 'demo',
   })
-  @IsNumber()
-  type: number = 0;
+  @IsString()
+  type: string ;
 
   @ApiProperty({
     description: 'Plataforma (0 = MT5, 1 = MT4)',
-    example: 0,
+    example: 'MT5',
   })
-  @IsNumber()
-  platform: number = 0;
+  @IsString()
+  platform: string;
 
   @ApiProperty({
     description: 'Servidor de trading asignado',
@@ -38,7 +38,7 @@ export class CreateAccountDto {
   @IsNotEmpty()
   server: string;
 
-  
+
   @ApiProperty({
     description: 'Nombre del usuario',
     example: 'daniel'

@@ -729,8 +729,8 @@ export class OrdersService {
       const createAccountData: CreateAccountDto = {
         id: 0,
         accountid: 0,
-        type: 0, // 0 = demo
-        platform: 0, // 0 = MT5
+        type: "demo",
+        platform: "MT5",
         server: 'FazoLiquidity-Server',
         name: uniqueName,
         groupName: groupName || 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
