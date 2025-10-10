@@ -65,7 +65,7 @@ export class ChallengesService {
     private dataSource: DataSource,
     private creationFazoClient: CreationFazoClient,
     private brokeretApiClient: BrokeretApiClient,
-  ) { }
+  ) {}
 
   /**
    * Función simplificada para crear una cuenta Brokeret
@@ -105,8 +105,8 @@ export class ChallengesService {
       const createAccountData: CreateAccountDto = {
         id: 0,
         accountid: 0,
-        type: "demo",
-        platform: "MT5",
+        type: 0, // 0 = demo
+        platform: 0, // 0 = MT5
         server: 'FazoLiquidity-Server',
         name: uniqueName,
         groupName: groupName,
@@ -383,8 +383,8 @@ export class ChallengesService {
 
       const brokerAccount = challenge.brokerAccount
         ? await queryRunner.manager.findOne(BrokerAccount, {
-          where: { brokerAccountID: challenge.brokerAccount.brokerAccountID },
-        })
+            where: { brokerAccountID: challenge.brokerAccount.brokerAccountID },
+          })
         : null;
 
       // Broker account may not exist; proceed to delete challenge and details regardless.
