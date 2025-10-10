@@ -2,29 +2,21 @@ import { IsString, IsNotEmpty, IsNumber, IsEmail, IsPositive } from 'class-valid
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateAccountDto {
+  @ApiProperty({ description: 'ID interno (en general 0)', example: 0 }) 
+  @IsNumber() id?: number = 0; 
+  
+  @ApiProperty({ description: 'AccountID interno (en general 0)', example: 0 }) 
+  @IsNumber() accountid?: number = 0; 
 
-  @ApiProperty({ description: 'ID interno (en general 0)', example: 0 })
-  @IsNumber()
-  id?: number = 0;
+  @ApiProperty({ description: 'Tipo de cuenta (0 = demo, 1 = real)', example: 0 }) 
+  @IsNumber() @IsNotEmpty() type: number; 
 
-  @ApiProperty({ description: 'AccountID interno (en general 0)', example: 0 })
-  @IsNumber()
-  accountid?: number = 0;
+  @ApiProperty({ description: 'Plataforma (0 = MT5, 1 = MT4)', example: 0 }) 
+  @IsNumber() @IsNotEmpty() platform: number; 
 
-  @ApiProperty({ description: 'Tipo de cuenta (0 = demo, 1 = real)', example: 0 })
-  @IsNumber()
-  @IsNotEmpty()
-  type: number;
+  @ApiProperty({ description: 'Servidor asociado', example: 'FazoLiquidity-Server' }) 
+  @IsString() @IsNotEmpty() server: string;
 
-  @ApiProperty({ description: 'Plataforma (0 = MT5, 1 = MT4)', example: 0 })
-  @IsNumber()
-  @IsNotEmpty()
-  platform: number;
-
-  @ApiProperty({ description: 'Servidor asociado', example: 'FazoLiquidity-Server' })
-  @IsString()
-  @IsNotEmpty()
-  server: string;
   @ApiProperty({
     description: 'Nombre del usuario',
     example: 'daniel'

@@ -92,7 +92,7 @@ export class OrdersService {
     private bufferService: BufferService,
     private addonRulesService: AddonRulesService,
     private relationAddonService: RelationAddonService,
-  ) {}
+  ) { }
 
   async create(createOrderDto: CreateOrderDto): Promise<CustomerOrder> {
     const order = this.orderRepository.create({
@@ -691,192 +691,90 @@ export class OrdersService {
     retryCount: number = 0,
   ): Promise<CreateBrokerAccountDto> {
     const maxRetries = 3;
-    const retryDelay = 1000; // 1 second
+    const retryDelay = 1000;
 
     try {
-      this.logger.log('Iniciando creación de cuenta Brokeret:', {
+      this.logger.log('Iniciando creación de cuenta Fazo:', {
         userId: user.userID,
         email: user.email,
         balance,
         attempt: retryCount + 1,
-        brokeretConfig: {
-          apiUrl: process.env.BROKERET_API_URL,
-          creationApiUrl: process.env.BROKERET_CREATION_API_URL,
-          hasApiKey: !!process.env.BROKERET_KEY,
-          hasUserCreationApi: !!process.env.BROKERET_USER_CREATION_API,
-          hasPassCreationApi: !!process.env.BROKERET_PASS_CREATION_API,
-        },
       });
 
-      // Generar contraseñas aleatorias para la cuenta
+      // Contraseñas aleatorias
       const masterPassword = generateRandomPassword(8);
       const investorPassword = generateRandomPassword(8);
 
-      // Extraer datos del usuario y billing para crear la cuenta
       const { billing } = createOrderDto.user;
       const fullName = `${billing.first_name} ${billing.last_name}`.trim();
-
-      // Add timestamp to make name more unique to avoid duplicates
       const uniqueName =
         retryCount > 0
           ? `${fullName || user.username}_${Date.now()}`
           : fullName || user.username;
 
-      // Extraer leverage dinámico de las reglas del challenge
-      const dynamicLeverage = getLeverageFromRelation(relation);
+      // Convertir todo lo numérico a enteros seguros
+      const finalBalance = Math.floor(Number(balance)) || 0;
+      const dynamicLeverage = Math.floor(Number(getLeverageFromRelation(relation)));
 
-      // Crear el DTO para la API de Fazo
+      // Payload idéntico al Swagger
       const createAccountData: CreateAccountDto = {
         id: 0,
         accountid: 0,
         type: 0, // 0 = demo
         platform: 0, // 0 = MT5
-        server: 'FazoLiquidity-Server',
+        server: 'FazoLiquidity-Server', // debe coincidir exactamente con el swagger
+        groupName: groupName || 'contest\\PG\\kbst\\contestphase1',
         name: uniqueName,
-        groupName: groupName || 'contest\\PG\\kbst\\contestphase1', // Grupo por defecto
         email: user.email,
         phone: billing.phone || user.phone || '+1234567890',
-        country: billing.country || 'US',
-        city: billing.city || 'Unknown',
-        address:
-          `${billing.address_1} ${billing.address_2 || ''}`.trim() || 'Unknown',
-        balance: balance,
+        country: billing.country || 'PE',
+        city: billing.city || 'Trujillo',
+        address: `${billing.address_1} ${billing.address_2 || ''}`.trim() || 'Unknown',
+        balance: finalBalance,
         mPassword: masterPassword,
         iPassword: investorPassword,
-        leverage: dynamicLeverage, // Leverage dinámico extraído de reglas
+        leverage: dynamicLeverage,
       };
 
-      // Llamar al cliente de creación Fazo
-      let fazoResponse: CreateAccountResponse;
-      try {
-        fazoResponse =
-          await this.creationFazoClient.createAccount(createAccountData);
-      } catch (error) {
-        this.logger.error('Error creating account with Fazo:', error);
+      // 👇 Log del payload real
+      this.logger.warn('[FAZO REQUEST PAYLOAD]', JSON.stringify(createAccountData, null, 2));
 
-        // Extraer información detallada del error para propagarla
-        const errorDetails = {
-          message: error.message || 'Unknown error',
-          status: error.response?.status,
-          url: error.config?.url,
-          method: error.config?.method,
-        };
+      // Llamada HTTP al broker Fazo
+      const fazoResponse = await this.creationFazoClient.createAccount(createAccountData);
 
-        throw new InternalServerErrorException({
-          message: 'Failed to create broker account with Fazo API',
-          failedAt: 'broker_account_creation',
-          details: errorDetails,
-          originalError: error.message,
-        });
-      }
+      this.logger.log('Cuenta creada exitosamente en Fazo:', fazoResponse);
 
-      this.logger.log('Brokeret API account created successfully:', {
-        message: fazoResponse.message,
-        data: fazoResponse.user,
-        accountId: fazoResponse.user.accountid,
-        balance: fazoResponse.user.balance,
-      });
-
-      // Realizar depósito inicial con fallback
-      try {
-        const depositData = {
-          login: Number(fazoResponse.user.accountid),
-          amount: balance,
-          comment: 'Initial deposit for challenge account',
-          payment_method: 'internal',
-        };
-
-        this.logger.log('Making initial deposit with brokeretApiClient:', {
-          login: fazoResponse.user.accountid,
-          amount: balance,
-        });
-
-        const depositResult =
-          await this.brokeretApiClient.makeDeposit(depositData);
-
-        this.logger.log(
-          'Initial deposit completed successfully with brokeretApiClient:',
-          {
-            result: depositResult,
-          },
-        );
-      } catch (brokeretError) {
-        this.logger.warn(
-          'brokeretApiClient.makeDeposit failed, trying fallback with creationFazoClient:',
-          brokeretError.message,
-        );
-
-        try {
-          // Adaptar los datos para el cliente Fazo
-          const fazoDepositData = {
-            loginid: fazoResponse.user.accountid,
-            amount: balance,
-            txnType: 0,
-            description: 'Initial deposit for challenge account',
-            comment: 'Fallback deposit via creationFazoClient',
-          };
-
-          this.logger.log(
-            'Making initial deposit with creationFazoClient fallback:',
-            {
-              fazoDepositData,
-            },
-          );
-
-          const fazoDepositResult =
-            await this.creationFazoClient.makeDeposit(fazoDepositData);
-
-          this.logger.log(
-            'Initial deposit completed successfully with creationFazoClient fallback:',
-            {
-              result: fazoDepositResult,
-            },
-          );
-        } catch (fazoError) {
-          this.logger.error(
-            'Both brokeretApiClient and creationFazoClient makeDeposit failed:',
-            {
-              brokeretError: brokeretError.message,
-              fazoError: fazoError.message,
-            },
-          );
-          // this.logger.warn(
-          //   'Continuing without initial deposit - balance will be handled separately',
-          // );
-          // No lanzamos error, continuamos con la creación de la cuenta
-          // El balance se manejará por separado
-        }
-      }
-
-      // Mapear la respuesta de Fazo a CreateBrokerAccountDto
+      // Construir el DTO local para guardarlo
       const brokerAccountDto: CreateBrokerAccountDto = {
         login: fazoResponse.user.accountid.toString(),
         password: masterPassword,
+        investorPass: investorPassword,
         server: this.configService.get<string>('MT_SERVER') || '',
-        serverIp: this.configService.get<string>('MT_SERVER'), // IP del servidor por defecto
+        serverIp: this.configService.get<string>('MT_SERVER'),
         platform: 'MT5',
         isUsed: false,
-        investorPass: investorPassword,
-        innitialBalance: balance,
+        innitialBalance: finalBalance,
       };
 
       return brokerAccountDto;
     } catch (error) {
-      // Si el error ya es una InternalServerErrorException, lo propagamos tal como está
-      if (error instanceof InternalServerErrorException) {
-        throw error;
-      }
+      this.logger.error('Error creando cuenta Brokeret (Fazo):', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+      });
 
-      // Para otros errores, crear una excepción más descriptiva
       throw new InternalServerErrorException({
-        message: 'Failed to create Brokeret API account',
-        failedAt: 'broker_account_creation_general',
+        message: 'Failed to create broker account with Fazo API',
+        failedAt: 'broker_account_creation',
         details: {
-          originalMessage: error.message,
-          errorType: error.constructor.name,
+          message: error.message,
+          status: error.response?.status,
+          url: error.config?.url,
         },
-        originalError: error.message,
       });
     }
   }
+
 }
