@@ -295,8 +295,39 @@ export class FlushBufferJob {
             skipped++;
             continue;
           }
-          account.metaStats.tradingDays =
-            account.rulesEvaluation.tradingDays.numDays;
+          // Asegurar que tradingDays esté disponible incluso si rulesEvaluation aún no existe
+          try {
+            const safeTradingDays =
+              account?.rulesEvaluation?.tradingDays?.numDays ??
+              account?.metaStats?.tradingDays ??
+              0;
+            if (!account.metaStats) {
+              account.metaStats = {
+                equity: account?.metaStats?.equity ?? 0,
+                maxMinBalance: account?.metaStats?.maxMinBalance ?? {
+                  maxBalance: 0,
+                  minBalance: 0,
+                },
+                averageMetrics: account?.metaStats?.averageMetrics ?? {
+                  averageProfit: 0,
+                  losingTrades: 0,
+                  winningTrades: 0,
+                  totalTrades: 0,
+                  lossRate: 0,
+                  averageLoss: 0,
+                  winRate: 0,
+                },
+                numTrades: account?.metaStats?.numTrades ?? 0,
+                tradingDays: safeTradingDays,
+              } as any;
+            } else {
+              (account.metaStats as any).tradingDays = safeTradingDays;
+            }
+          } catch (e) {
+            this.logger.warn(
+              `FlushBufferJob: tradingDays no disponible para login=${login}, usando 0 por defecto`,
+            );
+          }
           // Extract positions from the PositionsClassType structure
           const openPositions = account.openPositions?.positions ?? [];
           const closedPositions = account.closedPositions?.positions ?? [];
@@ -320,11 +351,15 @@ export class FlushBufferJob {
           const payload: DeepPartial<ChallengeDetails> = {
             challengeID: challenge.challengeID,
             metaStats: account.metaStats ?? null,
+            // Persistir balance para que la UI tenga daily/current/initial
+            balance: account.balance ?? null,
+            // Persistir solo posiciones abiertas para visualización
             positions: {
               openPositions,
-              closedPositions,
             },
+            // Persistir evaluación completa y parámetros de riesgo desde el buffer
             rulesValidation: account.rulesEvaluation ?? null,
+            rulesParams: account.riskValidation ?? null,
             lastUpdate: account.lastUpdate
               ? new Date(account.lastUpdate)
               : new Date(),

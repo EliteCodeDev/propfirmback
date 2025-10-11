@@ -125,6 +125,8 @@ export class Account {
       openPositions: this.openPositions?.positions,
       closedPositions: this.closedPositions?.positions,
       rulesEvaluation: this.rulesEvaluation,
+      // Incluir parámetros de riesgo para detectar cambios de configuración
+      riskValidation: this.riskValidation,
       lastUpdate: this.lastUpdate,
       equity: this.equity,
       balance: this.balance,

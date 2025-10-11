@@ -121,51 +121,44 @@ export class CreationFazoClient {
   ): Promise<T> {
     await this.ensureValidToken();
 
-    // 🔹 Asegurar serialización JSON correcta
-    const serializedData =
-      typeof data === 'object' && data !== null
-        ? JSON.stringify(data)
-        : data;
-
     try {
-      this.logger.debug('[FAZO DEBUG] Request body:', serializedData);
+      const config: AxiosRequestConfig = {
+        method,
+        url: this.buildFazoUrl(path),
+        headers: {
+          ...this.buildFazoHeaders(true),
+          'Content-Type': 'application/json',
+        },
+        responseType: 'json',
+      };
 
-      const response = await firstValueFrom(
-        this.http.request<T>({
-          method,
-          url: this.buildFazoUrl(path),
-          data: serializedData,
-          headers: {
-            ...this.buildFazoHeaders(true),
-            'Content-Type': 'application/json',
-          },
-          responseType: 'json',
-        }),
-      );
+      // 🚫 Solo agrega body si no es GET
+      if (method !== 'get' && data !== undefined) {
+        config.data = typeof data === 'object' ? JSON.stringify(data) : data;
+      }
 
+      const response = await firstValueFrom(this.http.request<T>(config));
       return response.data;
     } catch (error: any) {
-      // Si es 401 (Unauthorized), reintenta con nuevo token
       if (error?.response?.status === 401 && retryOnUnauthorized) {
         this.logger.warn('Token expirado/no autorizado, renovando...');
         await this.getToken();
         return this.requestWithAuth<T>(method, path, data, false);
       }
 
-      // 🔹 Log extendido para depuración
       this.logger.error('[FAZO ERROR]', {
         url: this.buildFazoUrl(path),
         method,
         status: error?.response?.status,
         statusText: error?.response?.statusText,
-        sentData: serializedData,
+        sentData: data,
         receivedData: error?.response?.data,
-        headers: error?.config?.headers,
       });
 
       throw error;
     }
   }
+
 
   private async request<T = any>(
     method: AxiosRequestConfig['method'],
@@ -200,31 +193,41 @@ export class CreationFazoClient {
   }
 
   // === Nuevos endpoints de Fazo ===
+  private isManagerConnected = false;
+
   async connectToManager(): Promise<any> {
+    if (this.isManagerConnected) {
+      this.logger.debug('Manager ya conectado, omitiendo reconexión.');
+      return;
+    }
+
     const managerData = {
-      mngId: 2013, // tu Manager Login
-      pwd: 'N_UmMbG3', // tu Manager Password
-      srvIp: '185.56.137.162:443', // IP y puerto del servidor del broker
+      mngId: 2013,
+      pwd: 'N_UmMbG3',
+      srvIp: '185.56.137.162:443', // sin :443
     };
 
-    this.logger.log('Conectando al Manager MT5 con Fazo API:', managerData);
+    await this.ensureValidToken();
 
     try {
       const response = await firstValueFrom(
         this.http.post(
           this.buildFazoUrl('Home/login'),
           managerData,
-          { headers: this.buildFazoHeaders(true) }
-        )
+          { headers: this.buildFazoHeaders(true) },
+        ),
       );
 
       this.logger.log('Conectado correctamente al Manager:', response.data);
+      this.isManagerConnected = true; // ✅ marcar como conectado
       return response.data;
     } catch (error: any) {
+      this.isManagerConnected = false;
       this.logger.error('Error conectando al Manager:', error?.response?.data || error.message);
       throw error;
     }
   }
+
 
 
   async authenticate(authData: AuthDto): Promise<TokenResponse> {
@@ -329,8 +332,29 @@ export class CreationFazoClient {
    * Obtiene la posición de un usuario por su loginId
    */
   async getPosition(loginId: number): Promise<any> {
-    return this.requestWithAuth('get', `Home/getPosition/${loginId}`);
+    await this.ensureValidToken();
+
+    // 🔁 fuerza reconexión al manager en cada request
+    this.isManagerConnected = false;
+    await this.connectToManager();
+
+    try {
+      const response = await this.requestWithAuth('get', `Home/getPosition/${loginId}`);
+      return response;
+    } catch (error: any) {
+      // ⚠️ Si la sesión expira, reintenta una vez
+      if (error?.response?.status === 401) {
+        this.logger.warn('Sesión del Manager expirada, reintentando...');
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.requestWithAuth('get', `Home/getPosition/${loginId}`);
+      }
+
+      this.logger.error('Error al obtener posiciones FAZO:', error?.response?.data || error.message);
+      throw error;
+    }
   }
+
 
   /**
    * Obtiene el historial de trades de un usuario

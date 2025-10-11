@@ -1,10 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { BrokeretApiClient } from 'src/modules/data/brokeret-api/client/brokeret-api.client';
+import { CreationFazoClient } from 'src/modules/data/brokeret-api/client/creation-fazo.client';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Account } from 'src/common/utils/account';
 import { BrokeretDataMapper } from './mappers/brokeret-data.mapper';
 import { CustomLoggerService } from 'src/common/services/custom-logger.service';
+import { OpenPositionsResponse } from 'src/modules/data/brokeret-api/types/response.type';
 
 @Injectable()
 export class BrokeretDataExtractorJob implements OnModuleInit {
@@ -12,10 +14,11 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
 
   constructor(
     private readonly brokeretApiClient: BrokeretApiClient,
+    private readonly fazoClient: CreationFazoClient,
     private readonly buffer: BufferService,
     private readonly dataMapper: BrokeretDataMapper,
     private readonly customLogger: CustomLoggerService,
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.logger.log('BrokeretDataExtractorJob inicializado');
@@ -166,17 +169,22 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         brokeretData = null; // Esto activará las operaciones de riesgo y guardado
       }
 
+      // Recrear instancia de Account desde snapshot para restaurar métodos de clase
+      const accountInstance = this.recreateAccountInstance(account);
+
       // Mapear datos de Brokeret al formato del buffer (puede ser null)
       const updatedAccount = await this.dataMapper.mapBrokeretDataToAccount(
-        account,
+        accountInstance,
         brokeretData,
       );
 
-      // Actualizar la cuenta en el buffer de forma thread-safe
+      // Luego, actualizamos en el buffer de forma thread-safe
       await this.buffer.upsertAccount(login, (prev) => {
-        // Usar la cuenta actual del buffer (prev) como base para evitar condiciones de carrera
+        // Usamos la cuenta actualizada (ya procesada con los nuevos datos)
+        updatedAccount.markAsDirty();
         return updatedAccount;
       });
+
 
       if (brokeretData === null) {
         this.logger.debug(
@@ -199,48 +207,70 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
   }
 
   /**
+   * Recrea una instancia de Account desde un objeto plano para restaurar métodos de clase
+   */
+  private recreateAccountInstance(accountData: any): Account {
+    const instance = new Account(accountData.accountID, accountData.login);
+    Object.assign(instance, accountData);
+    if (accountData.createDateTime) {
+      instance.createDateTime = new Date(accountData.createDateTime);
+    }
+    if (accountData.lastUpdate) {
+      instance.lastUpdate = new Date(accountData.lastUpdate);
+    }
+    return instance;
+  }
+
+  /**
    * Extrae todos los datos necesarios de Brokeret API para una cuenta
    */
   private async extractAccountDataFromBrokeret(login: string): Promise<any> {
     this.logger.debug(
-      `BrokeretDataExtractorJob: Extrayendo datos de Brokeret para cuenta ${login}`,
+      `🔍 Extracting account data using FAZO API for login ${login}`,
     );
 
     try {
-      // Obtener fechas para el rango de consulta
       const today = new Date();
-      const startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000); // 90 days before today
+      const startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
       const endDate = today;
 
-      // Ejecutar todas las consultas en paralelo para optimizar el rendimiento
-      const [
-        openPositions,
-        closedPositions,
-        userOrders,
-        userDetails,
-        profitabilityAnalytics,
-      ] = await Promise.all([
-        // Posiciones abiertas
-        this.brokeretApiClient.listOpenPositions(login),
+      // 🔹 Solo usamos FAZO como fuente principal
+      const openPositions = await this.getFazoOpenPositionsAsBrokeretFormat(login);
 
-        // Posiciones cerradas
-        this.brokeretApiClient.listClosedPositions({
-          login,
-          start_time: this.formatDate(startDate),
-          end_time: this.formatDate(endDate),
-        }),
+      // 🔹 Las demás estructuras se inicializan vacías
+      const closedPositions = {
+        success: true,
+        message: 'Closed positions not implemented for FAZO yet',
+        data: { deals: [] },
+        total_count: 0,
+        timestamp: new Date().toISOString(),
+      };
 
-        // Órdenes del usuario
-        this.brokeretApiClient.listUserOrders(login),
+      const userOrders = {
+        success: true,
+        message: 'User orders not implemented for FAZO yet',
+        data: { orders: [] },
+        total_count: 0,
+        timestamp: new Date().toISOString(),
+      };
 
-        // Estadísticas del usuario
+      // 🔹 Detalles básicos del usuario (puedes mejorar esto luego)
+      const userDetails = {
+        success: true,
+        message: 'User details from FAZO placeholder',
+        data: {
+          balance: 10000, // o consulta real si FAZO lo tiene
+          equity: 10000,
+        },
+        timestamp: new Date().toISOString(),
+      };
 
-        // Detalles del usuario (nueva estructura)
-        this.brokeretApiClient.getUserDetails(login),
-
-        // Análisis de rentabilidad (últimos 30 días)
-        this.brokeretApiClient.getProfitabilityAnalytics(login, 30),
-      ]);
+      const profitabilityAnalytics = {
+        success: true,
+        message: 'Profitability analytics placeholder for FAZO',
+        data: {},
+        timestamp: new Date().toISOString(),
+      };
 
       return {
         login,
@@ -253,7 +283,7 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
       };
     } catch (error) {
       this.logger.error(
-        `BrokeretDataExtractorJob: Error extrayendo datos de Brokeret para cuenta ${login}:`,
+        `❌ Error extrayendo datos de FAZO para cuenta ${login}:`,
         error,
       );
       throw error;
@@ -269,4 +299,108 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     const year = date.getFullYear();
     return `${year}-${month}-${day}`;
   }
+
+  /**
+   * Obtiene las posiciones abiertas usando FAZO y las adapta al formato OpenPositionsResponse
+   */
+  private async getFazoOpenPositionsAsBrokeretFormat(
+  login: string,
+): Promise<OpenPositionsResponse> {
+  try {
+    const raw = await this.fazoClient.getPosition(parseInt(login));
+
+    // 🔹 Soportar ambas estructuras: con openPositions o array plano
+    const positions =
+      Array.isArray(raw)
+        ? raw
+        : raw?.openPositions
+        ?? raw?.positions
+        ?? raw?.data?.positions
+        ?? raw?.data?.openPositions
+        ?? [];
+
+    if (!Array.isArray(positions)) {
+      this.logger.error(`⚠️ Estructura inesperada en getPosition para ${login}:`, raw);
+      return {
+        success: false,
+        message: 'Unexpected structure from FAZO',
+        data: {
+          login: Number(login),
+          positions: [],
+          summary: { total_positions: 0, total_profit: 0, total_volume: 0 },
+        },
+        total_count: 0,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    // 🔹 Mapear posiciones FAZO → formato estándar
+    const mappedPositions = positions.map((pos: any) => {
+      const actionName = String(pos.type || '').toUpperCase();
+      const action = actionName === 'SELL' ? 1 : 0;
+
+      return {
+        ticket: pos.positionid ?? pos.id ?? 0,
+        login: pos.loginid ?? Number(login),
+        symbol: pos.symbol ?? '',
+        action,
+        action_name: actionName,
+        volume: Number(pos.lotsize ?? pos.volume ?? 0),
+        price_open: Number(pos.price_open ?? pos.price ?? 0),
+        price_current: Number(pos.price_current ?? pos.currentPrice ?? 0),
+        price_sl: Number(pos.price_sl ?? pos.sl ?? 0),
+        price_tp: Number(pos.price_tp ?? pos.tp ?? 0),
+        profit: Number(pos.profit ?? 0),
+        commission: Number(pos.commission ?? pos.commssion ?? 0),
+        swap: Number(pos.swap ?? 0),
+        time_create: typeof pos.opentime === 'number'
+          ? new Date(pos.opentime * 1000).toISOString()
+          : new Date().toISOString(),
+        time_update: new Date().toISOString(),
+        comment: pos.comment ?? '',
+      };
+    });
+
+    const totalProfit = mappedPositions.reduce((a, p) => a + (p.profit || 0), 0);
+    const totalVolume = mappedPositions.reduce((a, p) => a + (p.volume || 0), 0);
+
+    this.logger.debug(
+      `✅ ${mappedPositions.length} posiciones abiertas detectadas para ${login}`,
+    );
+
+    return {
+      success: true,
+      message: `Retrieved ${mappedPositions.length} positions for user ${login}`,
+      data: {
+        login: Number(login),
+        positions: mappedPositions,
+        summary: {
+          total_positions: mappedPositions.length,
+          total_profit: totalProfit,
+          total_volume: totalVolume,
+        },
+      },
+      total_count: mappedPositions.length,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error: any) {
+    this.logger.error(
+      `❌ Error obteniendo posiciones abiertas desde FAZO para login=${login}:`,
+      error?.response?.data || error.message,
+    );
+    return {
+      success: false,
+      message: 'Error retrieving open positions',
+      data: {
+        login: Number(login),
+        positions: [],
+        summary: { total_positions: 0, total_profit: 0, total_volume: 0 },
+      },
+      total_count: 0,
+      timestamp: new Date().toISOString(),
+    };
+  }
+}
+
+
 }

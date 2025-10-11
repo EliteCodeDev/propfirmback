@@ -103,8 +103,19 @@ export class BrokeretDataMapper {
       }
 
       // REGLA 2.1: Validación para posiciones abiertas
-      const newOpenPositions =
-        brokeretData.openPositions?.data?.positions || [];
+      // Soporte flexible para Fazo o Brokeret (ambos formatos posibles)
+      // Soporte flexible para Fazo o Brokeret (ambos formatos posibles)
+      const newOpenPositions = (
+        brokeretData.openPositions?.data?.positions ||
+        (brokeretData.openPositions as any)?.positions ||
+        (brokeretData.openPositions as any)?.openPositions ||
+        []
+      ) as OpenPositionsResponse['data']['positions'];
+      // Log de depuración opcional (puedes dejarlo temporalmente)
+      this.logger.debug(
+        `[BrokeretDataMapper] ${brokeretData.login}: posiciones abiertas detectadas = ${newOpenPositions.length}`,
+      );
+
       const existingOpenPositions =
         updatedAccount.openPositions?.positions || [];
       const newClosedPositions =
@@ -127,14 +138,16 @@ export class BrokeretDataMapper {
           // this.logger.debug(
           //   `BrokeretDataMapper: Mapeando posiciones existentes para cuenta ${brokeretData.login} : ${JSON.stringify(existingOrderIds)}`,
           // );
+          // Normalizar IDs de órdenes cerradas a números primitivos
           const closedOrderIds = newClosedPositions.map(
-            (pos: any) => pos.order,
+            (pos: any) => Number(pos.order),
           );
           // this.logger.debug(
           //   `BrokeretDataMapper: Mapeando posiciones cerradas para cuenta ${brokeretData.login} : ${JSON.stringify(closedOrderIds)}`,
           // );
+          // Comparar correctamente números primitivos para detectar órdenes faltantes
           const missingPositions = existingOrderIds.filter(
-            (orderId) => !closedOrderIds.includes(orderId as Number),
+            (orderId) => !closedOrderIds.includes(Number(orderId)),
           );
 
           if (missingPositions.length > 0) {
@@ -142,11 +155,10 @@ export class BrokeretDataMapper {
             this.logger.error(
               `BrokeretDataMapper: Error en cuenta ${brokeretData.login} - Posiciones abiertas ${missingPositions.join(', ')} no aparecen en closed positions ni en open positions`,
             );
-            // Mantener las posiciones existentes y marcar como error
+            // Mantener las posiciones existentes y continuar sin bloquear el guardado
+            // (permitimos que otras partes del account se persistan y que el cierre
+            // se refleje cuando llegue en la API)
             updatedAccount.openPositions = updatedAccount.openPositions;
-            updatedAccount.saved = false;
-            updatedAccount.updated = false;
-            return updatedAccount;
           } else {
             // 2.1.2.1: Las posiciones fueron cerradas correctamente
             this.logger.debug(
@@ -180,10 +192,8 @@ export class BrokeretDataMapper {
         this.logger.error(
           `BrokeretDataMapper: Error en cuenta ${brokeretData.login} - Nueva data tiene menos posiciones cerradas (${newClosedCount}) que las existentes (${existingClosedCount})`,
         );
-        // Mantener las posiciones existentes y marcar como error
-        updatedAccount.saved = false;
-        updatedAccount.updated = false;
-        return updatedAccount;
+        // Mantener las posiciones existentes y continuar sin bloquear persistencia
+        updatedAccount.closedPositions = updatedAccount.closedPositions;
       } else if (newClosedCount === 0 && existingClosedCount === 0) {
         // No hay posiciones cerradas en ningún lado, crear estructura vacía
         updatedAccount.closedPositions = this.mapClosedPositions([]);
@@ -378,6 +388,7 @@ export class BrokeretDataMapper {
     const validation = new RiskParams();
     validation.profitTarget = riskEvaluationResult.profitTarget.profit;
     validation.dailyDrawdown = riskEvaluationResult.dailyDrawdown.drawdown;
+    validation.maxDrawdown = riskEvaluationResult.maxDrawdown.drawdown;
     validation.tradingDays = riskEvaluationResult.tradingDays.numDays;
     validation.inactiveDays = riskEvaluationResult.inactiveDays.inactiveDays;
     return validation;

@@ -308,33 +308,8 @@ export function mapChallengeToAccount(challenge: Challenge): Account {
   if (!account.riskValidation) {
     account.riskValidation = new RiskParams();
   }
-  const rulesParams = challenge.details?.rulesParams;
-  if (rulesParams) {
-    account.riskValidation = {
-      ...rulesParams,
-    };
-  } else {
-    account.riskValidation.profitTarget = getParameterValueBySlug(
-      challenge,
-      'profit-target',
-    );
-    account.riskValidation.dailyDrawdown = getParameterValueBySlug(
-      challenge,
-      'daily-drawdown',
-    );
-    account.riskValidation.maxDrawdown = getParameterValueBySlug(
-      challenge,
-      'max-drawdown',
-    );
-    account.riskValidation.tradingDays = getParameterValueBySlug(
-      challenge,
-      'trading-days',
-    );
-    account.riskValidation.inactiveDays = getParameterValueBySlug(
-      challenge,
-      'inactive-days',
-    );
-  }
+  // Rehidratar siempre desde slugs del challenge para evitar datos corruptos en details
+  account.riskValidation = getBasicRiskParams(challenge);
   // Asignar valores usando la función helper reutilizable
   return account;
 }

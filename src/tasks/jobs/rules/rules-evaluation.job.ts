@@ -99,8 +99,7 @@ export class RulesEvaluationJob {
             );
             // Actualizar rulesEvaluation con el resultado completo de la evaluación
             updated.rulesEvaluation = riskEvaluation;
-            // También actualizar riskValidation con valores numéricos para compatibilidad
-            updated.riskValidation = this.mapToRiskValidation(riskEvaluation);
+            // No sobrescribir riskValidation (parámetros del challenge). Mantener los originales.
             updated.lastUpdate = new Date();
             return updated;
           });
