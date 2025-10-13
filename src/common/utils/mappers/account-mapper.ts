@@ -324,6 +324,23 @@ export function mapChallengeDetailsToAccount(
   details: ChallengeDetails,
 ): void {
   try {
+    // Procesar balance si existe en detalles (persistido por FlushBufferJob)
+    if (details.balance) {
+      const balanceData = details.balance as any;
+      // Asegurar que account.balance exista
+      if (!account.balance) {
+        account.balance = new Balance();
+      }
+
+      // Actualizar campos del balance desde detalles
+      account.balance.initialBalance =
+        balanceData.initialBalance ?? account.balance.initialBalance ?? 0;
+      account.balance.currentBalance =
+        balanceData.currentBalance ?? account.balance.currentBalance ?? 0;
+      account.balance.dailyBalance =
+        balanceData.dailyBalance ?? account.balance.dailyBalance ?? 0;
+    }
+
     // Procesar metaStats si existe
     if (details.metaStats) {
       const metaStatsData = details.metaStats;

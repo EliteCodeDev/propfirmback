@@ -353,9 +353,10 @@ export class FlushBufferJob {
             metaStats: account.metaStats ?? null,
             // Persistir balance para que la UI tenga daily/current/initial
             balance: account.balance ?? null,
-            // Persistir solo posiciones abiertas para visualización
+            // Persistir posiciones abiertas y cerradas para visualización e históricos
             positions: {
               openPositions,
+              closedPositions,
             },
             // Persistir evaluación completa y parámetros de riesgo desde el buffer
             rulesValidation: account.rulesEvaluation ?? null,

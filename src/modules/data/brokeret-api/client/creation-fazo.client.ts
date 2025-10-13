@@ -357,15 +357,124 @@ export class CreationFazoClient {
 
 
   /**
-   * Obtiene el historial de trades de un usuario
-   */
+ * Obtiene el historial completo de operaciones (tradehistory) desde FAZO.
+ * ⚙️ No requiere parámetros: solo token y conexión activa al Manager.
+ */
+  /**
+ * Obtiene el historial completo de operaciones (tradehistory) desde FAZO.
+ * Requiere loginId, startDate y endDate en el body.
+ */
   async getTradeHistory(tradeHistoryData: {
     loginId: number;
     startDate: string;
     endDate: string;
   }): Promise<any> {
-    return this.requestWithAuth('post', 'Home/tradehistory', tradeHistoryData);
+    await this.ensureValidToken();
+
+    // 🔁 Fuerza reconexión al manager antes de cada llamada
+    this.isManagerConnected = false;
+    await this.connectToManager();
+
+    try {
+      this.logger.debug(
+        `Solicitando historial de operaciones (Home/tradehistory) con body=${JSON.stringify(tradeHistoryData)}`
+      );
+
+      const response = await this.requestWithAuth(
+        'post',
+        'Home/tradehistory',
+        tradeHistoryData
+      );
+
+      // ⚠️ Si FAZO devuelve mensaje interno de desconexión, reconectar y reintentar
+      if (response?.result?.toLowerCase?.().includes('manager disconnectioned')) {
+        this.logger.warn('⚠️ Manager desconectado durante tradehistory, reconectando...');
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.requestWithAuth('post', 'Home/tradehistory', tradeHistoryData);
+      }
+
+      this.logger.debug('Historial obtenido correctamente:', response);
+      return response;
+    } catch (error: any) {
+      // ⚠️ Si expira el token o manager, reintenta una vez
+      if (error?.response?.status === 401) {
+        this.logger.warn('Sesión expirada en tradehistory, reintentando...');
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.requestWithAuth('post', 'Home/tradehistory', tradeHistoryData);
+      }
+
+      // ⚠️ Si el error viene en el cuerpo
+      if (error?.response?.data?.result?.toLowerCase?.().includes('manager disconnectioned')) {
+        this.logger.warn('Manager desconectado (detectado en error.response.data), reintentando...');
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.requestWithAuth('post', 'Home/tradehistory', tradeHistoryData);
+      }
+
+      this.logger.error('Error al obtener tradehistory FAZO:', error?.response?.data || error.message);
+      throw error;
+    }
   }
+
+
+  /**
+ * ✅ Obtiene la información de todas las cuentas conectadas al servidor FAZO (balance, equity, etc.)
+ * Método oficial: GET /Home/getAllAccountInfos
+ * Requiere token válido + conexión activa al Manager.
+ */
+  async getAllAccountInfos(): Promise<any[]> {
+    await this.ensureValidToken();
+
+    // 🔁 Si el manager no está conectado, conéctalo
+    if (!this.isManagerConnected) {
+      this.logger.debug('Manager desconectado. Conectando antes de getAllAccountInfos...');
+      await this.connectToManager();
+    }
+
+    try {
+      this.logger.debug('📡 Solicitando información de todas las cuentas (GET /Home/getAllAccountInfos)...');
+      const response = await this.requestWithAuth('get', 'Home/getAllAccountInfos');
+
+      // 🧩 Normalizar la respuesta: FAZO devuelve un array plano o un objeto con data/result
+      const data = Array.isArray(response)
+        ? response
+        : response?.data ?? response?.result ?? [];
+
+      if (!Array.isArray(data)) {
+        this.logger.warn('⚠️ Respuesta inesperada de getAllAccountInfos:', response);
+        return [];
+      }
+
+      this.logger.debug(`✅ getAllAccountInfos: ${data.length} cuentas recibidas.`);
+      this.isManagerConnected = true;
+      return data;
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        this.logger.warn('⚠️ Token o sesión del manager expirada en getAllAccountInfos, reintentando...');
+        await this.getToken();
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.getAllAccountInfos();
+      }
+
+      if (error?.response?.data?.result?.toLowerCase?.().includes('manager disconnectioned')) {
+        this.logger.warn('⚠️ Manager desconectado en getAllAccountInfos, reintentando...');
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.getAllAccountInfos();
+      }
+
+      this.logger.error('❌ Error al obtener todas las cuentas desde FAZO:', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error.message,
+      });
+      throw error;
+    }
+  }
+
 
   /**
    * Obtiene la información de un usuario por su loginId

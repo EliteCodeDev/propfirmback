@@ -175,6 +175,15 @@ export class ChallengeDetailsService {
       ) {
         updates.rulesValidation = challengeDetailsData.rulesValidation || null;
       }
+      // Incluir balance en updates para que se persista en upsert
+      if (
+        Object.prototype.hasOwnProperty.call(
+          challengeDetailsData,
+          'balance',
+        )
+      ) {
+        updates.balance = challengeDetailsData.balance || null;
+      }
       if (
         Object.prototype.hasOwnProperty.call(
           challengeDetailsData,
@@ -193,6 +202,7 @@ export class ChallengeDetailsService {
         positions: challengeDetailsData.positions || null,
         rulesValidation: challengeDetailsData.rulesValidation || null,
         rulesParams: challengeDetailsData.rulesParams || null,
+        balance: challengeDetailsData.balance || null,
         lastUpdate: new Date(),
       };
       const challengeDetails =
