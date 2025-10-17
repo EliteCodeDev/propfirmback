@@ -13,6 +13,7 @@ import { MailerService } from 'src/modules/mailer/mailer.service';
 import { UserAccount } from '../users/entities';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
+import { SaveVeriffSessionDto } from './dto/veriff-session.dto';
 @Injectable()
 export class VerificationService {
   constructor(
@@ -142,32 +143,123 @@ export class VerificationService {
     }
   }
 
-  private extractVendorData(payload: any): string | undefined {
-    return (
+  private extractVendorData(payload: any): any {
+    const vd =
       payload?.vendorData ||
       payload?.verification?.vendorData ||
       payload?.session?.vendorData ||
-      payload?.context?.vendorData
-    );
+      payload?.context?.vendorData;
+    return vd;
   }
 
-  private async resolveUserIdFromVendorData(vendorData: string): Promise<string | undefined> {
-    // Estrategia: asumir que vendorData es el UUID del usuario o JSON con { userID }
-    try {
-      const parsed = JSON.parse(vendorData);
-      if (parsed?.userID) return parsed.userID;
-    } catch (_) {
-      // no JSON, usar cadena directa
+  private normalizeVendorData(vd: any): { obj?: any; str?: string } {
+    if (vd == null) return {};
+    if (typeof vd === 'string') {
+      const s = vd.trim();
+      try {
+        const obj = JSON.parse(s);
+        return { obj, str: s };
+      } catch {
+        return { str: s };
+      }
     }
-    // Si la cadena parece UUID, retornarla; si no, buscar por email/username
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(vendorData)) return vendorData;
+    if (typeof vd === 'object') return { obj: vd };
+    return { str: String(vd) };
+  }
 
-    // fallback: intentar encontrar por username o email
-    const user = await this.userAccountRepository.findOne({
-      where: [{ email: vendorData }, { username: vendorData }],
-    });
-    return user?.userID;
+  private getUuidFromObject(obj: any): string | undefined {
+    if (!obj || typeof obj !== 'object') return;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const queue: any[] = [obj];
+    while (queue.length) {
+      const curr = queue.shift()!;
+      for (const [k, v] of Object.entries(curr)) {
+        const key = k.toLowerCase().replace(/[\s_\-]/g, '');
+        // Prefer candidate keys that often carry user IDs
+        const keySuggestsUserId =
+          key.includes('userid') ||
+          (key.includes('usuario') && key.includes('id')) ||
+          key === 'id';
+
+        if (keySuggestsUserId) {
+          if (typeof v === 'string' && uuidRegex.test(v)) return v;
+          if (
+            typeof v === 'object' &&
+            v &&
+            typeof (v as any).id === 'string' &&
+            uuidRegex.test((v as any).id)
+          ) {
+            return (v as any).id;
+          }
+        }
+        // Direct string value that looks like UUID
+        if (typeof v === 'string' && uuidRegex.test(v)) return v;
+        if (typeof v === 'object' && v) queue.push(v as any);
+      }
+    }
+    return undefined;
+  }
+
+  private getEmailOrUsernameFromObject(obj: any): { email?: string; username?: string } {
+    if (!obj || typeof obj !== 'object') return {};
+    const queue: any[] = [obj];
+    while (queue.length) {
+      const curr = queue.shift()!;
+      for (const [k, v] of Object.entries(curr)) {
+        const key = k.toLowerCase();
+        if (typeof v === 'string') {
+          if (key.includes('email') || key.includes('correo') || v.includes('@')) {
+            return { email: v };
+          }
+          if (key.includes('username') || key.includes('usuario') || key.includes('user')) {
+            return { username: v };
+          }
+        } else if (typeof v === 'object' && v) {
+          queue.push(v as any);
+        }
+      }
+    }
+    return {};
+  }
+
+  private async resolveUserIdFromVendorData(vendorData: any): Promise<string | undefined> {
+    const { obj, str } = this.normalizeVendorData(vendorData);
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    // 1) If vendorData string is a UUID, return directly
+    if (str && uuidRegex.test(str)) return str;
+
+    // 2) Try to extract UUID from object
+    const uuidFromObj = obj && this.getUuidFromObject(obj);
+    if (uuidFromObj) return uuidFromObj;
+
+    // 3) If vendorData string is email/username
+    if (str) {
+      const trimmed = str.trim();
+      if (trimmed.includes('@')) {
+        const userByEmail = await this.userAccountRepository.findOne({ where: { email: trimmed } });
+        if (userByEmail) return userByEmail.userID;
+      } else {
+        const userByUsername = await this.userAccountRepository.findOne({ where: { username: trimmed } });
+        if (userByUsername) return userByUsername.userID;
+      }
+    }
+
+    // 4) Try to find email or username inside object
+    if (obj) {
+      const { email, username } = this.getEmailOrUsernameFromObject(obj);
+      if (email) {
+        const u = await this.userAccountRepository.findOne({ where: { email } });
+        if (u) return u.userID;
+      }
+      if (username) {
+        const u = await this.userAccountRepository.findOne({ where: { username } });
+        if (u) return u.userID;
+      }
+    }
+
+    return undefined;
   }
 
   private mapEventStatus(payload: any): VerificationStatus {
@@ -472,5 +564,35 @@ export class VerificationService {
     } else {
       return MediaType.DOCUMENT; // Default
     }
+  }
+
+  async saveVeriffSession(userID: string, dto: SaveVeriffSessionDto): Promise<Verification> {
+    let latest = await this.verificationRepository.findOne({
+      where: { userID },
+      order: { submittedAt: 'DESC' },
+    });
+
+    const isFinal = latest && [VerificationStatus.APPROVED, VerificationStatus.REJECTED].includes(latest.status);
+
+    if (!latest || isFinal) {
+      latest = this.verificationRepository.create({
+        userID,
+        status: VerificationStatus.CREATED,
+        documentType: DocumentType.OTHER,
+        veriffSessionUrl: dto.url,
+        veriffSessionId: dto.sessionId,
+      });
+      latest = await this.verificationRepository.save(latest);
+    } else {
+      latest.veriffSessionUrl = dto.url;
+      latest.veriffSessionId = dto.sessionId;
+      // Si aún no hay estado claro, marcar como CREATED
+      if (!latest.status || latest.status === (undefined as any)) {
+        latest.status = VerificationStatus.CREATED;
+      }
+      latest = await this.verificationRepository.save(latest);
+    }
+
+    return latest;
   }
 }

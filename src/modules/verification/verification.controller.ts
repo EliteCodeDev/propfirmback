@@ -28,6 +28,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
+import { SaveVeriffSessionDto } from './dto/veriff-session.dto';
 
 @ApiTags('Verification')
 @ApiBearerAuth()
@@ -134,5 +135,10 @@ export class VerificationController {
   veriffDecision(@Request() req, @Body() payload: any) {
     const signature = req.headers['x-veriff-signature'] || req.headers['x-signature'];
     return this.verificationService.handleVeriffDecision(payload, signature as string | undefined);
+  }
+  @Post('veriff-session')
+  @ApiOperation({ summary: 'Guardar sesión de Veriff (URL/ID) para continuar luego' })
+  saveVeriffSession(@Request() req, @Body() dto: SaveVeriffSessionDto) {
+    return this.verificationService.saveVeriffSession(req.user.userID, dto);
   }
 }

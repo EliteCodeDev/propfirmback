@@ -40,6 +40,14 @@ export class Verification {
   @Column({ length: 255, nullable: true })
   rejectionReason: string;
 
+  // URL de sesión de Veriff para continuar desde frontend/backend
+  @Column({ type: 'text', nullable: true })
+  veriffSessionUrl: string;
+
+  // ID de sesión de Veriff
+  @Column({ length: 100, nullable: true })
+  veriffSessionId: string;
+
   @CreateDateColumn()
   submittedAt: Date;
 

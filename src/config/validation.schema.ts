@@ -91,4 +91,13 @@ export const validationSchema = Joi.object({
   VERIFF_STATION_API_URL: Joi.string()
     .optional()
     .default('https://stationapi.veriff.com'),
+  VERIFF_CALLBACK_URL: Joi.string()
+    .optional()
+    .default('https://www.veriff.com/get-verified?navigation=slim'),
+  VERIFF_EVENT_WEBHOOK_URL: Joi.string()
+    .optional()
+    .default('https://webhook-test.veriff.com/hook'),
+  VERIFF_DECISION_WEBHOOK_URL: Joi.string()
+    .optional()
+    .default('https://webhook-test.veriff.com/notification'),
 });
