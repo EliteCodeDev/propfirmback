@@ -23,6 +23,7 @@ import {
   apiKeysConfig,
   minioConfig,
   loggerConfig,
+  veriffConfig,
 } from './config';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
@@ -74,6 +75,7 @@ const disableTasks =
     ConfigModule.forFeature(jwtConfigValues),
     ConfigModule.forFeature(apiKeysConfig),
     ConfigModule.forFeature(loggerConfig),
+    ConfigModule.forFeature(veriffConfig),
     // Winston Logger
     WinstonModule.forRootAsync({
       imports: [ConfigModule],

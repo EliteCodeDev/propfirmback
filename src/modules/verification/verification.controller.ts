@@ -118,4 +118,21 @@ export class VerificationController {
   remove(@Param('id') id: string) {
     return this.verificationService.remove(id);
   }
+
+  // Webhooks Veriff
+  @Public()
+  @Post('webhooks/event')
+  @ApiOperation({ summary: 'Webhook de eventos Veriff (inicio/envío de verificación)' })
+  veriffEvent(@Request() req, @Body() payload: any) {
+    const signature = req.headers['x-veriff-signature'] || req.headers['x-signature'];
+    return this.verificationService.handleVeriffEvent(payload, signature as string | undefined);
+  }
+
+  @Public()
+  @Post('webhooks/decision')
+  @ApiOperation({ summary: 'Webhook de decisiones Veriff (aprobado/rechazado/reenvío)' })
+  veriffDecision(@Request() req, @Body() payload: any) {
+    const signature = req.headers['x-veriff-signature'] || req.headers['x-signature'];
+    return this.verificationService.handleVeriffDecision(payload, signature as string | undefined);
+  }
 }

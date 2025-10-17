@@ -84,4 +84,11 @@ export const validationSchema = Joi.object({
   MINIO_ACCESS_KEY: Joi.string().required(),
   MINIO_SECRET_KEY: Joi.string().required(),
   MINIO_BUCKET_NAME: Joi.string().required(),
+
+  // Veriff
+  VERIFF_API_KEY: Joi.string().optional(),
+  VERIFF_SHARED_SECRET: Joi.string().optional(),
+  VERIFF_STATION_API_URL: Joi.string()
+    .optional()
+    .default('https://stationapi.veriff.com'),
 });

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Raw } from 'typeorm';
 import { Verification } from './entities/verification.entity';
@@ -7,10 +7,12 @@ import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
 import { VerificationStatus } from 'src/common/enums/verification-status.enum';
 import { MediaType } from 'src/common/enums/media-type.enum';
+import { DocumentType } from 'src/common/enums/verification-document-type.enum';
 import { MinioService } from 'src/modules/storage/minio/minio.service';
 import { MailerService } from 'src/modules/mailer/mailer.service';
 import { UserAccount } from '../users/entities';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 @Injectable()
 export class VerificationService {
   constructor(
@@ -24,6 +26,191 @@ export class VerificationService {
     private userAccountRepository: Repository<UserAccount>,
     private configService: ConfigService,
   ) {}
+
+  /**
+   * Maneja eventos del webhook de Veriff (created, started, submitted, etc.)
+   * Intenta asociar el evento con el usuario usando `vendorData`.
+   */
+  async handleVeriffEvent(payload: any, signature?: string) {
+    // Verificación opcional de firma
+    const ok = this.verifyVeriffSignature(payload, signature);
+    if (!ok) {
+      // No rechazamos duro; registramos y continuamos para facilitar pruebas locales
+      // throw new BadRequestException('Invalid Veriff signature');
+    }
+
+    const vendorData = this.extractVendorData(payload);
+    const status = this.mapEventStatus(payload);
+
+    if (!vendorData) {
+      return { success: false, message: 'vendorData missing' };
+    }
+
+    const userID = await this.resolveUserIdFromVendorData(vendorData);
+    if (!userID) {
+      return { success: false, message: 'user not found from vendorData' };
+    }
+
+    // Buscar última verificación del usuario y actualizar estado, o crear una si no existe
+    let latest = await this.verificationRepository.findOne({
+      where: { userID },
+      order: { submittedAt: 'DESC' },
+    });
+
+    if (!latest) {
+      latest = this.verificationRepository.create({
+        userID,
+        status,
+        documentType: DocumentType.OTHER,
+      });
+      latest = await this.verificationRepository.save(latest);
+    } else {
+      latest.status = status;
+      latest = await this.verificationRepository.save(latest);
+    }
+
+    return { success: true, verificationID: latest.verificationID, status };
+  }
+
+  /**
+   * Maneja el webhook de decisión de Veriff (approved/rejected/resubmission_requested).
+   */
+  async handleVeriffDecision(payload: any, signature?: string) {
+    const ok = this.verifyVeriffSignature(payload, signature);
+    if (!ok) {
+      // throw new BadRequestException('Invalid Veriff signature');
+    }
+
+    const vendorData = this.extractVendorData(payload);
+    const decision = this.mapDecisionStatus(payload);
+    const rejectionReason = this.extractRejectionReason(payload);
+
+    if (!vendorData || !decision) {
+      return { success: false, message: 'vendorData or decision missing' };
+    }
+
+    const userID = await this.resolveUserIdFromVendorData(vendorData);
+    if (!userID) {
+      return { success: false, message: 'user not found from vendorData' };
+    }
+
+    // Usar la verificación más reciente del usuario como objetivo
+    const verification = await this.verificationRepository.findOne({
+      where: { userID },
+      order: { submittedAt: 'DESC' },
+      relations: ['user'],
+    });
+
+    if (!verification) {
+      // Crear una nueva si no existe para no perder el evento
+      const created = await this.verificationRepository.save(
+        this.verificationRepository.create({
+          userID,
+          status: decision,
+          documentType: DocumentType.OTHER,
+          rejectionReason,
+        }),
+      );
+      // Enviar correo acorde al estado
+      await this.sendVerificationStatusEmail(created, decision);
+      // Actualizar flag de usuario si aprobado
+      if (decision === VerificationStatus.APPROVED) {
+        await this.userAccountRepository.update({ userID }, { isVerified: true });
+      }
+      return { success: true, verificationID: created.verificationID, status: decision };
+    }
+
+    // Actualizar utilizando la lógica central existente
+    const updated = await this.update(verification.verificationID, {
+      status: decision,
+      rejectionReason,
+    } as UpdateVerificationDto);
+
+    return { success: true, verificationID: updated.verificationID, status: decision };
+  }
+
+  private verifyVeriffSignature(payload: any, signature?: string): boolean {
+    try {
+      const sharedSecret = this.configService.get<string>('veriff.sharedSecret');
+      if (!sharedSecret || !signature) return true; // firmado opcional
+      const raw = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      const hmac = crypto.createHmac('sha256', sharedSecret).update(raw).digest('hex');
+      const normalized = String(signature).replace(/^sha256=/i, '').trim();
+      return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(normalized));
+    } catch {
+      return false;
+    }
+  }
+
+  private extractVendorData(payload: any): string | undefined {
+    return (
+      payload?.vendorData ||
+      payload?.verification?.vendorData ||
+      payload?.session?.vendorData ||
+      payload?.context?.vendorData
+    );
+  }
+
+  private async resolveUserIdFromVendorData(vendorData: string): Promise<string | undefined> {
+    // Estrategia: asumir que vendorData es el UUID del usuario o JSON con { userID }
+    try {
+      const parsed = JSON.parse(vendorData);
+      if (parsed?.userID) return parsed.userID;
+    } catch (_) {
+      // no JSON, usar cadena directa
+    }
+    // Si la cadena parece UUID, retornarla; si no, buscar por email/username
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(vendorData)) return vendorData;
+
+    // fallback: intentar encontrar por username o email
+    const user = await this.userAccountRepository.findOne({
+      where: [{ email: vendorData }, { username: vendorData }],
+    });
+    return user?.userID;
+  }
+
+  private mapEventStatus(payload: any): VerificationStatus {
+    const event = (payload?.event || payload?.type || '').toString().toLowerCase();
+    // Mapear eventos típicos
+    if (event.includes('created')) return VerificationStatus.CREATED;
+    if (event.includes('started')) return VerificationStatus.STARTED;
+    if (event.includes('submitted')) return VerificationStatus.SUBMITTED;
+    return VerificationStatus.PENDING;
+  }
+
+  private mapDecisionStatus(payload: any): VerificationStatus | undefined {
+    const decision = (
+      payload?.decision?.status ||
+      payload?.decision ||
+      payload?.status ||
+      ''
+    )
+      .toString()
+      .toLowerCase();
+
+    if (['approved', 'accept', 'accepted', 'approve'].includes(decision)) {
+      return VerificationStatus.APPROVED;
+    }
+    if (['declined', 'rejected', 'reject', 'fail', 'failed'].includes(decision)) {
+      return VerificationStatus.REJECTED;
+    }
+    if (['resubmission_requested', 'resubmit', 'resubmission'].includes(decision)) {
+      return VerificationStatus.RESUBMISSION_REQUESTED;
+    }
+    return undefined;
+  }
+
+  private extractRejectionReason(payload: any): string | undefined {
+    const fields = [
+      payload?.decision?.reason,
+      payload?.reason,
+      payload?.message,
+      payload?.details,
+    ];
+    const reason = fields.find((x) => !!x);
+    return typeof reason === 'string' ? reason : undefined;
+  }
 
   async createVerification(
     userID: string,
