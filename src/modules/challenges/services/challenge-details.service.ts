@@ -90,28 +90,51 @@ export class ChallengeDetailsService {
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
         'metaStats',
-      )
+      ) && updateChallengeDetailsDto.metaStats != null
     ) {
-      updates.metaStats = updateChallengeDetailsDto.metaStats || null;
+      updates.metaStats = {
+        ...(challengeDetails.metaStats ?? {}),
+        ...updateChallengeDetailsDto.metaStats,
+      } as any;
     }
 
     if (
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
         'positions',
-      )
+      ) && updateChallengeDetailsDto.positions != null
     ) {
-      updates.positions = updateChallengeDetailsDto.positions || null;
+      const existingPositions = (challengeDetails.positions ?? {}) as any;
+      const incomingPositions = updateChallengeDetailsDto.positions as any;
+      const mergedPositions: any = {};
+
+      // openPositions: actualizar incluso si viene [] (porque puede quedar en cero legítimamente)
+      if (Array.isArray(incomingPositions.openPositions)) {
+        mergedPositions.openPositions = incomingPositions.openPositions;
+      } else if (Array.isArray(existingPositions.openPositions)) {
+        mergedPositions.openPositions = existingPositions.openPositions;
+      }
+
+      // closedPositions: NO resetear si viene [] o undefined; solo actualizar si trae elementos
+      if (
+        Array.isArray(incomingPositions.closedPositions) &&
+        incomingPositions.closedPositions.length > 0
+      ) {
+        mergedPositions.closedPositions = incomingPositions.closedPositions;
+      } else if (Array.isArray(existingPositions.closedPositions)) {
+        mergedPositions.closedPositions = existingPositions.closedPositions;
+      }
+
+      updates.positions = mergedPositions;
     }
 
     if (
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
         'rulesValidation',
-      )
+      ) && updateChallengeDetailsDto.rulesValidation != null
     ) {
-      updates.rulesValidation =
-        updateChallengeDetailsDto.rulesValidation || null;
+      updates.rulesValidation = updateChallengeDetailsDto.rulesValidation;
     }
 
     // AGREGAR ESTA VALIDACIÓN PARA BALANCE
@@ -119,18 +142,21 @@ export class ChallengeDetailsService {
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
         'balance',
-      )
+      ) && updateChallengeDetailsDto.balance != null
     ) {
-      updates.balance = updateChallengeDetailsDto.balance || null;
+      updates.balance = {
+        ...(challengeDetails.balance ?? {}),
+        ...updateChallengeDetailsDto.balance,
+      } as any;
     }
 
     if (
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
         'rulesParams',
-      )
+      ) && updateChallengeDetailsDto.rulesParams != null
     ) {
-      updates.rulesParams = updateChallengeDetailsDto.rulesParams || null;
+      updates.rulesParams = updateChallengeDetailsDto.rulesParams;
     }
 
     Object.assign(challengeDetails, updates);
@@ -153,44 +179,73 @@ export class ChallengeDetailsService {
     });
 
     if (existingDetails) {
-      // Update existing details
+      // Update existing details, ignorando null/undefined y haciendo merge seguro
       const updates: DeepPartial<ChallengeDetails> = {
         lastUpdate: new Date(),
       };
       if (
-        Object.prototype.hasOwnProperty.call(challengeDetailsData, 'metaStats')
+        Object.prototype.hasOwnProperty.call(challengeDetailsData, 'metaStats') &&
+        challengeDetailsData.metaStats != null
       ) {
-        updates.metaStats = challengeDetailsData.metaStats || null;
+        updates.metaStats = {
+          ...(existingDetails.metaStats ?? {}),
+          ...challengeDetailsData.metaStats,
+        } as any;
       }
       if (
-        Object.prototype.hasOwnProperty.call(challengeDetailsData, 'positions')
+        Object.prototype.hasOwnProperty.call(challengeDetailsData, 'positions') &&
+        challengeDetailsData.positions != null
       ) {
-        updates.positions = challengeDetailsData.positions || null;
+        const existingPositions = (existingDetails.positions ?? {}) as any;
+        const incomingPositions = challengeDetailsData.positions as any;
+        const mergedPositions: any = {};
+
+        // openPositions: actualizar incluso si viene []
+        if (Array.isArray(incomingPositions.openPositions)) {
+          mergedPositions.openPositions = incomingPositions.openPositions;
+        } else if (Array.isArray(existingPositions.openPositions)) {
+          mergedPositions.openPositions = existingPositions.openPositions;
+        }
+
+        // closedPositions: solo actualizar si hay elementos (>0)
+        if (
+          Array.isArray(incomingPositions.closedPositions) &&
+          incomingPositions.closedPositions.length > 0
+        ) {
+          mergedPositions.closedPositions = incomingPositions.closedPositions;
+        } else if (Array.isArray(existingPositions.closedPositions)) {
+          mergedPositions.closedPositions = existingPositions.closedPositions;
+        }
+
+        updates.positions = mergedPositions;
       }
       if (
         Object.prototype.hasOwnProperty.call(
           challengeDetailsData,
           'rulesValidation',
-        )
+        ) && challengeDetailsData.rulesValidation != null
       ) {
-        updates.rulesValidation = challengeDetailsData.rulesValidation || null;
+        updates.rulesValidation = challengeDetailsData.rulesValidation;
       }
-      // Incluir balance en updates para que se persista en upsert
+      // Incluir balance en updates para que se persista en upsert, ignorando null
       if (
         Object.prototype.hasOwnProperty.call(
           challengeDetailsData,
           'balance',
-        )
+        ) && challengeDetailsData.balance != null
       ) {
-        updates.balance = challengeDetailsData.balance || null;
+        updates.balance = {
+          ...(existingDetails.balance ?? {}),
+          ...challengeDetailsData.balance,
+        } as any;
       }
       if (
         Object.prototype.hasOwnProperty.call(
           challengeDetailsData,
           'rulesParams',
-        )
+        ) && challengeDetailsData.rulesParams != null
       ) {
-        updates.rulesParams = challengeDetailsData.rulesParams || null;
+        updates.rulesParams = challengeDetailsData.rulesParams;
       }
       Object.assign(existingDetails, updates);
       return this.challengeDetailsRepository.save(existingDetails);
@@ -198,11 +253,11 @@ export class ChallengeDetailsService {
       // Create new details
       const payloadNew: DeepPartial<ChallengeDetails> = {
         challengeID,
-        metaStats: challengeDetailsData.metaStats || null,
-        positions: challengeDetailsData.positions || null,
-        rulesValidation: challengeDetailsData.rulesValidation || null,
-        rulesParams: challengeDetailsData.rulesParams || null,
-        balance: challengeDetailsData.balance || null,
+        metaStats: challengeDetailsData.metaStats ?? null,
+        positions: challengeDetailsData.positions ?? null,
+        rulesValidation: challengeDetailsData.rulesValidation ?? null,
+        rulesParams: challengeDetailsData.rulesParams ?? null,
+        balance: challengeDetailsData.balance ?? null,
         lastUpdate: new Date(),
       };
       const challengeDetails =

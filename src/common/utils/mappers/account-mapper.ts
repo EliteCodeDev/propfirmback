@@ -332,7 +332,7 @@ export function mapChallengeDetailsToAccount(
         account.balance = new Balance();
       }
 
-      // Actualizar campos del balance desde detalles
+      // Actualizar campos del balance desde detalles, conservando existentes si no vienen
       account.balance.initialBalance =
         balanceData.initialBalance ?? account.balance.initialBalance ?? 0;
       account.balance.currentBalance =
@@ -341,29 +341,63 @@ export function mapChallengeDetailsToAccount(
         balanceData.dailyBalance ?? account.balance.dailyBalance ?? 0;
     }
 
-    // Procesar metaStats si existe
+    // Procesar metaStats con merge seguro (no resetear a defaults)
     if (details.metaStats) {
       const metaStatsData = details.metaStats;
-      account.metaStats = new MetaStats();
-      account.metaStats.equity = metaStatsData.equity || account.equity || 0;
-      account.metaStats.maxMinBalance = metaStatsData.maxMinBalance || {
-        maxBalance: 0,
-        minBalance: 0,
-      };
-      account.metaStats.averageMetrics = metaStatsData.averageMetrics || {
-        averageProfit: 0,
-        losingTrades: 0,
-        winningTrades: 0,
-        totalTrades: 0,
-        lossRate: 0,
-        averageLoss: 0,
-        winRate: 0,
-      };
-      account.metaStats.numTrades = metaStatsData.numTrades || 0;
-      account.metaStats.tradingDays = metaStatsData.tradingDays || 0;
+      const existing = account.metaStats || new MetaStats();
 
-      // Actualizar equity de la cuenta
-      if (metaStatsData.equity) {
+      const mergedMaxMin = {
+        maxBalance:
+          metaStatsData.maxMinBalance?.maxBalance ??
+          existing.maxMinBalance?.maxBalance ??
+          0,
+        minBalance:
+          metaStatsData.maxMinBalance?.minBalance ??
+          existing.maxMinBalance?.minBalance ??
+          0,
+      };
+
+      const mergedAvg = {
+        averageProfit:
+          metaStatsData.averageMetrics?.averageProfit ??
+          existing.averageMetrics?.averageProfit ??
+          0,
+        losingTrades:
+          metaStatsData.averageMetrics?.losingTrades ??
+          existing.averageMetrics?.losingTrades ??
+          0,
+        winningTrades:
+          metaStatsData.averageMetrics?.winningTrades ??
+          existing.averageMetrics?.winningTrades ??
+          0,
+        totalTrades:
+          metaStatsData.averageMetrics?.totalTrades ??
+          existing.averageMetrics?.totalTrades ??
+          0,
+        lossRate:
+          metaStatsData.averageMetrics?.lossRate ??
+          existing.averageMetrics?.lossRate ??
+          0,
+        averageLoss:
+          metaStatsData.averageMetrics?.averageLoss ??
+          existing.averageMetrics?.averageLoss ??
+          0,
+        winRate:
+          metaStatsData.averageMetrics?.winRate ??
+          existing.averageMetrics?.winRate ??
+          0,
+      };
+
+      account.metaStats = new MetaStats();
+      account.metaStats.equity =
+        metaStatsData.equity ?? existing.equity ?? account.equity ?? 0;
+      account.metaStats.maxMinBalance = mergedMaxMin;
+      account.metaStats.averageMetrics = mergedAvg;
+      account.metaStats.numTrades = metaStatsData.numTrades ?? existing.numTrades ?? 0;
+      account.metaStats.tradingDays = metaStatsData.tradingDays ?? existing.tradingDays ?? 0;
+
+      // Actualizar equity de la cuenta solo si viene en details
+      if (metaStatsData.equity != null) {
         account.equity = metaStatsData.equity;
       }
     }
@@ -372,7 +406,7 @@ export function mapChallengeDetailsToAccount(
     if (details.positions) {
       const positionsData = details.positions;
 
-      // Procesar posiciones abiertas
+      // Procesar posiciones abiertas si vienen en details
       if (
         positionsData.openPositions &&
         Array.isArray(positionsData.openPositions)
@@ -381,7 +415,7 @@ export function mapChallengeDetailsToAccount(
         account.openPositions.setLenght(positionsData.openPositions.length);
       }
 
-      // Procesar posiciones cerradas
+      // Procesar posiciones cerradas si vienen en details
       if (
         positionsData.closedPositions &&
         Array.isArray(positionsData.closedPositions)
@@ -401,10 +435,10 @@ export function mapChallengeDetailsToAccount(
       }
     }
 
-    // Actualizar timestamp - asegurar que sea un objeto Date válido
+    // Actualizar timestamp: usar el de details si existe, sino conservar
     account.lastUpdate = details.lastUpdate
       ? new Date(details.lastUpdate)
-      : new Date();
+      : account.lastUpdate || new Date();
   } catch (error) {
     console.error('Error procesando ChallengeDetails:', error);
     // En caso de error, mantener la cuenta con valores por defecto

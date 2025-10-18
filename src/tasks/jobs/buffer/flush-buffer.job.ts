@@ -8,6 +8,7 @@ import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-deta
 import { Account } from 'src/common/utils';
 import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 import { ChallengeStatus } from 'src/common/enums';
+import { ChallengeDetailsService } from 'src/modules/challenges/services/challenge-details.service';
 
 @Injectable()
 export class FlushBufferJob {
@@ -36,6 +37,7 @@ export class FlushBufferJob {
     @InjectRepository(ChallengeDetails)
     private readonly detailsRepo: Repository<ChallengeDetails>,
     private readonly customLogger: CustomLoggerService,
+    private readonly challengeDetailsService: ChallengeDetailsService,
   ) {}
 
   // Cada minuto en el segundo 30 para persistir datos actualizados
@@ -209,7 +211,7 @@ export class FlushBufferJob {
    * Processes batches with controlled concurrency
    */
   private async processBatchesConcurrently(
-    batches: Array<{ login: string; account: Account }[]>,
+    batches: Array<{ login: string; account: Account }>[],
   ): Promise<Array<{ persisted: number; skipped: number; failed: number }>> {
     const semaphore = new Array(this.MAX_CONCURRENT_BATCHES).fill(null);
 
@@ -255,6 +257,8 @@ export class FlushBufferJob {
     let persisted = 0;
     let skipped = 0;
     let failed = 0;
+    // Declarar lista de challenges a actualizar de estado
+    const challengesToUpdateStatus: Array<{ challengeID: string; status: ChallengeStatus }> = [];
 
     try {
       // Get all logins for this batch
@@ -277,11 +281,6 @@ export class FlushBufferJob {
       });
 
       // Prepare bulk upsert data
-      const challengeDetailsToSave: DeepPartial<ChallengeDetails>[] = [];
-      const challengesToUpdateStatus: {
-        challengeID: string;
-        status: ChallengeStatus;
-      }[] = [];
       const accountsToMarkClean: Account[] = [];
 
       for (const { login, account } of accountEntries) {
@@ -301,26 +300,8 @@ export class FlushBufferJob {
               account?.rulesEvaluation?.tradingDays?.numDays ??
               account?.metaStats?.tradingDays ??
               0;
-            if (!account.metaStats) {
-              account.metaStats = {
-                equity: account?.metaStats?.equity ?? 0,
-                maxMinBalance: account?.metaStats?.maxMinBalance ?? {
-                  maxBalance: 0,
-                  minBalance: 0,
-                },
-                averageMetrics: account?.metaStats?.averageMetrics ?? {
-                  averageProfit: 0,
-                  losingTrades: 0,
-                  winningTrades: 0,
-                  totalTrades: 0,
-                  lossRate: 0,
-                  averageLoss: 0,
-                  winRate: 0,
-                },
-                numTrades: account?.metaStats?.numTrades ?? 0,
-                tradingDays: safeTradingDays,
-              } as any;
-            } else {
+            // Solo inyectar tradingDays si metaStats existe
+            if (account.metaStats) {
               (account.metaStats as any).tradingDays = safeTradingDays;
             }
           } catch (e) {
@@ -348,44 +329,84 @@ export class FlushBufferJob {
             );
           }
 
-          const payload: DeepPartial<ChallengeDetails> = {
-            challengeID: challenge.challengeID,
-            metaStats: account.metaStats ?? null,
-            // Persistir balance para que la UI tenga daily/current/initial
-            balance: account.balance ?? null,
-            // Persistir posiciones abiertas y cerradas para visualización e históricos
-            positions: {
-              openPositions,
-              closedPositions,
-            },
-            // Persistir evaluación completa y parámetros de riesgo desde el buffer
-            rulesValidation: account.rulesEvaluation ?? null,
-            rulesParams: account.riskValidation ?? null,
+          // Construir payload selectivo (no sobreescribir con null)
+          const payload: any = {
             lastUpdate: account.lastUpdate
               ? new Date(account.lastUpdate)
               : new Date(),
           };
 
-          challengeDetailsToSave.push(payload);
+          if (account.metaStats) {
+            // Asegurar equity dentro de metaStats (fallback a account.equity)
+            const equity =
+              (account.metaStats as any).equity ?? account.equity ?? undefined;
+            payload.metaStats = {
+              ...account.metaStats,
+              ...(equity !== undefined ? { equity } : {}),
+            };
+          }
+
+          if (
+            account.balance &&
+            typeof account.balance.currentBalance === 'number'
+          ) {
+            payload.balance = account.balance;
+          }
+
+          // Siempre incluir posiciones si existen estructuras
+          if (account.openPositions || account.closedPositions) {
+            const positionsPayload: any = {};
+            // openPositions: persistir incluso si [] para reflejar vaciado legítimo
+            if (Array.isArray(openPositions)) {
+              positionsPayload.openPositions = openPositions;
+            }
+            // closedPositions: solo persistir si hay elementos (>0) para evitar resets
+            if (Array.isArray(closedPositions) && closedPositions.length > 0) {
+              positionsPayload.closedPositions = closedPositions;
+            }
+            if (
+              positionsPayload.openPositions !== undefined ||
+              positionsPayload.closedPositions !== undefined
+            ) {
+              payload.positions = positionsPayload;
+            }
+          }
+
+          if (account.rulesEvaluation) {
+            payload.rulesValidation = account.rulesEvaluation;
+          }
+
+          if (account.riskValidation) {
+            payload.rulesParams = account.riskValidation;
+          }
+
+          await this.challengeDetailsService.upsertChallengeDetails(
+            challenge.challengeID,
+            payload,
+          );
+
           accountsToMarkClean.push(account);
+          persisted++;
         } catch (err) {
           this.logger.error(
-            `FlushBufferJob: error preparando datos para login=${login}: ${err?.message || err}`,
+            `FlushBufferJob: error preparando datos para login=${login}: ${
+              err?.message || err
+            }`,
           );
           failed++;
         }
       }
 
-      // Bulk save all challenge details for this batch
-      if (challengeDetailsToSave.length > 0) {
-        const details = this.detailsRepo.create(challengeDetailsToSave);
-        await this.detailsRepo.save(details);
-
-        // Mark accounts as clean after successful save
+      // Mark accounts as clean after successful save
+      if (accountsToMarkClean.length > 0) {
         accountsToMarkClean.forEach((account) => account.markAsClean());
+        this.logger.debug(
+          `FlushBufferJob: marcadas como limpias ${accountsToMarkClean.length} cuentas`,
+        );
+      }
 
-        persisted = challengeDetailsToSave.length;
-
+      // Bulk save all challenge details for this batch
+      if (persisted > 0) {
         this.logger.debug(
           `FlushBufferJob: batch ${batchIndex + 1} completado - ` +
             `persistido=${persisted} omitido=${skipped} fallido=${failed}`,

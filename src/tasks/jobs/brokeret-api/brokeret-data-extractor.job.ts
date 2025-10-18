@@ -283,18 +283,23 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
           challengeStart.getMonth(),
           challengeStart.getDate(),
         );
-        startOfChallengeDay.setDate(startOfChallengeDay.getDate() - 1);
+        // Cambiar a 3 meses antes
+        startOfChallengeDay.setMonth(startOfChallengeDay.getMonth() - 3);
         startDate = startOfChallengeDay;
+        this.logger.debug(`📅 Ventana FAZO para ${login}: start=${this.formatDate(startDate)} (desde createDateTime=${challengeStart.toISOString()} -3m), end=${this.formatDate(endDate)}`);
       } else {
-        // Fallback de seguridad: 90 días hacia atrás desde hoy (inicio del día)
+        // Fallback de seguridad: 3 meses hacia atrás desde hoy (inicio del día)
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        startOfToday.setDate(startOfToday.getDate() - 90);
+        startOfToday.setMonth(startOfToday.getMonth() - 3);
         startDate = startOfToday;
+        this.logger.debug(`📅 Ventana FAZO para ${login}: start=${this.formatDate(startDate)} (fallback -3m), end=${this.formatDate(endDate)}`);
       }
 
       // Clamp: si por alguna razón start > end, retroceder 1 día
       if (startDate > endDate) {
+        const oldStart = new Date(startDate.getTime());
         startDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+        this.logger.warn(`🧲 Clamp aplicado para ${login}: start=${this.formatDate(oldStart)} > end=${this.formatDate(endDate)} ⇒ nuevo start=${this.formatDate(startDate)}`);
       }
 
       // 🔹 Solo usamos FAZO como fuente principal
@@ -305,6 +310,10 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         login,
         startDate,
         endDate,
+      );
+
+      this.logger.debug(
+        `📈 Resumen FAZO ${login}: abiertas=${openPositions?.total_count ?? openPositions?.data?.summary?.total_positions ?? 0}, cerradas=${closedPositions?.total_count ?? closedPositions?.data?.summary?.total_deals ?? 0} en ventana ${this.formatDate(startDate)}→${this.formatDate(endDate)}`,
       );
 
       const userOrders = {
@@ -366,6 +375,33 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
           );
         }
 
+        // Valores previos y bases para fallback
+        const initialBalance = Number(
+          account?.balance?.initialBalance ?? account?.balance?.currentBalance ?? 0,
+        );
+        const prevBalanceForFallback = Number(
+          account?.balance?.currentBalance ?? initialBalance,
+        );
+        const prevEquityForFallback = Number(
+          typeof account?.equity === 'number' ? account.equity : prevBalanceForFallback,
+        );
+
+        // Resumen de actividad desde FAZO (closed/open summaries)
+        const closedNet = Number(
+          (typeof closedPositions === 'object'
+            ? (closedPositions as any)?.data?.summary?.net_profit
+            : 0) ?? 0,
+        );
+        const openProfit = Number(
+          (typeof openPositions === 'object'
+            ? (openPositions as any)?.data?.summary?.total_profit
+            : 0) ?? 0,
+        );
+        const computedCurrentBalance = Number(initialBalance) + Number(closedNet || 0);
+        const computedEquity = computedCurrentBalance + Number(openProfit || 0);
+        const hasActivity = Math.abs(closedNet) > 0.0001 || Math.abs(openProfit) > 0.0001;
+
+        // 1) Intentar usar datos de FAZO (getAllAccountInfos) si existen y no son sospechosos
         if (info) {
           const fetchedBalance = Number(info.balance ?? 0);
           const fetchedEquity = Number(info.equity ?? 0);
@@ -393,54 +429,47 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
           }
         }
 
-        // Calcular balance/equity desde FAZO (closed/open summaries) para usar como fallback inteligente
-        const closedNet = Number(
-          (this as any)?.closedPositions?.data?.summary?.net_profit ??
-          (typeof closedPositions === 'object'
-            ? (closedPositions as any)?.data?.summary?.net_profit
-            : 0) ?? 0,
+        // 2) Aplicar fallback SOLO si falta info o si hay actividad y los valores remotos parecen iniciales/0
+        const infoMissing = !info;
+        const infoSuspicious = !!info && (
+          hasActivity && (
+            Math.abs(Number(info?.equity ?? 0)) < 0.0001 ||
+            Math.abs(Number(info?.balance ?? 0) - initialBalance) < 0.0001
+          )
         );
-        const openProfit = Number(
-          (this as any)?.openPositions?.data?.summary?.total_profit ??
-          (typeof openPositions === 'object'
-            ? (openPositions as any)?.data?.summary?.total_profit
-            : 0) ?? 0,
-        );
-        const initialBalance = Number(
-          account?.balance?.initialBalance ?? account?.balance?.currentBalance ?? 0,
-        );
-        const computedCurrentBalance = Number(initialBalance) + Number(closedNet || 0);
-        const computedEquity = computedCurrentBalance + Number(openProfit || 0);
 
-        const missingOrZero =
-          !userDetails?.data ||
-          typeof userDetails.data.balance !== 'number' ||
-          typeof userDetails.data.equity !== 'number' ||
-          (userDetails.data.balance === 0 && userDetails.data.equity === 0);
-
-        // Si hay actividad (closedNet u openProfit) y la API devuelve valores iguales al inicial, sobreescribir con el cálculo
-        const hasActivity = Math.abs(closedNet) > 0.0001 || Math.abs(openProfit) > 0.0001;
-        const remoteLooksInitial = !!userDetails?.data &&
-          Number(userDetails.data.balance) === Number(initialBalance) &&
-          Number(userDetails.data.equity) === Number(initialBalance);
-
-        if (missingOrZero || (hasActivity && remoteLooksInitial)) {
-          userDetails = {
-            success: true,
-            message: missingOrZero
-              ? 'User details computed from FAZO summaries (fallback)'
-              : 'User details overridden with computed values due to detected activity',
-            data: {
-              balance: computedCurrentBalance,
-              equity: computedEquity,
-            },
-            timestamp: new Date().toISOString(),
-          };
-          this.logger.debug(
-            `🔄 Valores aplicados para ${login}: balance=${computedCurrentBalance}, equity=${computedEquity} (initial=${initialBalance}, closedNet=${closedNet}, openProfit=${openProfit}, missingOrZero=${missingOrZero}, remoteLooksInitial=${remoteLooksInitial})`,
-          );
+        if (infoMissing || infoSuspicious || !userDetails) {
+          if (hasActivity) {
+            userDetails = {
+              success: true,
+              message: 'User details computed from FAZO summaries (fallback, activity detected)',
+              data: {
+                balance: computedCurrentBalance,
+                equity: computedEquity,
+              },
+              timestamp: new Date().toISOString(),
+            };
+            this.logger.debug(
+              `🔄 Fallback con actividad para ${login}: balance=${computedCurrentBalance}, equity=${computedEquity} (initial=${initialBalance}, closedNet=${closedNet}, openProfit=${openProfit})`,
+            );
+          } else {
+            // Sin actividad: preservar valores previos para evitar reset al initialBalance
+            userDetails = {
+              success: true,
+              message: 'User details preserved from previous account state (fallback without activity)',
+              data: {
+                balance: prevBalanceForFallback,
+                equity: prevEquityForFallback,
+              },
+              timestamp: new Date().toISOString(),
+            };
+            this.logger.warn(
+              `🛡️ Preservado fallback para ${login}: prevBalance=${prevBalanceForFallback}, prevEquity=${prevEquityForFallback}`,
+            );
+          }
         }
 
+        // Usar profitability del API si fue correcto
         profitabilityAnalytics = profitability;
       } catch (err) {
         this.logger.warn(
@@ -460,18 +489,42 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
         const initialBalance = Number(
           account?.balance?.initialBalance ?? account?.balance?.currentBalance ?? 0,
         );
+        const prevBalanceForFallback = Number(
+          account?.balance?.currentBalance ?? initialBalance,
+        );
+        const prevEquityForFallback = Number(
+          typeof account?.equity === 'number' ? account.equity : prevBalanceForFallback,
+        );
         const computedCurrentBalance = Number(initialBalance) + Number(closedNet || 0);
         const computedEquity = computedCurrentBalance + Number(openProfit || 0);
 
-        userDetails = {
-          success: true,
-          message: 'User details fallback (computed from FAZO summaries when possible)',
-          data: {
-            balance: computedCurrentBalance,
-            equity: computedEquity,
-          },
-          timestamp: new Date().toISOString(),
-        };
+        const hasActivity = Math.abs(closedNet) > 0.0001 || Math.abs(openProfit) > 0.0001;
+
+        if (hasActivity) {
+          userDetails = {
+            success: true,
+            message: 'User details fallback (computed from FAZO summaries when possible)',
+            data: {
+              balance: computedCurrentBalance,
+              equity: computedEquity,
+            },
+            timestamp: new Date().toISOString(),
+          };
+        } else {
+          userDetails = {
+            success: true,
+            message: 'User details preserved from previous account state (catch fallback without activity)',
+            data: {
+              balance: prevBalanceForFallback,
+              equity: prevEquityForFallback,
+            },
+            timestamp: new Date().toISOString(),
+          };
+          this.logger.warn(
+            `🛡️ Preservado en catch fallback para ${login}: prevBalance=${prevBalanceForFallback}, prevEquity=${prevEquityForFallback}`,
+          );
+        }
+
         profitabilityAnalytics = {
           success: true,
           message: 'Profitability analytics fallback',
@@ -505,7 +558,7 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-    return `${year}-${month}-${day}`;
+    return `${month}/${day}/${year}`;
   }
 
   /**
@@ -622,6 +675,7 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
   ): Promise<ClosedPositionsResponse> {
     try {
       const loginId = this.extractNumericLogin(login) ?? Number(login);
+      this.logger.debug(`📡 Consultando tradehistory FAZO login=${loginId} start=${this.formatDate(startDate)} end=${this.formatDate(endDate)}`);
       const raw = await this.fazoClient.getTradeHistory({
         loginId: loginId,
         startDate: this.formatDate(startDate),
@@ -655,6 +709,9 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
           timestamp: new Date().toISOString(),
         };
       }
+
+      const rawDealsCount = deals.length;
+      const balanceDealsCount = deals.filter((d: any) => String(d.type || '').toUpperCase() === 'DEAL_BALANCE').length;
 
       // Filtrar balances (no son operaciones de mercado) y agrupar por positionid/orderId
       const validDeals = deals.filter((d: any) => String(d.type || '').toUpperCase() !== 'DEAL_BALANCE');
@@ -722,6 +779,10 @@ export class BrokeretDataExtractorJob implements OnModuleInit {
           };
         })
         .filter((p) => !!p);
+
+      if (validDeals.length === 0) {
+        this.logger.warn(`ℹ️ Sin operaciones cerradas en rango para ${login} en ventana ${this.formatDate(startDate)}→${this.formatDate(endDate)} (raw=${rawDealsCount}, balance=${balanceDealsCount}, procesadas=${processed.length})`);
+      }
 
       const totalProfit = processed.reduce((a: number, d: any) => a + Number(d.profit || 0), 0);
       const totalVolume = processed.reduce((a: number, d: any) => a + Number(d.volume || 0), 0);
