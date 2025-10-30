@@ -19,6 +19,7 @@ import {
   ProfitabilityAnalyticsResponse,
 } from 'src/modules/data/brokeret-api/types/response.type';
 import { isEmpty } from 'class-validator';
+import { riskEvaluation } from 'src/common/functions/risk-evaluation';
 
 /**
  * Interfaz para las órdenes de usuario (userOrders)
@@ -213,6 +214,30 @@ export class BrokeretDataMapper {
         updatedAccount,
       );
 
+      // Evaluar riesgo para actualizar reglas (daily drawdown y max drawdown)
+      try {
+        if (updatedAccount.riskValidation) {
+          const evalResult = riskEvaluation(
+            updatedAccount,
+            updatedAccount.riskValidation,
+          );
+          updatedAccount.rulesEvaluation = evalResult;
+          // Reflejar tradingDays en metaStats para consumo del front
+          if (updatedAccount.metaStats) {
+            (updatedAccount.metaStats as any).tradingDays =
+              evalResult.tradingDays?.numDays ?? 0;
+          }
+        } else {
+          this.logger.warn(
+            `BrokeretDataMapper: Cuenta ${updatedAccount.login} sin riskValidation; no se evalúan reglas`,
+          );
+        }
+      } catch (e) {
+        this.logger.error(
+          `BrokeretDataMapper: Error evaluando riesgo para ${updatedAccount.login}: ${e?.message || e}`,
+        );
+      }
+
       // NO actualizar riskValidation - se mantiene desde el challenge original
       // riskValidation contiene los parámetros de evaluación que no cambian
 
@@ -252,22 +277,44 @@ export class BrokeretDataMapper {
    * Mapea las posiciones abiertas
    */
   private mapOpenPositions(
-    openPositionsData: OpenPositionsResponse['data']['positions'],
+    openPositionsData: any[],
   ): PositionsClassType {
     const positions = openPositionsData.map((pos) => {
       const position = new OpenPosition();
-      position.OrderId = pos.ticket.toString();
+
+      // Usa el ID correcto (Fazo/Brokeret)
+      position.OrderId = String(pos.ticket ?? pos.positionid ?? pos.dealId ?? pos.id);
+
+      // Datos del símbolo y tipo
       position.Symbol = pos.symbol;
-      position.Type = pos.action_name;
-      position.Volume = pos.volume;
-      position.OpenPrice = pos.price_open;
-      position.ClosePrice = pos.price_current;
-      position.Profit = pos.profit;
-      position.Swap = pos.swap;
+      const typeRaw = (pos.action_name ?? pos.type ?? '').toString().toUpperCase();
+      position.Type = typeRaw === 'SELL' ? 'SELL' : 'BUY';
+      position.Volume = Number(pos.volume ?? pos.lotsize ?? 0);
+
+      // Precios
+      position.OpenPrice = Number(pos.price_open ?? pos.price ?? 0);
+      position.ClosePrice = null; // 🚫 nunca asignar para abiertas
+
+      // SL/TP (cuando estén disponibles)
+      position.SL = Number(pos.price_sl ?? 0);
+      position.TP = Number(pos.price_tp ?? 0);
+
+      // Profit: tomar directo si viene, o calcular si hay price_current
+      if (typeof pos.profit === 'number' && !isNaN(pos.profit)) {
+        position.Profit = pos.profit;
+      } else {
+        const priceCurrent = Number(pos.price_current ?? pos.currentPrice ?? 0);
+        const priceOpen = Number(pos.price_open ?? pos.price ?? 0);
+        const volume = Number(pos.volume ?? pos.lotsize ?? 0);
+        const isSell = typeRaw === 'SELL';
+        position.Profit = isSell
+          ? (priceOpen - priceCurrent) * volume
+          : (priceCurrent - priceOpen) * volume;
+      }
+
+      position.Swap = pos.swap ?? 0;
+      position.Commentary = pos.comment ?? '';
       position.TimeOpen = pos.time_create;
-      position.Commentary = pos.comment;
-      position.SL = pos.price_sl;
-      position.TP = pos.price_tp;
       return position;
     });
 
@@ -277,6 +324,7 @@ export class BrokeretDataMapper {
     return positionsClass;
   }
 
+
   /**
    * Mapea las posiciones cerradas
    */
@@ -285,19 +333,20 @@ export class BrokeretDataMapper {
   ): PositionsClassType {
     const positions = closedPositionsData.map((pos) => {
       const position = new ClosedPosition();
-      position.OrderId = pos.order.toString();
+      position.OrderId = String(pos.order ?? pos.ticket);
       position.Symbol = pos.symbol;
-      position.Type = pos.action;
-      position.Volume = pos.volume;
-      position.OpenPrice = pos.price_open;
-      position.ClosePrice = pos.price_close;
-      position.Profit = pos.profit;
-      position.Swap = pos.swap;
-      position.Commission = pos.commission;
+      const typeRaw = (pos.action ?? pos.action_name ?? '').toString().toUpperCase();
+      position.Type = typeRaw === 'SELL' ? 'SELL' : 'BUY';
+      position.Volume = Number(pos.volume ?? 0);
+      position.OpenPrice = Number(pos.price_open ?? 0);
+      position.ClosePrice = Number(pos.price_close ?? 0);
+      position.Profit = Number(pos.profit ?? 0);
+      position.Swap = Number(pos.swap ?? 0);
+      position.Commission = Number(pos.commission ?? 0);
       position.Rate = 1; // No disponible en la estructura, usar valor por defecto
       position.TimeOpen = pos.time_open;
       position.TimeClose = pos.time_close;
-      position.Commentary = pos.comment;
+      position.Commentary = (pos as any).comment ?? '';
       position.SL = 0; // No disponible en posiciones cerradas transformadas
       position.TP = 0; // No disponible en posiciones cerradas transformadas
       return position;

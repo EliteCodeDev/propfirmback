@@ -25,9 +25,11 @@ export function riskEvaluation(
     balance.currentBalance,
     balance.dailyBalance,
   );
+  // Usar equity (o balance actual si no está disponible) para el cálculo de max drawdown
+  const equityOrBalance = account.equity ?? balance.currentBalance;
   const maxDrawdown = calculateDailyTotalDrawdown(
     params.maxDrawdown,
-    balance.currentBalance,
+    equityOrBalance,
     balance.initialBalance,
   );
 

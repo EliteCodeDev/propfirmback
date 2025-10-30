@@ -480,8 +480,32 @@ export class CreationFazoClient {
    * Obtiene la información de un usuario por su loginId
    */
   async getUserInfo(loginId: number): Promise<any> {
-    return this.requestWithAuth('get', `Home/getUserInfo/${loginId}`);
+    await this.ensureValidToken();
+
+    // Re-conexión al manager para garantizar sesión activa
+    this.isManagerConnected = false;
+    await this.connectToManager();
+
+    try {
+      this.logger.debug(`📡 Solicitando info de usuario (GET /Home/getUserInfo/${loginId})`);
+      const response = await this.requestWithAuth('get', `Home/getUserInfo/${loginId}`);
+      return response;
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        this.logger.warn('⚠️ Sesión expirada en getUserInfo, reintentando...');
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.requestWithAuth('get', `Home/getUserInfo/${loginId}`);
+      }
+
+      this.logger.error('❌ Error al obtener información de usuario:', {
+        loginId,
+        error: error?.response?.data || error.message,
+      });
+      throw error;
+    }
   }
+
 
   /**
    * Habilita o deshabilita el trading para un usuario
@@ -490,7 +514,47 @@ export class CreationFazoClient {
     loginId: number;
     flag: boolean;
   }): Promise<any> {
-    return this.requestWithAuth('post', 'Home/tradeDisable', tradePermissionData);
+    // 🔐 Forzar token nuevo por llamada para aislar sesión
+    await this.getToken();
+
+    // 🔁 Fuerza reconexión al manager antes de cada llamada
+    this.isManagerConnected = false;
+    await this.connectToManager();
+
+    try {
+      this.logger.debug(
+        `Deshabilitar/Habilitar trading (POST /Home/tradeDisable) body=${JSON.stringify(tradePermissionData)}`,
+      );
+
+      const response = await this.requestWithAuth(
+        'post',
+        'Home/tradeDisable',
+        tradePermissionData,
+      );
+
+      // ⚠️ Si FAZO indica desconexión del manager, reconectar y reintentar
+      if (response?.result?.toLowerCase?.().includes('manager disconnectioned')) {
+        this.logger.warn('Manager desconectado durante tradeDisable, reconectando...');
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.requestWithAuth('post', 'Home/tradeDisable', tradePermissionData);
+      }
+
+      this.logger.debug('tradeDisable ejecutado correctamente:', response);
+      return response;
+    } catch (error: any) {
+      // Reintento en caso de 401 o desconexión detectada en el cuerpo
+      if (error?.response?.status === 401 || error?.response?.data?.result?.toLowerCase?.().includes('manager disconnectioned')) {
+        this.logger.warn('Sesión expirada o manager desconectado en tradeDisable, reintentando...');
+        await this.getToken();
+        this.isManagerConnected = false;
+        await this.connectToManager();
+        return this.requestWithAuth('post', 'Home/tradeDisable', tradePermissionData);
+      }
+
+      this.logger.error('Error al ejecutar tradeDisable:', error?.response?.data || error.message);
+      throw error;
+    }
   }
 
   /**

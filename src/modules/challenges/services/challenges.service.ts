@@ -703,6 +703,24 @@ export class ChallengesService {
       challenge.endDate = new Date();
       challenge.isActive = false;
 
+      // 🔒 Intentar deshabilitar trading en FAZO para esta cuenta
+      try {
+        const loginId = Number(challenge?.brokerAccount?.login);
+        if (loginId && !isNaN(loginId)) {
+          this.logger.log(`Deshabilitando trading en FAZO para loginId=${loginId}`);
+          await this.creationFazoClient.tradeDisable({ loginId, flag: false });
+        } else {
+          this.logger.warn(`No se pudo determinar loginId válido para challenge ${id}`);
+        }
+      } catch (err: any) {
+        this.logger.error('Error deshabilitando trading en FAZO durante desaprobación:', {
+          message: err?.message,
+          status: err?.response?.status,
+          data: err?.response?.data,
+        });
+        // No bloquear desaprobación por fallo externo
+      }
+
       // Remover cuenta del buffer si existe
       if (challenge.brokerAccount) {
         try {

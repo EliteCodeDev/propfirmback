@@ -7,21 +7,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { WinstonModule } from 'nest-winston';
-
 import { TurnstileService } from './common/security/turnstile.service';
 import { CustomLoggerService } from './common/services/custom-logger.service';
-
+import { WSTestGateway } from './ws-test.gateway';
 import {
   validationSchema,
   databaseConfig,
   jwtConfig,
   appConfig,
   jwtConfigValues,
-  mailerConfig,
-  smtApiConfig,
-  brokeretApiConfig,
   apiKeysConfig,
-  minioConfig,
   loggerConfig,
   veriffConfig,
 } from './config';
@@ -29,7 +24,6 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-
 import {
   AuthModule,
   MailerModule,
@@ -43,10 +37,8 @@ import {
   VerificationModule,
   WithdrawalsModule,
   RbacModule,
-  SmtApiModule,
   BusinessRequirementModule,
   BrokeretApiModule,
-  StorageModule,
   MinioModule,
   StylesModule,
 } from 'src/modules';
@@ -55,6 +47,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SeedOnBootModule } from './seeds/seed-on-boot.module';
 import { TasksModule } from './tasks/tasks.module';
 import { BufferModule } from './lib/buffer/buffer.module';
+import { WSTestController } from './ws-test.controller';
 
 // Flag para deshabilitar tareas/cron por entorno
 const disableTasks =
@@ -120,6 +113,7 @@ const disableTasks =
     StylesModule,
   ],
   controllers: [
+    WSTestController,
     //aea
   ],
   providers: [
@@ -134,6 +128,7 @@ const disableTasks =
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     TurnstileService,
     CustomLoggerService,
+    WSTestGateway,
   ],
 })
 export class AppModule {}

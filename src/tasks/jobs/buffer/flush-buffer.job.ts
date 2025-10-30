@@ -281,7 +281,7 @@ export class FlushBufferJob {
       });
 
       // Prepare bulk upsert data
-      const accountsToMarkClean: Account[] = [];
+      const accountsToMarkClean: Array<{ login: string; account: Account }> = [];
 
       for (const { login, account } of accountEntries) {
         try {
@@ -385,7 +385,8 @@ export class FlushBufferJob {
             payload,
           );
 
-          accountsToMarkClean.push(account);
+          // Marcar como clean en buffer tras persistir correctamente
+          accountsToMarkClean.push({ login, account });
           persisted++;
         } catch (err) {
           this.logger.error(
@@ -397,9 +398,17 @@ export class FlushBufferJob {
         }
       }
 
-      // Mark accounts as clean after successful save
+      // Mark accounts as clean after successful save (and reflect in buffer)
       if (accountsToMarkClean.length > 0) {
-        accountsToMarkClean.forEach((account) => account.markAsClean());
+        await Promise.all(
+          accountsToMarkClean.map(({ login, account }) =>
+            this.bufferService.upsertAccount(login, (prev) => {
+              const instance = this.recreateAccountInstance(prev ?? account);
+              instance.markAsClean();
+              return instance;
+            }),
+          ),
+        );
         this.logger.debug(
           `FlushBufferJob: marcadas como limpias ${accountsToMarkClean.length} cuentas`,
         );
