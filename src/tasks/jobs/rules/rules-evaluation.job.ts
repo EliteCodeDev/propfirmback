@@ -209,11 +209,10 @@ export class RulesEvaluationJob {
     } else {
       // Una cuenta es desaprobable si alguna regla crítica falla (status: false) 
       // y tiene un valor válido (no null)
-      const isDissaprovable = 
+      // Solo considerar pérdida diaria y pérdida máxima como causas de desaprobación automática
+      const isDissaprovable =
         (!riskEvaluation.dailyDrawdown.status && riskEvaluation.dailyDrawdown.drawdown !== null) ||
-        (!riskEvaluation.maxDrawdown.status && riskEvaluation.maxDrawdown.drawdown !== null) ||
-        (!riskEvaluation.inactiveDays.status && riskEvaluation.inactiveDays.inactiveDays !== null) ||
-        (!riskEvaluation.globalConsistency.status && riskEvaluation.globalConsistency.consistencyPercentage !== null);
+        (!riskEvaluation.maxDrawdown.status && riskEvaluation.maxDrawdown.drawdown !== null);
 
       // Log detallado del estado de cada regla de riesgo
       this.logger.debug('Estado detallado de evaluación de riesgo:', {
@@ -293,18 +292,8 @@ export class RulesEvaluationJob {
           ).toFixed(2)}%`,
         );
       }
-      if (!riskEvaluation.globalConsistency.status) {
-        observationParts.push(
-          `Inconsistencia global: ${Number(
-            riskEvaluation.globalConsistency.consistencyPercentage,
-          ).toFixed(2)}%`,
-        );
-      }
-      if (!riskEvaluation.inactiveDays.status) {
-        observationParts.push(
-          `Días inactivos excedidos: ${riskEvaluation.inactiveDays.inactiveDays}`,
-        );
-      }
+      // No incluir consistencia global como causa de desaprobación automática
+      // No incluir inactividad como causa de desaprobación
 
       const observation =
         observationParts.join(' | ') ||
