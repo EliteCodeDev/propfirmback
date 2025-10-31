@@ -92,10 +92,45 @@ export class ChallengeDetailsService {
         'metaStats',
       ) && updateChallengeDetailsDto.metaStats != null
     ) {
-      updates.metaStats = {
-        ...(challengeDetails.metaStats ?? {}),
-        ...updateChallengeDetailsDto.metaStats,
-      } as any;
+      const incomingMeta = updateChallengeDetailsDto.metaStats as any;
+      const existingMeta = (challengeDetails.metaStats ?? {}) as any;
+      const mergedMeta: any = { ...existingMeta };
+
+      // Equity: actualizar solo si es un número válido y > 0
+      if (Object.prototype.hasOwnProperty.call(incomingMeta, 'equity')) {
+        const eq = Number(incomingMeta.equity);
+        if (!isNaN(eq) && isFinite(eq) && eq > 0) {
+          mergedMeta.equity = eq;
+        }
+      }
+
+      // maxMinBalance: merge superficial (no restringimos valores)
+      if (incomingMeta.maxMinBalance != null) {
+        mergedMeta.maxMinBalance = {
+          ...(existingMeta.maxMinBalance ?? {}),
+          ...incomingMeta.maxMinBalance,
+        };
+      }
+
+      // averageMetrics: merge superficial
+      if (incomingMeta.averageMetrics != null) {
+        mergedMeta.averageMetrics = {
+          ...(existingMeta.averageMetrics ?? {}),
+          ...incomingMeta.averageMetrics,
+        };
+      }
+
+      // Otros campos simples
+      if (Object.prototype.hasOwnProperty.call(incomingMeta, 'numTrades')) {
+        mergedMeta.numTrades =
+          incomingMeta.numTrades != null ? incomingMeta.numTrades : existingMeta.numTrades;
+      }
+      if (Object.prototype.hasOwnProperty.call(incomingMeta, 'tradingDays')) {
+        mergedMeta.tradingDays =
+          incomingMeta.tradingDays != null ? incomingMeta.tradingDays : existingMeta.tradingDays;
+      }
+
+      updates.metaStats = mergedMeta;
     }
 
     if (
@@ -108,8 +143,11 @@ export class ChallengeDetailsService {
       const incomingPositions = updateChallengeDetailsDto.positions as any;
       const mergedPositions: any = {};
 
-      // openPositions: actualizar incluso si viene [] (porque puede quedar en cero legítimamente)
-      if (Array.isArray(incomingPositions.openPositions)) {
+      // openPositions: NO resetear si viene [] o undefined; solo actualizar si trae elementos
+      if (
+        Array.isArray(incomingPositions.openPositions) &&
+        incomingPositions.openPositions.length > 0
+      ) {
         mergedPositions.openPositions = incomingPositions.openPositions;
       } else if (Array.isArray(existingPositions.openPositions)) {
         mergedPositions.openPositions = existingPositions.openPositions;
@@ -120,10 +158,37 @@ export class ChallengeDetailsService {
         Array.isArray(incomingPositions.closedPositions) &&
         incomingPositions.closedPositions.length > 0
       ) {
-        mergedPositions.closedPositions = incomingPositions.closedPositions;
+        // Validación defensiva: asegurar que realmente estén cerradas
+        mergedPositions.closedPositions = (incomingPositions.closedPositions as any[]).filter(
+          (p) =>
+            p && typeof p.TimeClose === 'string' && !!p.TimeClose &&
+            typeof p.ClosePrice === 'number' && !isNaN(p.ClosePrice),
+        );
       } else if (Array.isArray(existingPositions.closedPositions)) {
-        mergedPositions.closedPositions = existingPositions.closedPositions;
+        // Preservar cerradas desde BD, pero validar que sean realmente cerradas
+        mergedPositions.closedPositions = (existingPositions.closedPositions as any[]).filter(
+          (p) =>
+            p && typeof p.TimeClose === 'string' && !!p.TimeClose &&
+            typeof p.ClosePrice === 'number' && !isNaN(p.ClosePrice),
+        );
       }
+
+      // Extra: excluir de cerradas cualquier orden que esté reportada como abierta (evitar duplicaciones)
+      try {
+        const openList = Array.isArray(mergedPositions.openPositions)
+          ? (mergedPositions.openPositions as any[])
+          : [];
+        const openIds = new Set(
+          openList
+            .map((op) => (op?.OrderId !== undefined ? String(op.OrderId) : ''))
+            .filter((id) => id && id.length > 0),
+        );
+        if (Array.isArray(mergedPositions.closedPositions)) {
+          mergedPositions.closedPositions = (mergedPositions.closedPositions as any[]).filter(
+            (cp) => !openIds.has(String(cp?.OrderId)),
+          );
+        }
+      } catch {}
 
       updates.positions = mergedPositions;
     }
@@ -137,17 +202,37 @@ export class ChallengeDetailsService {
       updates.rulesValidation = updateChallengeDetailsDto.rulesValidation;
     }
 
-    // AGREGAR ESTA VALIDACIÓN PARA BALANCE
+    // Merge seguro de balance: ignorar valores nulos/NaN/cero
     if (
       Object.prototype.hasOwnProperty.call(
         updateChallengeDetailsDto,
         'balance',
       ) && updateChallengeDetailsDto.balance != null
     ) {
-      updates.balance = {
-        ...(challengeDetails.balance ?? {}),
-        ...updateChallengeDetailsDto.balance,
-      } as any;
+      const incomingBal = updateChallengeDetailsDto.balance as any;
+      const existingBal = (challengeDetails.balance ?? {}) as any;
+      const mergedBal: any = { ...existingBal };
+
+      if (Object.prototype.hasOwnProperty.call(incomingBal, 'currentBalance')) {
+        const v = Number(incomingBal.currentBalance);
+        if (!isNaN(v) && isFinite(v) && v > 0) {
+          mergedBal.currentBalance = v;
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(incomingBal, 'dailyBalance')) {
+        const v = Number(incomingBal.dailyBalance);
+        if (!isNaN(v) && isFinite(v) && v > 0) {
+          mergedBal.dailyBalance = v;
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(incomingBal, 'initialBalance')) {
+        const v = Number(incomingBal.initialBalance);
+        if (!isNaN(v) && isFinite(v) && v > 0) {
+          mergedBal.initialBalance = v;
+        }
+      }
+
+      updates.balance = mergedBal;
     }
 
     if (
@@ -187,10 +272,38 @@ export class ChallengeDetailsService {
         Object.prototype.hasOwnProperty.call(challengeDetailsData, 'metaStats') &&
         challengeDetailsData.metaStats != null
       ) {
-        updates.metaStats = {
-          ...(existingDetails.metaStats ?? {}),
-          ...challengeDetailsData.metaStats,
-        } as any;
+        const incomingMeta = challengeDetailsData.metaStats as any;
+        const existingMeta = (existingDetails.metaStats ?? {}) as any;
+        const mergedMeta: any = { ...existingMeta };
+
+        if (Object.prototype.hasOwnProperty.call(incomingMeta, 'equity')) {
+          const eq = Number(incomingMeta.equity);
+          if (!isNaN(eq) && isFinite(eq) && eq > 0) {
+            mergedMeta.equity = eq;
+          }
+        }
+        if (incomingMeta.maxMinBalance != null) {
+          mergedMeta.maxMinBalance = {
+            ...(existingMeta.maxMinBalance ?? {}),
+            ...incomingMeta.maxMinBalance,
+          };
+        }
+        if (incomingMeta.averageMetrics != null) {
+          mergedMeta.averageMetrics = {
+            ...(existingMeta.averageMetrics ?? {}),
+            ...incomingMeta.averageMetrics,
+          };
+        }
+        if (Object.prototype.hasOwnProperty.call(incomingMeta, 'numTrades')) {
+          mergedMeta.numTrades =
+            incomingMeta.numTrades != null ? incomingMeta.numTrades : existingMeta.numTrades;
+        }
+        if (Object.prototype.hasOwnProperty.call(incomingMeta, 'tradingDays')) {
+          mergedMeta.tradingDays =
+            incomingMeta.tradingDays != null ? incomingMeta.tradingDays : existingMeta.tradingDays;
+        }
+
+        updates.metaStats = mergedMeta;
       }
       if (
         Object.prototype.hasOwnProperty.call(challengeDetailsData, 'positions') &&
@@ -200,8 +313,11 @@ export class ChallengeDetailsService {
         const incomingPositions = challengeDetailsData.positions as any;
         const mergedPositions: any = {};
 
-        // openPositions: actualizar incluso si viene []
-        if (Array.isArray(incomingPositions.openPositions)) {
+        // openPositions: solo actualizar si hay elementos (>0)
+        if (
+          Array.isArray(incomingPositions.openPositions) &&
+          incomingPositions.openPositions.length > 0
+        ) {
           mergedPositions.openPositions = incomingPositions.openPositions;
         } else if (Array.isArray(existingPositions.openPositions)) {
           mergedPositions.openPositions = existingPositions.openPositions;
@@ -212,10 +328,37 @@ export class ChallengeDetailsService {
           Array.isArray(incomingPositions.closedPositions) &&
           incomingPositions.closedPositions.length > 0
         ) {
-          mergedPositions.closedPositions = incomingPositions.closedPositions;
+          // Validación defensiva: asegurar que realmente estén cerradas
+          mergedPositions.closedPositions = (incomingPositions.closedPositions as any[]).filter(
+            (p) =>
+              p && typeof p.TimeClose === 'string' && !!p.TimeClose &&
+              typeof p.ClosePrice === 'number' && !isNaN(p.ClosePrice),
+          );
         } else if (Array.isArray(existingPositions.closedPositions)) {
-          mergedPositions.closedPositions = existingPositions.closedPositions;
+          // Preservar cerradas desde BD, pero validar que sean realmente cerradas
+          mergedPositions.closedPositions = (existingPositions.closedPositions as any[]).filter(
+            (p) =>
+              p && typeof p.TimeClose === 'string' && !!p.TimeClose &&
+              typeof p.ClosePrice === 'number' && !isNaN(p.ClosePrice),
+          );
         }
+
+        // Extra: excluir de cerradas cualquier orden que esté reportada como abierta (evitar duplicaciones)
+        try {
+          const openList = Array.isArray(mergedPositions.openPositions)
+            ? (mergedPositions.openPositions as any[])
+            : [];
+          const openIds = new Set(
+            openList
+              .map((op) => (op?.OrderId !== undefined ? String(op.OrderId) : ''))
+              .filter((id) => id && id.length > 0),
+          );
+          if (Array.isArray(mergedPositions.closedPositions)) {
+            mergedPositions.closedPositions = (mergedPositions.closedPositions as any[]).filter(
+              (cp) => !openIds.has(String(cp?.OrderId)),
+            );
+          }
+        } catch {}
 
         updates.positions = mergedPositions;
       }
@@ -227,17 +370,37 @@ export class ChallengeDetailsService {
       ) {
         updates.rulesValidation = challengeDetailsData.rulesValidation;
       }
-      // Incluir balance en updates para que se persista en upsert, ignorando null
+      // Merge seguro de balance en upsert (actualización): ignorar valores nulos/NaN/cero
       if (
         Object.prototype.hasOwnProperty.call(
           challengeDetailsData,
           'balance',
         ) && challengeDetailsData.balance != null
       ) {
-        updates.balance = {
-          ...(existingDetails.balance ?? {}),
-          ...challengeDetailsData.balance,
-        } as any;
+        const incomingBal = challengeDetailsData.balance as any;
+        const existingBal = (existingDetails.balance ?? {}) as any;
+        const mergedBal: any = { ...existingBal };
+
+        if (Object.prototype.hasOwnProperty.call(incomingBal, 'currentBalance')) {
+          const v = Number(incomingBal.currentBalance);
+          if (!isNaN(v) && isFinite(v) && v > 0) {
+            mergedBal.currentBalance = v;
+          }
+        }
+        if (Object.prototype.hasOwnProperty.call(incomingBal, 'dailyBalance')) {
+          const v = Number(incomingBal.dailyBalance);
+          if (!isNaN(v) && isFinite(v) && v > 0) {
+            mergedBal.dailyBalance = v;
+          }
+        }
+        if (Object.prototype.hasOwnProperty.call(incomingBal, 'initialBalance')) {
+          const v = Number(incomingBal.initialBalance);
+          if (!isNaN(v) && isFinite(v) && v > 0) {
+            mergedBal.initialBalance = v;
+          }
+        }
+
+        updates.balance = mergedBal;
       }
       if (
         Object.prototype.hasOwnProperty.call(

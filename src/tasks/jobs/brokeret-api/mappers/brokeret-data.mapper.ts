@@ -119,8 +119,14 @@ export class BrokeretDataMapper {
 
       const existingOpenPositions =
         updatedAccount.openPositions?.positions || [];
-      const newClosedPositions =
-        brokeretData.closedPositions?.data?.deals || [];
+      // Cerradas desde API: aplicar un filtro defensivo para evitar mezclar abiertas
+      const newClosedPositions = (
+        brokeretData.closedPositions?.data?.deals || []
+      ).filter((pos: any) => {
+        const tc = (pos as any).time_close ?? (pos as any).closetime ?? (pos as any).close_time ?? (pos as any).closeTime;
+        const pc = Number((pos as any).price_close ?? (pos as any).price);
+        return (typeof tc === 'string' && tc.length > 0) || (typeof tc === 'number' && tc > 0) || (Number.isFinite(pc) && pc !== 0);
+      });
       // this.logger.debug(
       //   `BrokeretDataMapper: Mapeando posiciones abiertas para cuenta ${brokeretData.login} : ${JSON.stringify(newClosedPositions)}`,
       // );
@@ -173,38 +179,59 @@ export class BrokeretDataMapper {
         updatedAccount.openPositions = this.mapOpenPositions(newOpenPositions);
       }
 
-      // REGLA 2.2: Validación para posiciones cerradas
-      const existingClosedCount =
-        updatedAccount.closedPositions?.positions?.length || 0;
+      // REGLA 2.2: Fusión de posiciones cerradas (API + existentes) por OrderId
+      const existingClosed = (
+        (updatedAccount.closedPositions?.positions as ClosedPosition[]) || []
+      ).filter((p) => p && typeof (p as any).TimeClose === 'string');
       const newClosedCount = newClosedPositions.length;
 
-      if (newClosedCount > existingClosedCount) {
-        // Hay más posiciones cerradas en la nueva data, actualizar
-        this.logger.debug(
-          `BrokeretDataMapper: Actualizando posiciones cerradas para cuenta ${brokeretData.login} - de ${existingClosedCount} a ${newClosedCount}`,
-        );
-        updatedAccount.closedPositions =
-          this.mapClosedPositions(newClosedPositions);
-      } else if (
-        newClosedCount < existingClosedCount &&
-        existingClosedCount > 0
-      ) {
-        // Hay menos posiciones cerradas en la nueva data, error
-        this.logger.error(
-          `BrokeretDataMapper: Error en cuenta ${brokeretData.login} - Nueva data tiene menos posiciones cerradas (${newClosedCount}) que las existentes (${existingClosedCount})`,
-        );
-        // Mantener las posiciones existentes y continuar sin bloquear persistencia
-        updatedAccount.closedPositions = updatedAccount.closedPositions;
-      } else if (newClosedCount === 0 && existingClosedCount === 0) {
-        // No hay posiciones cerradas en ningún lado, crear estructura vacía
-        updatedAccount.closedPositions = this.mapClosedPositions([]);
-      } else {
-        // Mismo número de posiciones, actualizar normalmente
-        if (newClosedCount > 0) {
-          updatedAccount.closedPositions =
-            this.mapClosedPositions(newClosedPositions);
+      if (newClosedCount === 0) {
+        if (existingClosed.length === 0) {
+          // No hay posiciones cerradas en ningún lado, crear estructura vacía
+          updatedAccount.closedPositions = this.mapClosedPositions([]);
+        } else {
+          // Mantener las existentes cuando la API trae vacío
+          const positionsClass = new PositionsClassType();
+          positionsClass.setPositions(existingClosed);
+          positionsClass.setLenght(existingClosed.length);
+          updatedAccount.closedPositions = positionsClass;
         }
-        // Si newClosedCount === 0 pero existingClosedCount > 0, mantener existentes (ya manejado arriba)
+      } else {
+        // Mapear nuevas cerradas desde API
+        const newClosedClass = this.mapClosedPositions(newClosedPositions);
+        const newClosed = (newClosedClass.getPositions() || []) as ClosedPosition[];
+
+        // Construir diccionario por OrderId y fusionar con preferencia por nuevas entradas
+        const byOrder: Record<string, ClosedPosition> = {};
+        for (const p of existingClosed) {
+          if (!p || !p.OrderId) continue;
+          byOrder[String(p.OrderId)] = p;
+        }
+        for (const p of newClosed) {
+          if (!p || !p.OrderId) continue;
+          const key = String(p.OrderId);
+          // Si existe, reemplazar por la nueva (asumimos datos más frescos de API)
+          byOrder[key] = p;
+        }
+
+        // Eliminar de cerradas cualquier orden que aún esté abierta para evitar duplicación visual
+        const openIdsSet = new Set(
+          ((updatedAccount.openPositions?.positions as OpenPosition[]) || [])
+            .map((op) => (op?.OrderId !== undefined ? String(op.OrderId) : ''))
+            .filter((id) => id && id.length > 0),
+        );
+        const merged = Object.values(byOrder)
+          .filter((p) => !openIdsSet.has(String(p.OrderId)))
+          .sort((a, b) => {
+          const ta = new Date(a.TimeClose || a.TimeOpen || 0).getTime();
+          const tb = new Date(b.TimeClose || b.TimeOpen || 0).getTime();
+          return ta - tb;
+        });
+
+        const positionsClass = new PositionsClassType();
+        positionsClass.setPositions(merged);
+        positionsClass.setLenght(merged.length);
+        updatedAccount.closedPositions = positionsClass;
       }
 
       // Mapear metaStats (métricas combinadas)
@@ -344,8 +371,13 @@ export class BrokeretDataMapper {
       position.Swap = Number(pos.swap ?? 0);
       position.Commission = Number(pos.commission ?? 0);
       position.Rate = 1; // No disponible en la estructura, usar valor por defecto
-      position.TimeOpen = pos.time_open;
-      position.TimeClose = pos.time_close;
+      // Normalizar timestamps a ISO (UTC) para consistencia con WS y DB
+      position.TimeOpen = this.normalizeTimestamp(
+        (pos as any).time_open ?? (pos as any).opentime ?? (pos as any).open_time ?? (pos as any).openTime ?? (pos as any).time_create ?? (pos as any).time,
+      );
+      position.TimeClose = this.normalizeTimestamp(
+        (pos as any).time_close ?? (pos as any).closetime ?? (pos as any).close_time ?? (pos as any).closeTime ?? (pos as any).time,
+      );
       position.Commentary = (pos as any).comment ?? '';
       position.SL = 0; // No disponible en posiciones cerradas transformadas
       position.TP = 0; // No disponible en posiciones cerradas transformadas
@@ -356,6 +388,35 @@ export class BrokeretDataMapper {
     positionsClass.setPositions(positions);
     positionsClass.setLenght(positions.length);
     return positionsClass;
+  }
+
+  /**
+   * Normaliza timestamps (segundos, milisegundos o cadenas) a ISO UTC.
+   * Devuelve string ISO o null si no es parseable.
+   */
+  private normalizeTimestamp(raw: any): string | null {
+    if (raw === null || raw === undefined) return null;
+    try {
+      if (typeof raw === 'number') {
+        const ms = raw > 1e12 ? raw : raw * 1000; // segundos vs milisegundos
+        return new Date(ms).toISOString();
+      }
+      if (typeof raw === 'string') {
+        const num = Number(raw);
+        if (!isNaN(num)) {
+          const ms = num > 1e12 ? num : num * 1000;
+          return new Date(ms).toISOString();
+        }
+        const d = new Date(raw);
+        return isNaN(d.getTime()) ? null : d.toISOString();
+      }
+      if (raw instanceof Date) {
+        return isNaN(raw.getTime()) ? null : raw.toISOString();
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   /**

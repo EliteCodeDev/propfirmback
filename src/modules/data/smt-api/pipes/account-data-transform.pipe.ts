@@ -90,7 +90,7 @@ export class AccountDataTransformPipe {
       openPosition.OpenPrice = pos.OpenPrice || pos.openPrice || 0;
       openPosition.SL = pos.SL || pos.sl || 0;
       openPosition.TP = pos.TP || pos.tp || 0;
-      openPosition.ClosePrice = pos.ClosePrice || pos.closePrice || 0;
+      openPosition.ClosePrice = null;
       openPosition.Swap = pos.Swap || pos.swap || 0;
       openPosition.Profit = pos.Profit || pos.profit || 0;
       openPosition.Commentary = pos.Commentary || pos.commentary || '';

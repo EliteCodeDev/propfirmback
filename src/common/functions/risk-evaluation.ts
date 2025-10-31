@@ -20,18 +20,58 @@ export function riskEvaluation(
     balance.currentBalance,
     balance.initialBalance,
   );
-  const dailyDrawdown = calculateDailyTotalDrawdown(
-    params.dailyDrawdown,
-    balance.currentBalance,
-    balance.dailyBalance,
-  );
-  // Usar equity (o balance actual si no está disponible) para el cálculo de max drawdown
-  const equityOrBalance = account.equity ?? balance.currentBalance;
-  const maxDrawdown = calculateDailyTotalDrawdown(
-    params.maxDrawdown,
-    equityOrBalance,
-    balance.initialBalance,
-  );
+  // Daily drawdown: validar contra ambas métricas (currentBalance y equity)
+  // Si no existe dailyBalance (baseline del día), no evaluar y marcar como cumplida
+  let dailyDrawdown;
+  if (balance.dailyBalance == null || balance.dailyBalance <= 0) {
+    dailyDrawdown = {
+      status: true,
+      drawdown: 0,
+    };
+  } else {
+    const dailyDDByBalance = calculateDailyTotalDrawdown(
+      params.dailyDrawdown,
+      balance.currentBalance,
+      balance.dailyBalance,
+    );
+    const dailyDDByEquity = calculateDailyTotalDrawdown(
+      params.dailyDrawdown,
+      account.equity ?? balance.currentBalance,
+      balance.dailyBalance,
+    );
+    dailyDrawdown = {
+      status: dailyDDByBalance.status && dailyDDByEquity.status,
+      drawdown: Math.max(dailyDDByBalance.drawdown, dailyDDByEquity.drawdown),
+    };
+  }
+
+  // Max drawdown condicional según regla de equity en tiempo real:
+  // - Si equity < balance inicial => comparar equity contra balance inicial
+  // - Caso contrario => comparar equity contra balance actual (saldo asentado)
+  const eqVal = account.equity ?? balance.currentBalance;
+  const initVal = balance.initialBalance;
+  const currVal = balance.currentBalance;
+  let maxDrawdown;
+  if (eqVal != null && initVal != null && initVal > 0 && eqVal < initVal) {
+    maxDrawdown = calculateDailyTotalDrawdown(
+      params.maxDrawdown,
+      eqVal,
+      initVal,
+    );
+  } else if (eqVal != null && currVal != null && currVal > 0) {
+    maxDrawdown = calculateDailyTotalDrawdown(
+      params.maxDrawdown,
+      eqVal,
+      currVal,
+    );
+  } else {
+    // Fallback seguro: comparar balance actual vs balance inicial
+    maxDrawdown = calculateDailyTotalDrawdown(
+      params.maxDrawdown,
+      currVal,
+      initVal,
+    );
+  }
 
   const tradingDays = calculateTradingDays(
     openPositions.positions,

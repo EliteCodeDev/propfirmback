@@ -110,7 +110,7 @@ export class SmtAccountDataTransformPipe {
       openPosition.OpenPrice = pos.OpenPrice || pos.openPrice || 0;
       openPosition.SL = pos.SL || pos.sl || 0;
       openPosition.TP = pos.TP || pos.tp || 0;
-      openPosition.ClosePrice = pos.ClosePrice || pos.closePrice || 0;
+      openPosition.ClosePrice = null;
       openPosition.Swap = pos.Swap || pos.swap || 0;
       openPosition.Profit = pos.Profit || pos.profit || 0;
       openPosition.Commentary = pos.Commentary || pos.commentary || '';
@@ -125,14 +125,15 @@ export class SmtAccountDataTransformPipe {
     return positions.map(pos => {
       const closedPosition = new ClosedPosition();
       closedPosition.OrderId = pos.OrderId || pos.orderId || '';
-      closedPosition.TimeOpen = pos.TimeOpen || pos.timeOpen || '';
+      // Normalizar fechas a ISO (UTC); evitar string vacío
+      closedPosition.TimeOpen = this.normalizeTimestamp(pos.TimeOpen ?? pos.timeOpen ?? null);
       closedPosition.Type = pos.Type || pos.type || '';
       closedPosition.Volume = pos.Volume || pos.volume || 0;
       closedPosition.Symbol = pos.Symbol || pos.symbol || '';
       closedPosition.OpenPrice = pos.OpenPrice || pos.openPrice || 0;
       closedPosition.SL = pos.SL || pos.sl || 0;
       closedPosition.TP = pos.TP || pos.tp || 0;
-      closedPosition.TimeClose = pos.TimeClose || pos.timeClose || '';
+      closedPosition.TimeClose = this.normalizeTimestamp(pos.TimeClose ?? pos.timeClose ?? null);
       closedPosition.ClosePrice = pos.ClosePrice || pos.closePrice || 0;
       closedPosition.Commission = pos.Commission || pos.commission || 0;
       closedPosition.Rate = pos.Rate || pos.rate || 0;
@@ -144,6 +145,35 @@ export class SmtAccountDataTransformPipe {
   }
 
   /**
+   * Normaliza timestamps (segundos, milisegundos o cadenas) a ISO UTC.
+   * Devuelve string ISO o null si no es parseable.
+   */
+  private normalizeTimestamp(raw: any): string | null {
+    if (raw === null || raw === undefined) return null;
+    try {
+      if (typeof raw === 'number') {
+        const ms = raw > 1e12 ? raw : raw * 1000;
+        return new Date(ms).toISOString();
+      }
+      if (typeof raw === 'string') {
+        const num = Number(raw);
+        if (!isNaN(num)) {
+          const ms = num > 1e12 ? num : num * 1000;
+          return new Date(ms).toISOString();
+        }
+        const d = new Date(raw);
+        return isNaN(d.getTime()) ? null : d.toISOString();
+      }
+      if (raw instanceof Date) {
+        return isNaN(raw.getTime()) ? null : raw.toISOString();
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /*
    * Mapea el resume de posiciones abiertas del DTO al formato interno
    */
   private mapOpenResume(resume: any): ResumenPositionOpen {

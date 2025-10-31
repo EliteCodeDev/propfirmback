@@ -105,32 +105,28 @@ export function groupPositionsByDays(
   closedPositions: ClosedPosition[],
 ) {
   const allPositions = mergePositions(openPositions, closedPositions);
+
+  // Helper: intenta obtener una fecha válida para la posición.
+  // Usa TimeOpen; si no existe y es posición cerrada, intenta con TimeClose.
+  const getValidDate = (position: OpenPosition | ClosedPosition): Date | null => {
+    const raw = position.TimeOpen || (position as ClosedPosition).TimeClose;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   const grouped = allPositions.reduce(
     (acc, position) => {
-      try {
-        // Validar y parsear la fecha de apertura de la posición
-        let timeOpen: Date;
-        
-        // TimeOpen es siempre string según las definiciones de tipo
-        if (!position.TimeOpen) {
-          throw new Error('TimeOpen is null or undefined');
-        }
-        
-        timeOpen = new Date(position.TimeOpen);
-        // Verificar si la fecha es válida
-        if (isNaN(timeOpen.getTime())) {
-          throw new Error('Invalid TimeOpen date');
-        }
-        
-        const date = timeOpen.toISOString().split('T')[0];
-        if (!acc[date]) {
-          acc[date] = [];
-        }
-        acc[date].push(position);
-      } catch (error) {
-        // Si hay error en el parseo de fecha, omitir esta posición
-        console.warn(`Error parsing TimeOpen for position:`, position, error);
+      const dateObj = getValidDate(position);
+      if (!dateObj) {
+        // Omitir posiciones sin fecha válida sin generar errores en consola
+        return acc;
       }
+      const date = dateObj.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(position);
       return acc;
     },
     {} as Record<string, (OpenPosition | ClosedPosition)[]>,

@@ -6,12 +6,14 @@ import * as riskFunctions from 'src/common/functions';
 import { riskEvaluationResult } from 'src/common/types/risk-results';
 import { ChallengeStatus } from 'src/common/enums';
 import { CustomLoggerService } from 'src/common/services/custom-logger.service';
+import { ChallengesService } from 'src/modules/challenges/services/challenges.service';
 @Injectable()
 export class RulesEvaluationJob {
   private readonly logger = new Logger(RulesEvaluationJob.name);
   constructor(
     private readonly bufferService: BufferService,
     private readonly customLogger: CustomLoggerService,
+    private readonly challengesService: ChallengesService,
   ) {}
 
   @Cron('20,50 */3 * * * *')
@@ -66,14 +68,9 @@ export class RulesEvaluationJob {
           // Recrear instancia de Account para restaurar métodos de clase
           const accountInstance = this.recreateAccountInstance(account);
 
-          // ✅ OPTIMIZACIÓN: Saltar evaluación si la cuenta no ha cambiado
-          if (!accountInstance.isDirty()) {
-            this.logger.debug(
-              `RulesEvaluationJob: Saltando evaluación para ${login} - sin cambios detectados`,
-            );
-            skippedCount++;
-            continue;
-          }
+          // Evaluar SIEMPRE las reglas de riesgo, incluso si la cuenta no está marcada como "dirty".
+          // Esto garantiza que las violaciones críticas existentes disparen la desaprobación
+          // aunque no haya cambios recientes en el buffer.
 
           // Evaluar reglas de riesgo solo si hay cambios
           const riskEvaluation = await this.evaluateAccountRules(
@@ -89,6 +86,11 @@ export class RulesEvaluationJob {
             accountInstance.status,
           );
           accountInstance.status = challengeStatus;
+
+          // Si la cuenta es desaprobable, ejecutar proceso de desaprobación
+          if (challengeStatus === ChallengeStatus.DISAPPROVABLE) {
+            await this.handleDisapproval(accountInstance, riskEvaluation);
+          }
 
           // Actualizar la cuenta con los resultados de validación
           await this.bufferService.upsertAccount(login, (prev) => {
@@ -258,6 +260,83 @@ export class RulesEvaluationJob {
       // Aquí puedes llamar a TasksService.setDesaprobableChallenge() si es necesario
     }
     return challengeStatus;
+  }
+
+  /**
+   * Ejecuta el proceso completo de desaprobación cuando se rompe alguna regla crítica
+   */
+  private async handleDisapproval(
+    account: Account,
+    riskEvaluation: riskEvaluationResult,
+  ): Promise<void> {
+    try {
+      const challengeId = account.challengeId;
+      if (!challengeId) {
+        this.logger.warn(
+          `No se encontró challengeId para login=${account.login}. Saltando desaprobación automática.`,
+        );
+        return;
+      }
+
+      const observationParts: string[] = [];
+      if (!riskEvaluation.dailyDrawdown.status) {
+        observationParts.push(
+          `Daily loss excedida: ${Number(
+            riskEvaluation.dailyDrawdown.drawdown,
+          ).toFixed(2)}%`,
+        );
+      }
+      if (!riskEvaluation.maxDrawdown.status) {
+        observationParts.push(
+          `Max loss excedida: ${Number(
+            riskEvaluation.maxDrawdown.drawdown,
+          ).toFixed(2)}%`,
+        );
+      }
+      if (!riskEvaluation.globalConsistency.status) {
+        observationParts.push(
+          `Inconsistencia global: ${Number(
+            riskEvaluation.globalConsistency.consistencyPercentage,
+          ).toFixed(2)}%`,
+        );
+      }
+      if (!riskEvaluation.inactiveDays.status) {
+        observationParts.push(
+          `Días inactivos excedidos: ${riskEvaluation.inactiveDays.inactiveDays}`,
+        );
+      }
+
+      const observation =
+        observationParts.join(' | ') ||
+        'Challenge no cumple con las reglas de riesgo establecidas';
+
+      this.customLogger.logJob({
+        jobName: 'RulesEvaluationJob',
+        operation: 'auto_disapprove_init',
+        status: 'in_progress',
+        details: { challenge_id: challengeId, login: account.login },
+      });
+
+      await this.challengesService.setDisapprovedChallenge(
+        challengeId,
+        observation,
+      );
+
+      this.customLogger.logJob({
+        jobName: 'RulesEvaluationJob',
+        operation: 'auto_disapprove_success',
+        status: 'completed',
+        details: { challenge_id: challengeId, login: account.login },
+      });
+    } catch (error) {
+      this.logger.error('Error en desaprobación automática:', error);
+      this.customLogger.logJob({
+        jobName: 'RulesEvaluationJob',
+        operation: 'auto_disapprove_error',
+        status: 'failed',
+        details: { error: error?.message || String(error) },
+      });
+    }
   }
   /**
    * Mapea el resultado de evaluación de riesgo a RiskValidation

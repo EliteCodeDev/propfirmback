@@ -81,6 +81,7 @@ export class OrdersService {
     private configService: ConfigService,
     @Inject(forwardRef(() => ChallengesService))
     private challengesService: ChallengesService,
+    @Inject(forwardRef(() => ChallengeDetailsService))
     private challengeDetailsService: ChallengeDetailsService,
     private challengeTemplatesService: ChallengeTemplatesService,
     @Inject(forwardRef(() => BrokerAccountsService))

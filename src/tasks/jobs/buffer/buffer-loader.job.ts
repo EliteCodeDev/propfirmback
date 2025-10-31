@@ -201,26 +201,37 @@ export class BufferLoaderJob implements OnModuleInit {
       let injectedCount = 0;
       let updatedCount = 0;
 
-      for (const account of accountsForBuffer) {
-        try {
-          const wasUpdated = await this.buffer.upsertAccount(
-            account.login,
-            (prev) => {
-              // Si existe una cuenta previa, mantener los datos de trading actualizados
-              // y solo actualizar la configuración del challenge
-              if (prev) {
-                updatedCount++;
-                // Actualizar solo los campos de configuración del challenge
-                prev.challengeId = account.challengeId;
-                prev.riskValidation = account.riskValidation;
-                prev.lastUpdate = account.lastUpdate;
-                return prev;
-              } else {
-                injectedCount++;
-                return account;
-              }
-            },
-          );
+          for (const account of accountsForBuffer) {
+            try {
+              const wasUpdated = await this.buffer.upsertAccount(
+                account.login,
+                (prev) => {
+                  // Si existe una cuenta previa, mantener los datos de trading actualizados
+                  // y solo actualizar la configuración del challenge
+                  if (prev) {
+                    updatedCount++;
+                    // Actualizar solo los campos de configuración del challenge
+                    prev.challengeId = account.challengeId;
+                    prev.riskValidation = account.riskValidation;
+                    prev.lastUpdate = account.lastUpdate;
+                    // Backfill de initialBalance si no existe o es inválido
+                    if (!prev.balance) {
+                      prev.balance = { initialBalance: 0, currentBalance: 0, dailyBalance: 0 } as any;
+                    }
+                    const init = Number(prev.balance.initialBalance);
+                    const newInit = Number(account.balance?.initialBalance ?? 0);
+                    if (isNaN(init) || init <= 0) {
+                      if (!isNaN(newInit) && newInit > 0) {
+                        prev.balance.initialBalance = newInit;
+                      }
+                    }
+                    return prev;
+                  } else {
+                    injectedCount++;
+                    return account;
+                  }
+                },
+              );
 
           this.logger.debug(
             `BufferLoaderJob: Cuenta ${account.login} ${wasUpdated ? 'actualizada' : 'inyectada'} en el buffer`,

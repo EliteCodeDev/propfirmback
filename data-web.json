@@ -7,11 +7,11 @@
         "challengeId": "8ead73cf-140a-483a-b98d-78a7e17d2bc1",
         "status": "progress",
         "createDateTime": "2025-10-11T02:50:30.152Z",
-        "lastUpdate": "2025-10-31T00:27:30.239Z",
+        "lastUpdate": "2025-10-31T01:27:30.219Z",
         "balance": {
             "initialBalance": "10000.00",
             "currentBalance": 10039.66,
-            "dailyBalance": 10039.66
+            "dailyBalance": 10034.87
         },
         "equity": 10039.66,
         "openPositions": {

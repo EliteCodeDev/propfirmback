@@ -5,7 +5,7 @@ import { DeepPartial, Repository, In } from 'typeorm';
 import { BufferService } from 'src/lib/buffer/buffer.service';
 import { Challenge } from 'src/modules/challenges/entities/challenge.entity';
 import { ChallengeDetails } from 'src/modules/challenges/entities/challenge-details.entity';
-import { Account } from 'src/common/utils';
+import { Account, PositionsClassType } from 'src/common/utils';
 import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 import { ChallengeStatus } from 'src/common/enums';
 import { ChallengeDetailsService } from 'src/modules/challenges/services/challenge-details.service';
@@ -309,6 +309,11 @@ export class FlushBufferJob {
               `FlushBufferJob: tradingDays no disponible para login=${login}, usando 0 por defecto`,
             );
           }
+          // Prefetch existing details once for preserves/fallbacks
+          const existingDetails = await this.detailsRepo.findOne({
+            where: { challengeID: challenge.challengeID },
+          });
+
           // Extract positions from the PositionsClassType structure
           const openPositions = account.openPositions?.positions ?? [];
           const closedPositions = account.closedPositions?.positions ?? [];
@@ -336,34 +341,125 @@ export class FlushBufferJob {
               : new Date(),
           };
 
-          if (account.metaStats) {
-            // Asegurar equity dentro de metaStats (fallback a account.equity)
-            const equity =
-              (account.metaStats as any).equity ?? account.equity ?? undefined;
-            payload.metaStats = {
-              ...account.metaStats,
-              ...(equity !== undefined ? { equity } : {}),
-            };
+          // No sobrescribir metaStats existentes: incluir equity sólo si es válido (>0)
+          const eq = Number(account.equity);
+          if (!isNaN(eq) && isFinite(eq) && eq > 0) {
+            payload.metaStats = { equity: eq };
           }
 
-          if (
-            account.balance &&
-            typeof account.balance.currentBalance === 'number'
-          ) {
-            payload.balance = account.balance;
+          if (account.balance) {
+            const safeBal: any = {};
+            const cb = Number(account.balance.currentBalance);
+            const db = Number(account.balance.dailyBalance);
+            const ib = Number(account.balance.initialBalance);
+            if (!isNaN(cb) && isFinite(cb) && cb > 0) safeBal.currentBalance = cb;
+            if (!isNaN(db) && isFinite(db) && db > 0) safeBal.dailyBalance = db;
+            if (!isNaN(ib) && isFinite(ib) && ib > 0) safeBal.initialBalance = ib;
+            if (Object.keys(safeBal).length > 0) {
+              payload.balance = safeBal;
+            }
           }
+
+          // No escribir balance si no hay un currentBalance válido; preservar DB
+          // (el merge de upsertChallengeDetails mantendrá valores previos)
 
           // Siempre incluir posiciones si existen estructuras
+          let preservedClosedFromDb: any[] | undefined;
+          let preservedOpenFromDb: any[] | undefined;
           if (account.openPositions || account.closedPositions) {
+            // Usar getters del Account para extraer posiciones reales
+            const safeOpenPositions =
+              typeof (account as any).getOpenPositions === 'function'
+                ? (account as any).getOpenPositions()
+                : openPositions;
+            const safeClosedPositions =
+              typeof (account as any).getClosedPositions === 'function'
+                ? (account as any).getClosedPositions()
+                : closedPositions;
+
             const positionsPayload: any = {};
-            // openPositions: persistir incluso si [] para reflejar vaciado legítimo
-            if (Array.isArray(openPositions)) {
-              positionsPayload.openPositions = openPositions;
+            // openPositions: persistir (incluido vacío si se requiere vaciado legítimo)
+            if (Array.isArray(safeOpenPositions) && safeOpenPositions.length > 0) {
+              positionsPayload.openPositions = safeOpenPositions;
+            } else {
+              // Preservar abiertas desde DB si el payload/memoria viene vacío
+              try {
+                const existingOpen = (existingDetails?.positions as any)?.openPositions;
+                if (Array.isArray(existingOpen) && existingOpen.length > 0) {
+                  positionsPayload.openPositions = existingOpen;
+                  preservedOpenFromDb = existingOpen;
+                }
+              } catch (dbErr) {
+                this.logger.warn(
+                  `FlushBufferJob: no se pudieron leer openPositions previas para challengeID=${challenge.challengeID}: ${dbErr?.message || dbErr}`,
+                );
+              }
             }
-            // closedPositions: solo persistir si hay elementos (>0) para evitar resets
-            if (Array.isArray(closedPositions) && closedPositions.length > 0) {
-              positionsPayload.closedPositions = closedPositions;
+            // closedPositions: validar que realmente estén cerradas (TimeClose string y ClosePrice numérico)
+            let validatedClosed = Array.isArray(safeClosedPositions)
+              ? (safeClosedPositions as any[]).filter(
+                  (p) =>
+                    p &&
+                    typeof p.TimeClose === 'string' &&
+                    !!p.TimeClose &&
+                    typeof p.ClosePrice === 'number' &&
+                    !isNaN(p.ClosePrice),
+                )
+              : [];
+            // Excluir de cerradas cualquier orden que esté reportada como abierta para evitar duplicaciones
+            try {
+              const openList = (positionsPayload.openPositions ?? safeOpenPositions ?? []) as any[];
+              const openIds = new Set(
+                openList
+                  .map((op) => (op?.OrderId !== undefined ? String(op.OrderId) : ''))
+                  .filter((id) => id && id.length > 0),
+              );
+              validatedClosed = validatedClosed.filter(
+                (cp) => !openIds.has(String(cp.OrderId)),
+              );
+            } catch {}
+            // incluir siempre que existan elementos (>0) para no borrar histórico
+            if (validatedClosed.length > 0) {
+              positionsPayload.closedPositions = validatedClosed as any[];
+            } else {
+              // Si no hay cerradas en memoria, preservar las ya guardadas en DB (filtradas contra abiertas)
+              try {
+                const existingClosed = (existingDetails?.positions as any)?.closedPositions;
+                if (Array.isArray(existingClosed) && existingClosed.length > 0) {
+                  // Validar que realmente estén cerradas
+                  let filteredExistingClosed = (existingClosed as any[]).filter(
+                    (p) =>
+                      p &&
+                      typeof p.TimeClose === 'string' &&
+                      !!p.TimeClose &&
+                      typeof p.ClosePrice === 'number' &&
+                      !isNaN(p.ClosePrice),
+                  );
+                  // Excluir de cerradas cualquier orden que esté reportada como abierta
+                  try {
+                    const openListDb = (positionsPayload.openPositions ?? safeOpenPositions ?? []) as any[];
+                    const openIdsDb = new Set(
+                      openListDb
+                        .map((op) => (op?.OrderId !== undefined ? String(op.OrderId) : ''))
+                        .filter((id) => id && id.length > 0),
+                    );
+                    filteredExistingClosed = filteredExistingClosed.filter(
+                      (cp) => !openIdsDb.has(String(cp.OrderId)),
+                    );
+                  } catch {}
+
+                  if (filteredExistingClosed.length > 0) {
+                    positionsPayload.closedPositions = filteredExistingClosed;
+                    preservedClosedFromDb = filteredExistingClosed;
+                  }
+                }
+              } catch (dbErr) {
+                this.logger.warn(
+                  `FlushBufferJob: no se pudieron leer closedPositions previas para challengeID=${challenge.challengeID}: ${dbErr?.message || dbErr}`,
+                );
+              }
             }
+            // Enviar positions si hay openPositions (incluido vacío) o closedPositions presentes
             if (
               positionsPayload.openPositions !== undefined ||
               positionsPayload.closedPositions !== undefined
@@ -384,6 +480,33 @@ export class FlushBufferJob {
             challenge.challengeID,
             payload,
           );
+
+          // Antes de marcar clean, rehidratar abiertas/cerradas en memoria si están vacías y existen en BD
+          try {
+            const currentClosed = Array.isArray(account.closedPositions?.positions)
+              ? account.closedPositions.positions
+              : [];
+            if ((!currentClosed || currentClosed.length === 0) && Array.isArray(preservedClosedFromDb) && preservedClosedFromDb.length > 0) {
+              if (!account.closedPositions) {
+                account.closedPositions = new PositionsClassType();
+              }
+              account.closedPositions.setPositions(preservedClosedFromDb);
+              account.closedPositions.setLenght(preservedClosedFromDb.length);
+            }
+
+            const currentOpen = Array.isArray(account.openPositions?.positions)
+              ? account.openPositions.positions
+              : [];
+            if ((!currentOpen || currentOpen.length === 0) && Array.isArray(preservedOpenFromDb) && preservedOpenFromDb.length > 0) {
+              if (!account.openPositions) {
+                account.openPositions = new PositionsClassType();
+              }
+              account.openPositions.setPositions(preservedOpenFromDb);
+              account.openPositions.setLenght(preservedOpenFromDb.length);
+            }
+          } catch (rehydrateErr) {
+            this.logger.warn(`FlushBufferJob: no se pudo rehidratar cerradas en memoria para login=${login}: ${rehydrateErr?.message || rehydrateErr}`);
+          }
 
           // Marcar como clean en buffer tras persistir correctamente
           accountsToMarkClean.push({ login, account });

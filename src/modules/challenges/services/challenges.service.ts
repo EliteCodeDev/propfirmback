@@ -51,6 +51,7 @@ export class ChallengesService {
     @InjectRepository(Challenge)
     private challengeRepository: Repository<Challenge>,
     private challengeTemplatesService: ChallengeTemplatesService,
+    @Inject(forwardRef(() => ChallengeDetailsService))
     private challengeDetailsService: ChallengeDetailsService,
     private addonRulesService: AddonRulesService,
     private certificatesService: CertificatesService,
